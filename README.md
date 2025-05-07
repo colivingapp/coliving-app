@@ -11,8 +11,8 @@
 [![Active](https://img.shields.io/badge/status-active-brightgreen)](https://github.com/colivingapp/coliving-app)
 [![Contributors](https://img.shields.io/github/contributors/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/graphs/contributors)
 [![GitHub Issues](https://img.shields.io/github/issues/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/issues)
-[![License](https://img.shields.io/github/license/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/blob/main/LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/commits/main)
+[![License](https://img.shields.io/github/license/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/blob/main/LICENSE)
 
 ---
 
