@@ -1,0 +1,23 @@
+{
+    "private": true,
+    "scripts": {
+        "watch": "vite",
+        "prod": "vite build"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^4.0.0",
+        "axios": "^1.1.2",
+        "laravel-vite-plugin": "^0.7.2",
+        "vite": "^4.0.0",
+        "vue": "^3.2.37"
+    },
+    "dependencies": {
+        "flag-icons": "^6.7.0",
+        "leaflet": "^1.9.3",
+        "leaflet-control-geocoder": "^2.4.0",
+        "leaflet.markercluster": "^1.5.3",
+        "vue-google-autocomplete": "^1.1.4",
+        "vue-router": "^4.1.6",
+        "vuedraggable": "^4.1.0"
+    }
+}
