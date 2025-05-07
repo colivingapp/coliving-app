@@ -98,6 +98,24 @@ For small enhancements or adjustments, you may submit a pull request without cre
 
 ---
 
+## 🔓 Open-Source Model
+
+Coliving App is open-source and free to use.
+
+In the future, optional premium features may be introduced as subscription-based add-ons, but all core functionality will remain free and open.
+
+By contributing, you agree your code may be used in both the open-source and monetized versions of the platform.
+
+We are committed to always crediting contributors and keeping the open ecosystem at the heart of the project.
+
+---
+
+## 📛 Project Name Use
+
+“Coliving App” is a project name reserved by the original author. Please do not use it to promote or market derivative projects without permission.
+
+---
+
 ## 📦 Branches
 
 | Branch      | Use Case                         | Where     | Clean? |
