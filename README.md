@@ -12,7 +12,7 @@
 [![Contributors](https://img.shields.io/github/contributors/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/graphs/contributors)
 [![GitHub Issues](https://img.shields.io/github/issues/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/commits/main)
-[![License](https://img.shields.io/github/license/colivingapp/coliving-app?style=flat-square)](https://github.com/colivingapp/coliving-app/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/colivingapp/coliving-app?style=flat-square&v=001)](https://github.com/colivingapp/coliving-app/blob/main/LICENSE)
 
 ---
 
