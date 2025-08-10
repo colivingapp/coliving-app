@@ -46,7 +46,7 @@
             <div style="height:30px;"></div>
             <b>Claim your Coliving App profile to accept or decline the join request.</b>
             <div style="height:15px;"></div>
-            Simply log in at <a href="https://coliving.app" target="_blank" style="color:#00a5ff;text-decoration:underline;">https://coliving.app</a> and click on the Claim Profile button in your coliving space profile.
+            Sign up at <a href="https://coliving.app" target="_blank" style="color:#00a5ff;text-decoration:underline;">https://coliving.app</a> and click on the <b>Claim</b> button in your coliving space <a href="https://coliving.app/space/{{$uid}}" target="_blank" style="color:#00a5ff;text-decoration:underline;">profile</a>.
             <div style="height:30px;"></div>
             Thank you for your attention to this matter.
         </div>

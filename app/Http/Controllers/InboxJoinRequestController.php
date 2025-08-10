@@ -85,36 +85,29 @@ class InboxJoinRequestController extends Controller
         $space_user_id = $space->user_id;
 
         $subj = 'New join request received';
+        $subj_admin = '';
         $notifyAdmin = false;
 
         // if space is not claimed
         if (!$space->claimed) {
             $template = 'join_request_unclaimed';
-            // if space doesn't have email, send to admin
-            if (!$space->email) {
-                $to = env('ADMIN_EMAIL');
-            }
-            // if space has email, send to space and also notify admin
-            else {
-                $to = $space->email;
-                // $to = env('ADMIN_EMAIL');
+
+            $to = $space->email;
+
+                if ($to == 'spaces@coliving.app') {
+                    $subj_admin = '[unclaimed_no_email] ';
+                }
+                else {
+                    $subj_admin = '[unclaimed] ';
+                }
                 $notifyAdmin = true;
-            }
         }
         // if space is claimed
         else {
             $template = 'join_request';
 
-            // if space doesn't have email (maybe later removed from profile), send to admin
-            if (!$space->email) {
-                $to = env('ADMIN_EMAIL');
-            }
-            // if space has email, send to space and also notify admin
-            else {
-                $to = $space->email;
-                // $to = env('ADMIN_EMAIL');
-                $notifyAdmin = true;
-            }
+            $to = $space->email;
+            $notifyAdmin = true;
         }
 
         // $from_name = Mate::where('user_id', $sender_id)->value('name');
@@ -135,7 +128,7 @@ class InboxJoinRequestController extends Controller
         }
 
         if ($notifyAdmin) {
-            $emailService->sendEmail(env('ADMIN_EMAIL'), $subj, $template, $data);
+            $emailService->sendEmail(env('ADMIN_EMAIL'), $subj_admin.$subj, $template, $data);
         }
 
         Log::create([
