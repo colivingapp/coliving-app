@@ -178,6 +178,9 @@ Route::post('/space', function (Request $request) {
     $space->whatsapp = (string)$request->input('whatsapp');
     $space->description = (string)$request->input('description');
     $space->info = (string)$request->input('info');
+    if ($type == "created") {
+        $space->user_id = $user_id;
+    }
 
     $space->orgSpont = $request->input('orgSpont');
     $space->quietLoud = $request->input('quietLoud');

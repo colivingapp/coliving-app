@@ -4,7 +4,7 @@
     <br>
     Your new space has been successfully created and is currently under review. Approval typically takes up to 24 hours.
     <br><br>
-    Once approved, you will receive an email notification, and your space profile will go live!
+    <b>Once approved, you will receive an email, and your space profile will go live!</b>
   </div>
   <div v-else>
     <div v-if="!userLoggedIn" class="content">

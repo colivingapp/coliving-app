@@ -26,23 +26,23 @@ class SpaceController extends Controller
 
         if ($space->private) {
             if (!auth()->check()) {
-                echo("Space is private");
+                echo("<b style='color:red;'>This space is private!</b>");
                 abort(403); // Space is private and user is not authenticated
             }
 
-            if ($space->user_id != auth()->user()->id) {
-                echo("Space is private");
+            if ($space->user_id != auth()->user()->id && auth()->user()->id != 1) {
+                echo("<b style='color:red;'>This space is private!</b>");
                 abort(403); // Space is private and user is not the owner
             }
         }
 
         if (($space->status == 'pending' || $space->status == 'declined')) {
             if (!auth()->check()) {
-                echo("The space has not been approved yet, please come back later");
+                echo("<b style='color:red;'>This space is awaiting approval!</b>");
                 abort(403); // Space has not been approved
             }
-            else if (auth()->user()->id != 1) {
-                echo("The space has not been approved yet, please come back later");
+            else if ($space->user_id != auth()->user()->id && auth()->user()->id != 1) {
+                echo("<b style='color:red;'>This space is awaiting approval!</b>");
                 abort(403); // Space has not been approved
             }
         }

@@ -256,8 +256,15 @@ function generateAvatar(name) {
 <template>
   <div class="content">
     
-    <div v-if="space && space.private != 0" style="margin-bottom:30px;background-color:red;color:white;padding:5px;border-radius:5px;">
-      This is a private profile. Only the owner can see it.
+    <div v-if="space && space.private != 0" style="background-color:red;color:white;padding:5px;border-radius:5px;">
+      This is a private space profile. Only the owner can see it.
+    </div>
+    
+    <div v-if="space && space.status != 'pending'" style="height:30px;"></div>
+    <div v-else style="height:10px;"></div>
+
+    <div v-if="space && space.status == 'pending'" style="margin-bottom:30px;background-color:blueviolet;color:white;padding:5px;border-radius:5px;">
+      This space is awaiting approval.
     </div>
 
     <div v-if="space" style="width:100%;height:30px;border-radius:3px;background:#f1f1f1;margin-bottom:30px;margin-top:-20px;padding:5px;">
