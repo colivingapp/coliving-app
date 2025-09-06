@@ -526,7 +526,7 @@ input {
 
 .menu {
   text-align: right;
-  max-width:190px;float:right;margin-right:15px;
+  max-width:205px;float:right;margin-right:15px;
   margin-top:10px;
 }
 
