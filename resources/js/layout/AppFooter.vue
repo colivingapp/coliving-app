@@ -47,7 +47,7 @@ watch(route, () => {
             <div style="text-align:center;">
                 Coliving App © 2025
                 <br>
-                v0.1-beta
+                v0.1.1-beta
                 <br>
                 <br>
                 <br>
@@ -145,7 +145,7 @@ watch(route, () => {
                         <span style="font-size:12px;color:#bbbbbb;">
                             Coliving App © 2025
                             <br>
-                            v0.1-beta
+                            v0.1.1-beta
                         </span>
 
                         <div class="footer-bottom-spacer"></div>
