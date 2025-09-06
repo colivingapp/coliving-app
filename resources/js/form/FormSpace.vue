@@ -697,7 +697,7 @@ export default {
           if (invalidFile.format) {
             alert(`Invalid file format: ${invalidFile.name}`);
           } else if (invalidFile.size) {
-            alert(`File size exceeds 2MB: ${invalidFile.name}`);
+            alert(`File size exceeds 5MB: ${invalidFile.name}`);
           } else if (invalidFile.count) {
             alert(`Maximum 20 files allowed. You selected ${invalidFile.count} files.`);
           }
@@ -749,7 +749,7 @@ export default {
       files.forEach(file => {
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
           invalidFiles.push({ name: file.name, format: true });
-        } else if (file.size > 4 * 1024 * 1024) {
+        } else if (file.size > 5 * 1024 * 1024) {
           invalidFiles.push({ name: file.name, size: true });
         }
       });

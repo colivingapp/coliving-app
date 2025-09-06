@@ -280,8 +280,8 @@ Route::post('/space', function (Request $request) {
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedFormats)) {
                 return response()->json(['error' => 'Invalid file format.'], 400);
             }
-            if ($file->getSize() > 4 * 1024 * 1024) {
-                return response()->json(['error' => 'File size exceeds 4MB.'], 400);
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return response()->json(['error' => 'File size exceeds 5MB.'], 400);
             }
         }
         if (count($files) > 20) {
