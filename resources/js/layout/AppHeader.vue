@@ -95,6 +95,8 @@
                       &nbsp;
                       <router-link to="/mates">Mates</router-link>
                       &nbsp;
+                      <router-link to="/hub">Hub</router-link>
+                      &nbsp;
                       <!-- <router-link to="/inbox">Inbox</router-link> -->
                       <router-link to="/inbox">
                         <!-- <span v-if="mate && (mate.hasUnreadPersonal || mate.hasUnreadSpaces)" style="color:red;">●</span> Inbox -->
@@ -143,6 +145,7 @@
 
                         <router-link to="/spaces" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Spaces</router-link>
                         <router-link to="/mates" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Mates</router-link>
+                        <router-link to="/hub" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Hub</router-link>
                         <router-link to="/inbox" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Inbox <span v-if="mate && (mate.hasUnreadPersonal || mate.hasUnreadSpaces)" style="color:red;">●</span>
                         </router-link>
       
@@ -523,7 +526,7 @@ input {
 
 .menu {
   text-align: right;
-  max-width:165px;float:right;margin-right:15px;
+  max-width:190px;float:right;margin-right:15px;
   margin-top:10px;
 }
 
