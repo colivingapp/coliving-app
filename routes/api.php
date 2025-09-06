@@ -268,40 +268,51 @@ Route::post('/space', function (Request $request) {
 
     $photosSaved = false;
     
-    // Save the uploaded files
+    // Save the uploaded photos (also resize and compress)
+    $photosSaved = false;
+    
     if ($request->hasFile('photos')) {
         $files = $request->file('photos');
     
-        // Validate each file in the array
+        // Validation for file format, size, and count (remains the same)
         foreach ($files as $file) {
-            // Check file format
             $allowedFormats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
-            $fileExtension = strtolower($file->getClientOriginalExtension());
-    
-            if (!in_array($fileExtension, $allowedFormats)) {
-                return response()->json(['error' => 'Invalid file format. Only JPEG and PNG are allowed.'], 400);
+            if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedFormats)) {
+                return response()->json(['error' => 'Invalid file format.'], 400);
             }
-    
-            // Check file size
-            $maxFileSize = 4 * 1024 * 1024; // 4MB
-            if ($file->getSize() > $maxFileSize) {
+            if ($file->getSize() > 4 * 1024 * 1024) {
                 return response()->json(['error' => 'File size exceeds 4MB.'], 400);
             }
         }
-    
-        // Validate the total number of files
-        $maxFiles = 20;
-        if (count($files) > $maxFiles) {
+        if (count($files) > 20) {
             return response()->json(['error' => 'Maximum 20 files allowed.'], 400);
         }
+
+        // Initialize the Image Manager for Version 2
+        $manager = new \Intervention\Image\ImageManager(['driver' => 'gd']);
     
         foreach ($files as $photo) {
-            $filename = uniqid() . '.' . $photo->getClientOriginalExtension();
-            $path = $photo->storeAs('public/spaces', $filename);
-            // $photoPath = str_replace('public/', 'storage/', $path);
-            $photo = new Photo(['filename' => $filename, 'space_uid' => $space->uid]);
-            $space->photos()->save($photo);
-            $photosSaved = true;
+            try {
+                $filename = uniqid() . '.' . $photo->getClientOriginalExtension();
+                
+                $image = $manager->make($photo)
+                    ->orientate(); // <-- ADD THIS LINE
+
+                $image->resize(1280, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+
+                $image->save(storage_path('app/public/spaces/' . $filename), 80);
+                
+                $photoModel = new Photo(['filename' => $filename, 'space_uid' => $space->uid]);
+                $space->photos()->save($photoModel);
+                $photosSaved = true;
+
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Image Upload Failed: ' . $e->getMessage());
+                return response()->json(['error' => 'A server error occurred while processing an image.'], 500);
+            }
         }
     }
 
