@@ -1,5 +1,8 @@
 <template>
-    <div v-if="userLoggedIn && isMember == 1" style="height:100%;">
+    <div v-if="isMember == 'loading'" class="spinner-container">
+        <div class="spinner"></div>
+    </div>
+    <div v-else-if="userLoggedIn && isMember == 1" style="height:100%;">
         <div class="content height100" style="margin-top:0px;padding-top:30px;">
             
             <div v-if="space" style="width:100%;height:30px;border-radius:3px;background:#f1f1f1;margin-bottom:20px;margin-top:-20px;padding:5px;" class="mobile-menu">
@@ -302,6 +305,9 @@
     .content-hub {
         float: left;
         margin-top:10px;
+    }
+    .spinner-container {
+        padding-top:100px;
     }
 }
 </style>
