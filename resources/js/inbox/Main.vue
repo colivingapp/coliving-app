@@ -222,7 +222,7 @@ const retrieveConversation = () => {
       const spaceEntry = Object.values(participantsObj).find(p => p.type === 'space');
 
       // Check if it's claimed
-      isSpaceClaimed.value = spaceEntry?.claimed === 1;
+      isSpaceClaimed.value = Number(spaceEntry?.claimed) === 1;
       // console.log(isSpaceClaimed.value)
     }
     else if (route.name == 'ConversationSpacePOV') {
