@@ -102,7 +102,7 @@
                 caUser.userId = "<?php echo($user->id); ?>";
             </script>
             
-            <script src="https://maps.googleapis.com/maps/api/js?key={{ config('ca.google_api_key') }}&libraries=places"></script>
+            <script src="https://maps.googleapis.com/maps/api/js?key={{ config('ca.google_api_key') }}&libraries=places&language=en"></script>
         <?php } else { ?>
             <script>
                 userLoggedIn = false;
