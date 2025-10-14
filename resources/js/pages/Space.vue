@@ -38,6 +38,14 @@ function formatTimestamp(timestamp) {
   });
 }
 
+// Helper function to ensure external URLs are absolute
+function formatExternalUrl(url) {
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+}
+
 let isLoaded = ref(false);
 let ratingSubmitted = ref(false);
 
@@ -289,7 +297,7 @@ function generateAvatar(name) {
 
           <div v-if="space.website">
             <br>
-            <a :href="space.website" target="_blank">{{ space.website }}</a>
+            <a :href="formatExternalUrl(space.website)" target="_blank">{{ space.website }}</a>
           </div>
         </div>
 
@@ -311,40 +319,40 @@ function generateAvatar(name) {
         <h2>Social</h2>
 
         <span v-if="space.twitter != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.twitter" target="_blank"><icons :iconName="'twitter'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.twitter)" target="_blank"><icons :iconName="'twitter'" /></a></div>
         </span>
         <span v-if="space.facebook != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.facebook" target="_blank"><icons :iconName="'facebook'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.facebook)" target="_blank"><icons :iconName="'facebook'" /></a></div>
         </span>
         <span v-if="space.instagram != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.instagram" target="_blank"><icons :iconName="'instagram'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.instagram)" target="_blank"><icons :iconName="'instagram'" /></a></div>
         </span>
         <span v-if="space.pinterest != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.pinterest" target="_blank"><icons :iconName="'pinterest'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.pinterest)" target="_blank"><icons :iconName="'pinterest'" /></a></div>
         </span>
         <span v-if="space.telegram != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.telegram" target="_blank"><icons :iconName="'telegram'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.telegram)" target="_blank"><icons :iconName="'telegram'" /></a></div>
         </span>
         <span v-if="space.github != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.github" target="_blank"><icons :iconName="'github'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.github)" target="_blank"><icons :iconName="'github'" /></a></div>
         </span>
         <span v-if="space.youtube != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.youtube" target="_blank"><icons :iconName="'youtube'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.youtube)" target="_blank"><icons :iconName="'youtube'" /></a></div>
         </span>
         <span v-if="space.tiktok != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.tiktok" target="_blank"><icons :iconName="'tiktok'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.tiktok)" target="_blank"><icons :iconName="'tiktok'" /></a></div>
         </span>
         <span v-if="space.linkedin != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.linkedin" target="_blank"><icons :iconName="'linkedin'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.linkedin)" target="_blank"><icons :iconName="'linkedin'" /></a></div>
         </span>
         <span v-if="space.linktree != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.linktree" target="_blank"><icons :iconName="'linktree'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.linktree)" target="_blank"><icons :iconName="'linktree'" /></a></div>
         </span>
         <span v-if="space.substack != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.substack" target="_blank"><icons :iconName="'substack'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.substack)" target="_blank"><icons :iconName="'substack'" /></a></div>
         </span>
         <span v-if="space.medium != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="space.medium" target="_blank"><icons :iconName="'medium'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.medium)" target="_blank"><icons :iconName="'medium'" /></a></div>
         </span>
       </span>
 
@@ -407,8 +415,6 @@ function generateAvatar(name) {
                 <span @click="editRating[index] = !editRating[index]" class="link"><span v-if="!editRating[index]">Edit</span><span v-else>Close</span></span>
 
               </div>
-              <!-- {{ edit rating }} -->
-              
               <div v-if="editRating[index]">
                   <h3>Edit your reference</h3>
                   <select v-model="ratingEdit">
@@ -467,7 +473,6 @@ function generateAvatar(name) {
 
         <div v-if="!userLoggedIn">
           <div style="height:20px;"></div>
-          <!-- <router-link :to="`/inbox/space/${$route.params.uid}`"><button class="action-button button-1" style="width:160px;">Login</button></router-link> -->
           <router-link to="/login"><b>Log in</b></router-link> to see your score
         </div>
 
