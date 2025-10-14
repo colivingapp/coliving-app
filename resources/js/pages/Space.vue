@@ -57,7 +57,6 @@ if (window.caUser) {
 let mate = ref('');
 if (userLoggedIn) {
   mate.value = window.mate;
-
   checkIfJoined();
 }
 
@@ -115,26 +114,28 @@ const fetchSpace = async () => {
 
     // Colive Fit
     // console.log(mate.value, space.value)
-    let user1 = {
-      orgSpont: space.value.orgSpont,
-      quietLoud: space.value.quietLoud,
-      earlyNight: space.value.earlyNight,
-      workFun: space.value.workFun,
-      expTrad: space.value.expTrad,
-      multiLocal: space.value.multiLocal
-    }
+    if (userLoggedIn && mate.value) {
+        let user1 = {
+          orgSpont: space.value.orgSpont,
+          quietLoud: space.value.quietLoud,
+          earlyNight: space.value.earlyNight,
+          workFun: space.value.workFun,
+          expTrad: space.value.expTrad,
+          multiLocal: space.value.multiLocal
+        }
 
-    let user2 = {
-      orgSpont: mate.value.orgSpont,
-      quietLoud: mate.value.quietLoud,
-      earlyNight: mate.value.earlyNight,
-      workFun: mate.value.workFun,
-      expTrad: mate.value.expTrad,
-      multiLocal: mate.value.multiLocal
+        let user2 = {
+          orgSpont: mate.value.orgSpont,
+          quietLoud: mate.value.quietLoud,
+          earlyNight: mate.value.earlyNight,
+          workFun: mate.value.workFun,
+          expTrad: mate.value.expTrad,
+          multiLocal: mate.value.multiLocal
+        }
+        // console.log(user1, user2)
+        coliveFitScore.value = calculateColiveFitScore(user1, user2)
+        // console.log(coliveFitScore)
     }
-    // console.log(user1, user2)
-    coliveFitScore.value = calculateColiveFitScore(user1, user2)
-    // console.log(coliveFitScore)
 
     document.title = space.value.name + ' - Coliving App';
 
@@ -152,11 +153,11 @@ const fetchSpace = async () => {
       isSocial.value = true;
     }
 
-    // Set bookmark
-    for (let space in mate.value.bookmarks) {
-      if (mate.value.bookmarks[space] == route.params.uid) {
-        isBookmarked.value = true;
-      }
+    // Set bookmark status based on the correct data structure
+    if (userLoggedIn && mate.value && mate.value.bookmarks) {
+        isBookmarked.value = mate.value.bookmarks.some(bookmark => bookmark.space_uid == route.params.uid);
+    } else {
+        isBookmarked.value = false;
     }
 
     isLoaded.value = true;
@@ -186,14 +187,12 @@ function calculateColiveFitScore(user1, user2) {
 
 let isBookmarked = ref(false);
 
-
 onMounted(() => {
   fetchSpace();
 });
 
 // Watch for changes in the route parameters, and update space data on navigation
 watch(() => route.params, fetchSpace);
-
 
 const submitRating = () => {
   ratingSubmitted.value = true;
@@ -254,7 +253,6 @@ const characterCount = computed(() => {
 const characterCountEdit = computed(() => {
   return referenceTextEdit.value.length;
 });
-
 
 function generateAvatar(name) {
   return multiavatar(name);
