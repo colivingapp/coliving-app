@@ -73,7 +73,16 @@
       </ul>
 
       <p>Coliving in Argentina offers a unique opportunity to live affordably while experiencing the country's rich culture and vibrant community. With numerous coliving spaces providing modern amenities and fostering a collaborative environment, Argentina is an ideal destination for digital nomads and expats looking to balance work and adventure.</p>
-   </div>
+    </div>
+
+   
+    <div style="height:50px;"></div>
+    
+    <div style="text-align:center;">
+      <router-link to="/space/new"><button class="action-button button-1">Add New Space</button></router-link>
+    </div>
+    
+    <div style="height:30px;"></div>
     
   </div>
  
