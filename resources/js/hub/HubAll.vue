@@ -25,12 +25,19 @@
         <span v-if="myColivingSpaces.length > 0">
           <div v-for="space in myColivingSpaces">
             <router-link :to="'/space/'+space.space_uid+'/hub'" >
-              <div style="width:100%;padding:10px;background-color: aliceblue;border: 1px solid #00abff;border-radius: 5px;display:grid;grid-template-columns:49px 1fr;margin-bottom:20px;">
-                <div style="padding-left:3px;">
-                  <img src="/img/hub.png" width="34">
+              <div style="width:100%;padding:10px;background-color: aliceblue;border: 1px solid #00abff;border-radius: 5px;display:grid;grid-template-columns:100px 10px 1fr;margin-bottom:20px;align-items:center;">
+                <div style="height:80px;width:100px;text-align:center;">
+                  <img
+                    :src="space.first_photo ? '/storage/spaces/' + space.first_photo : '/img/hub.png'"
+                    @error="$event.target.src='/img/hub.png'"
+                    style="height:100%;max-width:100%;border-radius:5px;"
+                  >
+                  <!-- <img :src="'/storage/spaces/' + space.first_photo" style="width:50px;border-radius:5px;"> -->
+                  <!-- <img src="/img/hub.png" width="34"> -->
                   <!-- <icons :icon-name="'space'" :width="34"></icons> -->
                 </div>
-                <div style="padding-top:1px;">  
+                <div></div>
+                <div>  
                   <span style="font-size:16px;font-weight:bold;">{{  space.name  }}</span>
                   <br>
                   {{ space.joined_at }} - Now

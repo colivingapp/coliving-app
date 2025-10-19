@@ -147,35 +147,58 @@ class SpaceController extends Controller
 
     public function myColivingSpaces()
     {
-        $coliving_spaces = SpaceMate::select('space_uid', 'left_at', 'joined_at')
-            ->where('status', 'active')
-            ->where('user_id', auth()->user()->id)
-            ->get();
+        $userId = auth()->id();
 
-        foreach ($coliving_spaces as $cs) {
-            $space = Space::where('uid', $cs['space_uid'])->select('name', 'country_slug')->get();
+        // current & past memberships
+        $colivingSpaces = SpaceMate::where('status', 'active')
+            ->where('user_id', $userId)
+            ->get(['space_uid', 'left_at', 'joined_at']);
 
-            if (!empty($space[0])) {
-                $cs['name'] = $space[0]['name'];
-                $cs['country_slug'] = $space[0]['country_slug'];
-            }
-        }
+        $pastColivingSpaces = SpaceMate::where('status', 'left')
+            ->where('user_id', $userId)
+            ->get(['space_uid', 'left_at', 'joined_at']);
 
-        $past_coliving_spaces = SpaceMate::select('space_uid', 'left_at', 'joined_at')
-            ->where('status', 'left')
-            ->where('user_id', auth()->user()->id)
-            ->get();
+        // all space UIDs we’ll need
+        $allUids = $colivingSpaces->pluck('space_uid')
+            ->merge($pastColivingSpaces->pluck('space_uid'))
+            ->unique()
+            ->values();
 
-        foreach ($past_coliving_spaces as $cs) {
-            $space = Space::where('uid', $cs['space_uid'])->select('name', 'country_slug')->get();
+        // fetch base space data, keyed by uid
+        $spacesByUid = Space::whereIn('uid', $allUids)
+            ->select('uid', 'name', 'country_slug', 'photo')
+            ->get()
+            ->keyBy('uid');
 
-            if (!empty($space[0])) {
-                $cs['name'] = $space[0]['name'];
-                $cs['country_slug'] = $space[0]['country_slug'];
-            }
-        }
+        // fetch best photo per space (prefer pos=1, else latest id)
+        $photoCandidates = DB::table('photos')
+            ->select('space_uid', 'filename', 'pos', 'id')
+            ->whereIn('space_uid', $allUids)
+            ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('space_uid')
+            ->map(fn ($rows) => optional($rows->first())->filename);
 
-        return [$coliving_spaces, $past_coliving_spaces];
+        // attach space info + photo
+        $attach = function ($spaces) use ($spacesByUid, $photoCandidates) {
+            return $spaces->map(function ($item) use ($spacesByUid, $photoCandidates) {
+                $space = $spacesByUid->get($item->space_uid);
+                if ($space) {
+                    $item->name         = $space->name;
+                    $item->country_slug = $space->country_slug;
+                    $item->first_photo  = $photoCandidates[$space->uid] ?? null;
+                } else {
+                    $item->name = $item->country_slug = $item->first_photo = null;
+                }
+                return $item;
+            });
+        };
+
+        return [
+            $attach($colivingSpaces),
+            $attach($pastColivingSpaces),
+        ];
     }
     
 
