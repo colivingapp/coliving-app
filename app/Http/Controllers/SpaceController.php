@@ -204,7 +204,27 @@ class SpaceController extends Controller
 
     public function hub($uid)
     {
-        $space = Space::where('uid', $uid)->select('user_id', 'name', 'info')->first();
+        $space = Space::where('uid', $uid)->select('uid', 'user_id', 'name', 'info', 'photo')->first();
+        
+        // Add first photo if space has photos (using efficient query like myColivingSpaces)
+        if ($space && $space->photo) {
+            $firstPhoto = DB::table('photos')
+                ->where('space_uid', $space->uid)
+                ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+                ->orderByDesc('id')
+                ->value('filename');
+            
+            $space->first_photo = $firstPhoto;
+            
+            // Debug logging
+            \Log::info('Hub photo debug', [
+                'space_uid' => $space->uid,
+                'space_photo_flag' => $space->photo,
+                'first_photo_filename' => $firstPhoto,
+                'photos_count' => DB::table('photos')->where('space_uid', $space->uid)->count()
+            ]);
+        }
+        
         $mates = SpaceMate::where('space_uid', $uid)->where('status', 'active')->select('user_id')->get();
         foreach ($mates as $mate) {
             $m[] = $mate['user_id'];

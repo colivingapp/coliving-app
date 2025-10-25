@@ -104,20 +104,6 @@
             
                 <div style="height:40px;"></div>
 
-                
-                <!-- <div style="display:grid;grid-template-columns:30px 10px 1fr;padding-left:5px;">
-                    <div title="Hub">
-                        <img src="/img/hub.png" width="30">
-                    </div>
-                    <div></div>
-                    <div style="padding-top:7px;"><router-link v-if="space" :to="'/space/'+$route.params.uid" target="_blank">{{ space.name }}</router-link></div>
-                </div> -->
-
-                <div style="padding-left:5px;">
-                    <b>Space</b>
-                    <div style="padding-top:5px;"><router-link v-if="space" :to="'/space/'+$route.params.uid">{{ space.name }}</router-link></div>
-                </div>
-
             </div>
 
             <div class="content-hub" style="height:100%;">
@@ -158,6 +144,26 @@
                     <div style="padding:20px;background:aliceblue;border:1px solid lightgray;">
                         <span v-if="space.info"  style="white-space: pre-line">{{ space.info }}</span>
                         <i v-else>No information available</i>
+                    </div>
+
+                    <div style="height:30px;"></div>
+
+                    <!-- Space Photo and Name -->
+                    <div v-if="space" style="display:grid;grid-template-columns:100px 10px 1fr;margin-bottom:20px;padding:15px;background-color: aliceblue;border: 1px solid #00abff;border-radius: 5px;align-items:center;">
+                        <div style="height:80px;width:100px;text-align:center;">
+                            <img
+                                :src="space.first_photo ? '/storage/spaces/' + space.first_photo : '/img/hub.png'"
+                                @error="$event.target.src='/img/hub.png'"
+                                style="height:100%;max-width:100%;border-radius:5px;"
+                                :alt="space.name"
+                            >
+                        </div>
+                        <div></div>
+                        <div>  
+                            <span style="font-size:18px;font-weight:bold;">{{ space.name }}</span>
+                            <br>
+                            <router-link :to="'/space/'+space_uid" style="color:#00abff;text-decoration:none;">Show space profile →</router-link>
+                        </div>
                     </div>
 
                     <div style="height:50px;display:inline-table;"></div>
@@ -249,7 +255,13 @@
     
     if (userLoggedIn.value) {
         axios.get('/api/space/'+route.params.uid+'/hub')
-        .then(resp => { spaceMates.value = resp.data.mates; space.value = resp.data.space; })
+        .then(resp => { 
+            spaceMates.value = resp.data.mates; 
+            space.value = resp.data.space;
+            console.log('Hub data received:', resp.data);
+            console.log('Space object:', resp.data.space);
+            console.log('First photo:', resp.data.space?.first_photo);
+        })
         .catch(err => console.log(err))
 
         spaceFetch();
