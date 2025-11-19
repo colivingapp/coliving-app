@@ -313,33 +313,43 @@ class SpaceController extends Controller
     public function getCountries()
     {
         $countries = Space::select('country', 'country_slug', 'country_code')
-        ->groupBy('country', 'country_slug', 'country_code')
-        ->selectRaw('country, country_slug, country_code, COUNT(*) as count')
-        ->where('status', 'approved')
-        ->where('private', 0)
-        ->get();
+            ->groupBy('country', 'country_slug', 'country_code')
+            ->selectRaw('country, country_slug, country_code, COUNT(*) as count')
+            ->where('status', 'approved')
+            ->where('private', 0)
+            ->get();
 
         $latest_space = Space::where('status', 'approved')
-        ->where('photo', 1)
-        ->where('claimed', 1)
-        ->where('private', 0)
-        ->select('country_code', 'country', 'country_slug', 'name', 'uid')
-        ->latest('created_at')
-        ->first();
+            ->where('photo', 1)
+            ->where('claimed', 1)
+            ->where('private', 0)
+            ->select('country_code', 'country', 'country_slug', 'name', 'uid')
+            ->latest('created_at')
+            ->first();
 
-        $latest_space_photo = DB::table('photos')
-        ->where('space_uid', $latest_space->uid)
-        ->where('pos', 0)
-        ->select('filename')
-        ->first();
+        // Default null in case there is no suitable space or no photo
+        if ($latest_space) {
+            $latest_space_photo = DB::table('photos')
+                ->where('space_uid', $latest_space->uid)
+                // same logic as in other methods:
+                ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+                ->orderByDesc('id')
+                ->value('filename');   // returns string|NULL
 
-        $latest_space->space_photo = $latest_space_photo->filename;
+            $latest_space->space_photo = $latest_space_photo ?? null;
+        }
 
         $countries_count = $countries->count();
-        $cities_count = Space::distinct('city')->count();
-        $spaces_count = Space::select('uid')->distinct()->count();
+        $cities_count    = Space::distinct('city')->count();
+        $spaces_count    = Space::select('uid')->distinct()->count();
 
-        return response()->json([$countries, $countries_count, $cities_count, $spaces_count, $latest_space]);
+        return response()->json([
+            $countries,
+            $countries_count,
+            $cities_count,
+            $spaces_count,
+            $latest_space,
+        ]);
     }
 
 
