@@ -26,17 +26,22 @@
                     <div v-if="$route.name !== 'Home'">
                         <div class="search-input" style="margin-top:2px;text-align:center;">
                             <input v-model="searchQuery" placeholder="Search..." 
-                                @input="showResults = searchQuery !== ''" 
+                                @input="showResults = searchQuery.length >= 2" 
                                 @blur="onBlur" 
                                 @focus="fetchSpaces"
                                 class="input-search" />
-                            <div v-if="showResults && spacesFiltered.length > 0" class="dropdown">
-                              <router-link v-for="space in spacesFiltered.slice(0, 3)" :to="'/space/'+space.uid">
-                                  <div class="dropdown-item">
-                                  {{ space.name }}, {{ space.country }}
-                                  </div>
-                              </router-link>
-                              <div v-if="spacesFiltered.length > 0" class="dropdown-item link" style="text-align:center;" @click="showAll">All...</div>
+                            <div v-if="showResults && debouncedSearchQuery.length >= 2" class="dropdown">
+                              <div v-if="spacesFiltered.length === 0" class="dropdown-item" style="text-align:center;color:#999;">
+                                No results found
+                              </div>
+                              <template v-else>
+                                <router-link v-for="space in spacesFiltered.slice(0, 3)" :to="'/space/'+space.uid">
+                                    <div class="dropdown-item">
+                                    {{ space.name }}, {{ space.country }}
+                                    </div>
+                                </router-link>
+                                <div v-if="spacesFiltered.length > 3" class="dropdown-item link" style="text-align:center;" @click="showAll">All...</div>
+                              </template>
                             </div>
                         </div>
                     </div>
@@ -167,7 +172,7 @@ import ProfilePic from '../components/ProfilePic.vue';
 
 import JetDropdown from './Dropdown.vue'
 
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch, inject, onMounted, onUnmounted } from 'vue';
 
 const inboxStatus = inject('inboxStatus')
 
@@ -184,7 +189,9 @@ let isMenuDropdownOpen = ref(false);
 
 
 const searchQuery = ref('');
+const debouncedSearchQuery = ref('');
 const showResults = ref(false);
+let debounceTimer = null;
 
 const spaces = ref(window.spaces || []);
 
@@ -237,26 +244,117 @@ function logOut() {
   })
 }
 
-const spacesFiltered = computed(() => {
-  if (searchQuery.value && spaces.value) {
-    return spaces.value.filter(space => {
-      const { country, name, formatted_address } = space;
-      const searchValue = searchQuery.value.toLowerCase();
+// Improved search function with relevance scoring
+function calculateRelevanceScore(space, searchValue) {
+  const { country, name, formatted_address, city } = space;
+  const searchLower = searchValue.toLowerCase();
+  let score = 0;
 
-      return (
-        country.toLowerCase().includes(searchValue) ||
-        name.toLowerCase().includes(searchValue) || 
-        formatted_address.toLowerCase().includes(searchValue)
-      );
-    });
+  // Normalize fields
+  const nameLower = (name || '').toLowerCase();
+  const countryLower = (country || '').toLowerCase();
+  const cityLower = (city || '').toLowerCase();
+  const addressLower = (formatted_address || '').toLowerCase();
+
+  // Exact name match (highest priority)
+  if (nameLower === searchLower) {
+    score += 1000;
+  }
+  // Name starts with query
+  else if (nameLower.startsWith(searchLower)) {
+    score += 500;
+  }
+  // Word boundary match in name (whole word)
+  else if (new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(nameLower)) {
+    score += 400;
+  }
+  // Name contains query
+  else if (nameLower.includes(searchLower)) {
+    score += 300;
+  }
+
+  // City exact match
+  if (cityLower === searchLower) {
+    score += 200;
+  }
+  // City starts with query
+  else if (cityLower.startsWith(searchLower)) {
+    score += 150;
+  }
+  // Word boundary match in city
+  else if (cityLower && new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(cityLower)) {
+    score += 100;
+  }
+  // City contains query
+  else if (cityLower.includes(searchLower)) {
+    score += 50;
+  }
+
+  // Country exact match
+  if (countryLower === searchLower) {
+    score += 100;
+  }
+  // Country starts with query
+  else if (countryLower.startsWith(searchLower)) {
+    score += 75;
+  }
+  // Word boundary match in country
+  else if (new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(countryLower)) {
+    score += 50;
+  }
+  // Country contains query
+  else if (countryLower.includes(searchLower)) {
+    score += 25;
+  }
+
+  // Address contains query (lowest priority)
+  if (addressLower.includes(searchLower)) {
+    score += 10;
+  }
+
+  return score;
+}
+
+const spacesFiltered = computed(() => {
+  if (debouncedSearchQuery.value && spaces.value && debouncedSearchQuery.value.length >= 2) {
+    const searchValue = debouncedSearchQuery.value.trim();
+    if (!searchValue) {
+      return spaces.value || [];
+    }
+
+    // Filter and score results
+    const results = spaces.value
+      .map(space => {
+        const score = calculateRelevanceScore(space, searchValue);
+        return { space, score };
+      })
+      .filter(item => item.score > 0) // Only include matches
+      .sort((a, b) => b.score - a.score) // Sort by relevance (highest first)
+      .map(item => item.space); // Extract just the space objects
+
+    return results;
   } else {
     return spaces.value || [];
   }
 });
 
+// Debounce search query
+watch(searchQuery, (newValue) => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
+  
+  debounceTimer = setTimeout(() => {
+    debouncedSearchQuery.value = newValue;
+  }, 300); // 300ms debounce
+});
 
-watch(spacesFiltered);
-
+// Cleanup on unmount
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
+});
 
 function slugify(text) {
     // replace non letter or digits by -

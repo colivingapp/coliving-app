@@ -251,7 +251,7 @@ class SpaceController extends Controller
     
     public function searchData()
     {
-        $spaces = Space::select('uid', 'name', 'country', 'formatted_address', 'longitude', 'latitude', 'photo')->where('status', 'approved')->get();
+        $spaces = Space::select('uid', 'name', 'country', 'city', 'formatted_address', 'longitude', 'latitude', 'photo')->where('status', 'approved')->get();
 
         foreach ($spaces as $space) {
             if ($space->photo) {
