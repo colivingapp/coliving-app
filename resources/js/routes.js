@@ -21,6 +21,9 @@ import Search from './pages/Search.vue';
 import MySpaces from './pages/SpacesMy.vue';
 import SpacesByCountry from './pages/SpacesByCountry.vue';
 import SpacesByCity from './pages/SpacesByCity.vue';
+import SpacesByCategory from './pages/SpacesByCategory.vue';
+import SpacesByCountryCategory from './pages/SpacesByCountryCategory.vue';
+import SpacesBySlug from './pages/SpacesBySlug.vue';
 import Space from './pages/Space.vue';
 import Mate from './pages/Mate.vue';
 import Mates from './pages/Mates.vue';
@@ -40,7 +43,7 @@ const routes = [
         component: Home,
         name: 'Home',
         meta: {
-            title: 'Coliving App - Experience the Coliving Revolution'
+            title: 'Coliving App - Shared Living Worldwide'
         },
     },
 
@@ -338,9 +341,25 @@ const routes = [
     {
         path: '/spaces/:countrySlug',
         name: 'spaces-by-country',
-        component: SpacesByCountry,
+        component: SpacesBySlug,
         meta: {
             title: 'Coliving App - Spaces by Country'
+        },
+    },
+    {
+        path: '/spaces/category/:category',
+        name: 'spaces-by-category',
+        redirect: (to) => `/spaces/${to.params.category}`,
+        meta: {
+            title: 'Coliving App - Spaces by Category'
+        },
+    },
+    {
+        path: '/spaces/:country/:category',
+        name: 'spaces-by-country-category',
+        component: SpacesByCountryCategory,
+        meta: {
+            title: 'Coliving App - Spaces by Country and Category'
         },
     },
 

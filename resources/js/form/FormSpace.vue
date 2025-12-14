@@ -39,9 +39,34 @@
           <h2>General info</h2>
 
           <div class="form-group">
-            <label for="email">Name <span style="color:red;">*</span></label>
+            <label for="name">Name <span style="color:red;">*</span></label>
             <input type="text" id="name" v-model="name" class="input">
           </div>
+
+          <div class="form-group">
+            <label for="category">What type of space is this? <span style="color:red;">*</span></label>
+            <br>
+            <select id="category" v-model="category" class="input" @change="onCategoryChange" required style="min-width:240px;">
+              <option value="">Select a category</option>
+              <option value="managed-coliving">Managed Coliving</option>
+              <option value="shared-housing">Shared Housing</option>
+              <option value="student-housing">Student Housing</option>
+              <option value="digital-nomad">Digital Nomad Coliving</option>
+              <option value="cohousing">Cohousing / Communal Living</option>
+              <option value="senior-coliving">Senior Coliving</option>
+              <option value="short-term">Short-Term Coliving</option>
+            </select>
+          </div>
+
+          <div class="form-group" v-if="category">
+            <label for="subcategory">Subtype (optional)</label>
+            <br>
+            <select id="subcategory" v-model="subcategory" class="input" style="min-width:240px;">
+              <option value="">None</option>
+              <option v-for="(label, value) in availableSubcategories" :key="value" :value="value">{{ label }}</option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label for="email">Username</label>
             <input type="text" id="username" v-model="username" class="input">
@@ -240,6 +265,7 @@
           <br>
           <br>
           <span v-if="error1">* The name is required. Please enter your space name to proceed.<br></span>
+          <span v-if="error6">* Category is required. Please select a category for your space.<br></span>
           <span v-if="error2">* Email address is required for communication. Please enter your space email.<br></span>
           <span v-if="error3">* Country is required. Please select the country where your space is located.<br></span>
           <span v-if="error4">* Address is required. Please enter the address of your space.</span>
@@ -288,6 +314,8 @@ export default {
       username: '',
       description: '',
       info: '',
+      category: '',
+      subcategory: '',
       country: '',
       country_code: '',
       city: '',
@@ -352,6 +380,7 @@ export default {
       error3: false,
       error4: false,
       error5: false,
+      error6: false,
 
       userId: null,
       created: false,
@@ -365,6 +394,55 @@ export default {
       } else {
         return 'create';
       }
+    },
+    availableSubcategories() {
+      const subcategories = {
+        'shared-housing': {
+          'flat-apartment': 'Flat / Apartment',
+          'house-villa': 'House / Villa',
+          'private-room': 'Private Room',
+          'shared-room': 'Shared Room',
+        },
+        'student-housing': {
+          'university-residence': 'University Residence',
+          'private-student-housing': 'Private Student Housing',
+          'exchange-erasmus': 'Exchange / Erasmus',
+          'researcher-phd': 'Researcher / PhD',
+        },
+        'digital-nomad': {
+          'work-first': 'Work-first',
+          'community-first': 'Community-first',
+          'builder-house': 'Builder house',
+          'travel-first': 'Travel-first',
+        },
+        'managed-coliving': {
+          'private-rooms': 'Private rooms',
+          'studios-micro-units': 'Studios / micro-units',
+          'mixed-units': 'Mixed units',
+          'serviced-apartments': 'Serviced apartments',
+          'corporate-housing': 'Corporate Housing',
+          'subscription-membership': 'Subscription / membership model',
+        },
+        'cohousing': {
+          'cohousing-formal': 'Cohousing (Formal)',
+          'commune-informal': 'Commune (Informal)',
+          'eco-community': 'Eco Community',
+          'intentional-community': 'Intentional Community',
+        },
+        'senior-coliving': {
+          'independent-living': 'Independent Living',
+          'assisted-living': 'Assisted Living',
+          'intergenerational': 'Intergenerational',
+          '55-community': '55+ Community',
+        },
+        'short-term': {
+          'seasonal': 'Seasonal',
+          'retreat-based': 'Retreat-Based',
+          'pop-up': 'Pop-Up',
+          'project-based': 'Project-Based',
+        },
+      };
+      return subcategories[this.category] || {};
     }
   },
 
@@ -389,6 +467,8 @@ export default {
         }
         this.description = m.description;
         this.info = m.info;
+        this.category = m.category || '';
+        this.subcategory = m.subcategory || '';
 
         this.avatar = m.avatar;
         this.country = m.country;
@@ -550,6 +630,11 @@ export default {
       this.longitude = coordinates.lng;
     },
 
+    onCategoryChange() {
+      // Reset subcategory when category changes
+      this.subcategory = '';
+    },
+
     submitForm() {
       // Form validation
       this.errors = false;
@@ -561,6 +646,10 @@ export default {
       if (!this.name) {
         this.errors = true;
         return this.error1 = true;
+      }
+      else if (!this.category) {
+        this.errors = true;
+        return this.error6 = true;
       }
       else if (!this.address) {
         this.errors = true;
@@ -582,6 +671,8 @@ export default {
       formData.append('username', this.username);
       formData.append('description', this.description);
       formData.append('info', this.info);
+      formData.append('category', this.category);
+      formData.append('subcategory', this.subcategory || '');
       
       formData.append('country', this.country);
       formData.append('city', this.city);

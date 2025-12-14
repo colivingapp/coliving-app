@@ -723,6 +723,19 @@ button {
   color: #87ceeb;
 }
 
+/* Secondary button (inverse of button-1) */
+.action-button.button-2 {
+  background-color: white;
+  color: #87ceeb;
+  border: 1px solid #87c9eb;
+  width: 260px;
+}
+
+.action-button.button-2:hover {
+  background-color: #87c9eb;
+  color: white;
+}
+
 
 .action-button.button-post:enabled {
   background-color: #00cf2d;

@@ -1,7 +1,7 @@
 <template>
   <div class="content">
     <h1>Hub</h1>
-    The coliving hub is the place where you can find information about your coliving space, chat with your coliving space mates, customize your coliving settings, and participate in engaging coliving activities.
+    The Space Hub is where members coordinate inside a space: read shared info from the host, see who’s in the space, and chat together.
     <div style="height:10px;"></div>
 
     <div v-if="userLoggedIn">

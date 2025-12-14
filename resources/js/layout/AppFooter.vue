@@ -101,7 +101,7 @@ watch(route, () => {
 
                         <router-link to="/spaces">Spaces</router-link>
                         <br>
-                        <router-link to="/mates">Mates</router-link>
+                        <router-link to="/mates">Members</router-link>
                         <br>
                         <router-link to="/inbox">Inbox</router-link>
                         <br>

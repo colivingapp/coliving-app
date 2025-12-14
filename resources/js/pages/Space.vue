@@ -257,6 +257,72 @@ const characterCountEdit = computed(() => {
 function generateAvatar(name) {
   return multiavatar(name);
 }
+
+const categoryLabels = {
+  'shared-housing': 'Shared Housing',
+  'student-housing': 'Student Housing',
+  'digital-nomad': 'Digital Nomad Coliving',
+  'managed-coliving': 'Managed Coliving',
+  'cohousing': 'Cohousing / Communal Living',
+  'senior-coliving': 'Senior Coliving',
+  'short-term': 'Short-Term Coliving',
+};
+
+const subcategoryLabels = {
+  'shared-housing': {
+    'flat-apartment': 'Flat / Apartment',
+    'house-villa': 'House / Villa',
+    'private-room': 'Private Room',
+    'shared-room': 'Shared Room',
+  },
+  'student-housing': {
+    'university-residence': 'University Residence',
+    'private-student-housing': 'Private Student Housing',
+    'exchange-erasmus': 'Exchange / Erasmus',
+    'researcher-phd': 'Researcher / PhD',
+  },
+  'digital-nomad': {
+    'work-first': 'Work-first',
+    'community-first': 'Community-first',
+    'builder-house': 'Builder house',
+    'travel-first': 'Travel-first',
+  },
+  'managed-coliving': {
+    'private-rooms': 'Private rooms',
+    'studios-micro-units': 'Studios / micro-units',
+    'mixed-units': 'Mixed units',
+    'serviced-apartments': 'Serviced apartments',
+    'corporate-housing': 'Corporate Housing',
+    'subscription-membership': 'Subscription / membership model',
+  },
+  'cohousing': {
+    'cohousing-formal': 'Cohousing (Formal)',
+    'commune-informal': 'Commune (Informal)',
+    'eco-community': 'Eco Community',
+    'intentional-community': 'Intentional Community',
+  },
+  'senior-coliving': {
+    'independent-living': 'Independent Living',
+    'assisted-living': 'Assisted Living',
+    'intergenerational': 'Intergenerational',
+    '55-community': '55+ Community',
+  },
+  'short-term': {
+    'seasonal': 'Seasonal',
+    'retreat-based': 'Retreat-Based',
+    'pop-up': 'Pop-Up',
+    'project-based': 'Project-Based',
+  },
+};
+
+function getCategoryLabel(category) {
+  return categoryLabels[category] || category;
+}
+
+function getSubcategoryLabel(category, subcategory) {
+  if (!category || !subcategory) return null;
+  return subcategoryLabels[category]?.[subcategory] || subcategory;
+}
 </script>
 
 <template>
@@ -282,6 +348,11 @@ function generateAvatar(name) {
       <div style="display:grid;grid-template-columns:1fr 75px;">
         <div>
           <div class="space-name">{{ space.name }}</div>
+          <div v-if="space.category" style="margin-top:8px;margin-bottom:8px;">
+            <span style="font-weight:bold;">Type: </span> 
+            <router-link :to="'/spaces/'+space.category" style="text-decoration:none;">{{ getCategoryLabel(space.category) }}</router-link>
+            <span v-if="space.subcategory"> - {{ getSubcategoryLabel(space.category, space.subcategory) }}</span>
+          </div>
           <div v-if="space.address">{{ space.address }}</div>
           <div v-else>{{ space.formatted_address }}</div>
         
@@ -477,7 +548,6 @@ function generateAvatar(name) {
         <div style="height:20px;"></div>
       </div>
 
-      
       <div style="height:20px;"></div>
 
       <div v-if="space">

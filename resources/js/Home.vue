@@ -17,7 +17,7 @@
       </div>
 
       <div style="height:10px;"></div>
-      <span style="font-size:12px;">Search by country, city, address or coliving space name</span>
+      <span style="font-size:12px;">Search by country, city, address, or space name</span>
       <!-- <div style="height:4px;"></div>
       <router-link to="/spaces">View all spaces</router-link> -->
       <div style="height:25px;"></div>
@@ -27,8 +27,7 @@
     </div>
     <div>
       <div style="height:30px;"></div>
-
-      <router-link to="/space/new"><button class="action-button button-1">Add New Space</button></router-link>
+      <router-link to="/space/new"><button class="action-button button-1">Add a Space</button></router-link>
       
       <div style="height:30px;"></div>
 
@@ -48,35 +47,86 @@
 
   <div class="content" id="home-content" style="text-align:center;max-width:800px;">
     
-    <div style="height:80px;"></div>
+    <div style="height:50px;"></div>
 
+    <h1 style="margin-bottom:10px;">Open Coliving</h1>
+    <div style="line-height:1.75;">
+      Coliving isn’t just a trendy label for branded buildings. It’s the broader idea of people living together - sharing a home, lowering costs, making connections, and building community.
+      <br><br>
+      Coliving App is an open-source platform for shared living worldwide: coliving businesses, community houses, private rooms in shared apartments, student housing, communes, cohousing, retirement communities, and other alternative communal living arrangements.
+    </div>
+    <div style="height:18px;"></div>
+    <div>
+      <router-link to="/spaces"><button class="action-button button-2" style="margin-right:8px;">Explore Spaces</button></router-link>
+    </div>
+
+    <div style="height:70px;"></div>
     
-    <h1>Coliving Spaces</h1>
+    <h1 style="margin-bottom:10px;">More than a directory</h1>
 
-    Find your perfect coliving space with Coliving App, where you can discover a wide selection of spaces - from small apartments to big coliving communities all around the world. Add your space to Coliving App and start accepting join requests from coliving mates. It's free to use!
+    Coliving App starts as a discovery tool, but it’s designed to go further:
+    <div style="height:14px;"></div>
+    <div style="max-width:720px;margin:0 auto;line-height:1.75;">
+      <div style="padding:10px 14px;margin-bottom:10px;border:1px solid #e5e5e5;border-radius:10px;background:#fafafa;">
+        <b>1) Find spaces</b><br>
+        Explore shared living around the world: rooms, shared apartments, student housing, coliving spaces, community houses, cohousing, communes, retirement communities, and more.
+      </div>
+      <div style="padding:10px 14px;margin-bottom:10px;border:1px solid #e5e5e5;border-radius:10px;background:#fafafa;">
+        <b>2) Join spaces</b><br>
+        Request to join and become part of a home. Coliving App doesn’t manage payments - hosts and members handle arrangements directly.
+      </div>
+      <div style="padding:10px 14px;border:1px solid #e5e5e5;border-radius:10px;background:#fafafa;">
+        <b>3) Use the Space Hub</b><br>
+        Once you’re in, use the Space Hub to stay connected: shared space info, members list, and group chat - with more community features coming based on what spaces actually need.
+      </div>
+    </div>
 
-    <div style="height:20px;"></div>
 
-    <img src="/img/landing-add.png" style="width:100%;max-width:330px;">
+    <div style="height:70px;"></div>
+
+    <h1 style="margin-bottom:10px;">Why “open coliving”?</h1>
+    <div style="line-height:1.7;">
+      “Coliving” should describe a way of living, not just a brand category. Coliving App embraces the broader meaning - from shared flats and community houses to cohousing and intentional communities.
+      Being <b>open source</b> keeps the spirit aligned: transparent, community-driven, and built for the movement, not only for listings.
+    </div>
+
+    <div style="height:16px;"></div>
+    <div style="max-width:780px;margin:0 auto;">
+      <a href="https://github.com/colivingapp/coliving-app" target="_blank" rel="noopener">Contribute on GitHub →</a>
+    </div>
+
+    <div style="height:70px;"></div>
 
 
-    <div style="height:100px;"></div>
-
-
-    <h1>Coliving Mates</h1>
+    <h1 style="margin-bottom:10px;">People & Community</h1>
     
-    Join a global network of coliving mates. Whether you're a digital nomad, remote worker, student, or just a traveler, create a free profile on Coliving App to showcase your visited countries, find coliving mates nearby, and connect with the coliving community.
-
-    <div style="height:20px;"></div>
-
-    <img src="/img/landing-global.jpg" style="width:100%;max-width:320px;">
+    Create a free profile to connect with others, join spaces, and build the kind of home you want: collaborative, affordable, social, quiet, or anywhere in between.
 
     <div style="height:20px;"></div>
 
     
     <router-link v-if="!userLoggedIn" to="/register"><button class="action-button button-1">Create Profile</button></router-link>
+
+    <div style="height:70px;"></div>
+
+    <h1 style="margin-bottom:10px;">For hosts</h1>
+    <div style="line-height:1.7;">
+      If you host a space - or you’re starting one - add it to the map, accept join requests, and grow a real community around your home. Your space can be as simple as a room in an apartment or as big as a coliving house, cooperative, or commune.
+    </div>
+    <div style="height:18px;"></div>
+    <router-link v-if="!userLoggedIn" to="/register"><button class="action-button button-2" style="margin-left:8px;">Create Profile</button></router-link>
+    <router-link v-else to="/space/new"><button class="action-button button-1">Add a Space</button></router-link>
+
+    <div style="height:70px;"></div>
+
+    <h1 style="margin-bottom:10px;">For members</h1>
+    <div style="line-height:1.7;">
+      Explore spaces, bookmark what you like, message hosts, and join spaces. Once you’re in, the Space Hub gives you shared info, a members list, and a space chat.
+    </div>
+    <div style="height:18px;"></div>
+    <router-link to="/hub"><button class="action-button button-2">Explore the Hub</button></router-link>
   </div>
-  <div style="height:110px;"></div>
+  <div style="height:130px;"></div>
 </template>
 
 

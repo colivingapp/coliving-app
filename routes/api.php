@@ -178,6 +178,8 @@ Route::post('/space', function (Request $request) {
     $space->whatsapp = (string)$request->input('whatsapp');
     $space->description = (string)$request->input('description');
     $space->info = (string)$request->input('info');
+    $space->category = (string)$request->input('category');
+    $space->subcategory = (string)$request->input('subcategory') ?: null;
     if ($type == "created") {
         $space->user_id = $user_id;
     }
@@ -780,6 +782,8 @@ Route::get('/space/{uid}/admin/check-invite-email', function($uid) {
 Route::get('/spaces', [SpaceController::class, 'getCountries']);
 
 Route::get('/spaces/{countrySlug}', [SpaceController::class, 'getSpacesByCountry']);
+Route::get('/spaces/category/{category}', [SpaceController::class, 'getSpacesByCategory']);
+Route::get('/spaces/{countrySlug}/category/{category}', [SpaceController::class, 'getSpacesByCountryCategory']);
 
 // Route::get('/cities', [SpaceController::class, 'getCities']);
 

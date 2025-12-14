@@ -1,7 +1,7 @@
 <template>
     <div class="content" >
         
-        <h1>Coliving Mates</h1>
+        <h1>Members</h1>
 
         <div>
             <div>
@@ -19,8 +19,8 @@
 
                 <div style="max-width:620px;float:left;">
 
-                    <h2 class="mobile-only-h2">Coliving Mates</h2>
-                    Here you will find a list of coliving mates. To be visible in this list, your profile visibility needs to be set to public.
+                    <h2 class="mobile-only-h2">Members</h2>
+                    Here you will find a list of members. To be visible in this list, your profile visibility needs to be set to public.
                     
                     <div style="height:30px;"></div>
 

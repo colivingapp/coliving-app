@@ -355,8 +355,15 @@ class SpaceController extends Controller
 
     public function getSpacesByCountry($countrySlug)
     {
-        $spaces = Space::where('country_slug', $countrySlug)->select('name', 'uid', 'longitude', 'latitude', 'country_code', 'country', 'address', 'photo')->where('status', 'approved')->where('private', 0)->get();
+        $spaces = Space::where('country_slug', $countrySlug)
+            ->select('name', 'uid', 'longitude', 'latitude', 'country_code', 'country', 'address', 'photo')
+            ->where('status', 'approved')
+            ->where('private', 0)
+            ->get();
         $country = Space::where('country_slug', $countrySlug)->select('country')->first();
+        if (!$country) {
+            abort(404);
+        }
 
         $spaces->each(function ($space) {
             $activeMatesCount = SpaceMate::where('space_uid', $space->uid)
@@ -406,6 +413,134 @@ class SpaceController extends Controller
         ]);
     }
 
+    public function getSpacesByCategory($category)
+    {
+        $validCategories = array_keys(Space::CATEGORIES);
+        if (!in_array($category, $validCategories)) {
+            abort(404);
+        }
+
+        $spaces = Space::where('category', $category)
+            ->select('name', 'uid', 'longitude', 'latitude', 'country_code', 'country', 'country_slug', 'address', 'photo')
+            ->where('status', 'approved')
+            ->where('private', 0)
+            ->get();
+
+        $spaces->each(function ($space) {
+            $activeMatesCount = SpaceMate::where('space_uid', $space->uid)
+                ->where('status', 'active')
+                ->count();
+
+            $space->mates = $activeMatesCount;
+
+            if ($space->photo) {
+                $photos = DB::table('photos')
+                    ->where('space_uid', $space->uid)
+                    ->select('filename', 'id', 'pos')
+                    ->get()
+                    ->keyBy('id')
+                    ->toArray();
+                
+                $space->first_photo = null;
+
+                if ($photos) {
+                    $firstPhoto = null;
+    
+                    foreach ($photos as $photo) {
+                        if ($photo->pos == 1) {
+                            $firstPhoto = $photo->filename;
+                            break;
+                        }
+                    }
+    
+                    if (!$firstPhoto) {
+                        $maxId = max(array_keys($photos));
+                        if ($maxId) {
+                            $firstPhoto = $photos[$maxId]->filename;
+                        }
+                    }
+    
+                    $space->first_photo = $firstPhoto;
+                }
+            }
+        });
+
+        return response()->json([
+            'category' => Space::CATEGORIES[$category],
+            'categorySlug' => $category,
+            'spaces' => $spaces,
+        ]);
+    }
+
+    public function getSpacesByCountryCategory($countrySlug, $category)
+    {
+        $validCategories = array_keys(Space::CATEGORIES);
+        if (!in_array($category, $validCategories)) {
+            abort(404);
+        }
+
+        $spaces = Space::where('country_slug', $countrySlug)
+            ->where('category', $category)
+            ->select('name', 'uid', 'longitude', 'latitude', 'country_code', 'country', 'address', 'photo')
+            ->where('status', 'approved')
+            ->where('private', 0)
+            ->get();
+        
+        $country = Space::where('country_slug', $countrySlug)->select('country')->first();
+        
+        if (!$country) {
+            abort(404);
+        }
+
+        $spaces->each(function ($space) {
+            $activeMatesCount = SpaceMate::where('space_uid', $space->uid)
+                ->where('status', 'active')
+                ->count();
+
+            $space->mates = $activeMatesCount;
+
+            
+            if ($space->photo) {
+                $photos = DB::table('photos')
+                    ->where('space_uid', $space->uid)
+                    ->select('filename', 'id', 'pos')
+                    ->get()
+                    ->keyBy('id')
+                    ->toArray();
+                
+                $space->first_photo = null;
+
+                if ($photos) {
+                    $firstPhoto = null;
+    
+                    foreach ($photos as $photo) {
+                        if ($photo->pos == 1) {
+                            $firstPhoto = $photo->filename;
+                            break;
+                        }
+                    }
+    
+                    if (!$firstPhoto) {
+                        // Find the photo with the highest 'id' value
+                        $maxId = max(array_keys($photos));
+                        if ($maxId) {
+                            $firstPhoto = $photos[$maxId]->filename;
+                        }
+                    }
+    
+                    $space->first_photo = $firstPhoto;
+                }
+            }
+
+        });
+
+        return response()->json([
+            'country' => $country->country,
+            'category' => Space::CATEGORIES[$category],
+            'categorySlug' => $category,
+            'spaces' => $spaces,
+        ]);
+    }
 
     public function getCities()
     {
@@ -416,7 +551,7 @@ class SpaceController extends Controller
         ->where('private', 0)
         ->get();
 
-        $countries_count = $countries->count();
+        $countries_count = Space::select('country_slug')->distinct()->count();
         $cities_count = Space::distinct('city')->count();
         $spaces_count = Space::select('uid')->distinct()->count();
 

@@ -4,20 +4,25 @@
         <div v-if="$route.name == 'About'" class="page-content"> 
             <h1 style="font-weight:bold!important">About Coliving App</h1>
 
-            <p>Coliving App is an open-source, community-driven platform redefining how we live, connect, and build shared homes around the world.</p>
+            <p>Coliving App is an open-source, community-driven platform for shared living worldwide.</p>
 
-            <p>The project was born from a real experience of living and sharing a home in Medellin, Colombia in 2019 with amazing people from around the world — an unforgettable glimpse into what community life could truly be. That spirit of connection sparked the idea, and after a long journey of reflection and development, the first public beta was launched in 2024.</p>
+            <p>The project was born from a real experience of living and sharing a home in Medellin, Colombia in 2019 with amazing people from around the world - an unforgettable glimpse into what community life could truly be. That spirit of connection sparked the idea, and after a long journey of reflection and development, the first public beta was launched in 2024.</p>
 
-            <p>Coliving App is more than just a tool for finding spaces — it’s a growing movement toward a new way of living. We believe that shared homes can be vibrant communities, places where friendships grow, projects are born, and daily life feels lighter and richer.</p>
+            <p>We see coliving in its broader meaning: people living together, building community, and making daily life easier. That can be a managed coliving house, a shared flat, student housing, cohousing, or an intentional community.</p>
 
-            <p>Whether you want to launch a new coliving space, join an existing one, or find like-minded housemates, Coliving App gives you the freedom, tools, and support to make it happen.</p>
+            <p>Coliving App is more than a directory. It connects three pieces:</p>
+            <p>
+                <b>1) Spaces</b> - discover spaces on the map and browse by location and category.<br>
+                <b>2) Members and hosts</b> - members can request to join; hosts can accept join requests and build their community.<br>
+                <b>3) Space Hubs</b> - once you are in a space, the Hub provides shared info, a members list, and a space chat (more community features will evolve based on what spaces need).
+            </p>
 
-            <p>Coliving App is not just a platform — it's an experiment in how we live, share, and create meaning together. Whether you’re a digital nomad, a remote worker, a city explorer, or a community builder, you’re invited to help shape the future of shared living.</p>
+            <p>We keep things simple: Coliving App does not manage payments. Hosts and members handle arrangements directly.</p>
 
-            <p>This is our first public beta release — a work in progress shaped by early adopters like you. Thank you for being part of the journey.</p>
+            <p>This is our first public beta release - a work in progress shaped by early adopters like you. Thank you for being part of the journey.</p>
 
-            <p><a href="https://coliving.app/spaces">Explore Coliving Spaces →</a><br>
-            <a href="https://coliving.app/mates">Meet Coliving Mates →</a><br>
+            <p><a href="https://coliving.app/spaces">Explore Spaces →</a><br>
+            <a href="https://coliving.app/space/new">Add New Space →</a><br>
             <a href="https://github.com/colivingapp/coliving-app" target="_blank">Contribute on GitHub →</a></p>
         </div>
 

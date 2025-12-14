@@ -29,11 +29,10 @@ if (file_exists(__DIR__.'/web_admin.php')) {
 
 Route::get('/', function (SpaceController $spaceController) {
     $meta = [];
-    $meta['title'] = "Coliving App - Experience the Coliving Revolution";
-    // $meta['title'] = "Coliving App - Shared Spaces, Rooms for Rent, Affordable Housing";
+    $meta['title'] = "Coliving App - Shared Living Worldwide";
     $meta['description'] = "";
     $meta['soc_title'] = "Coliving App";
-    $meta['soc_description'] = "Coliving App helps you find coliving spaces and mates that match your lifestyle, turning shared living into meaningful community.";
+    $meta['soc_description'] = "Open coliving for everyone: shared living worldwide - from coliving spaces and community houses to private rooms and student housing. Find spaces, join spaces, and use Space Hubs for community life.";
     $meta['image'] = "thumb-world-3-small.png?v=001";
     // $meta['image_w'] = 3800;
     // $meta['image_h'] = 1830;
@@ -415,11 +414,86 @@ Route::get('/spaces', function () {
 // })->name('spaces.show');
 
 
+// Category routes must come before country routes to avoid conflicts
+Route::get('/spaces/category/{category}', function ($category) {
+    $validCategories = array_keys(\App\Models\Space::CATEGORIES);
+    if (!in_array($category, $validCategories)) {
+        abort(404);
+    }
+    // Non-canonical URL: redirect to canonical /spaces/{category}
+    return redirect('/spaces/' . $category, 301);
+})->name('spaces.category');
+
+Route::get('/spaces/{country}/{category}', function ($country_slug, $category) {
+    // Handle wrong order: if category is a valid country slug and country is a valid category, redirect
+    $validCategories = array_keys(\App\Models\Space::CATEGORIES);
+    $countryExists = Space::where('country_slug', $category)->exists();
+    
+    if (in_array($country_slug, $validCategories) && $countryExists) {
+        // Wrong order detected, redirect to correct order
+        return redirect('/spaces/' . $category . '/' . $country_slug, 301);
+    }
+
+    // Validate category
+    if (!in_array($category, $validCategories)) {
+        abort(404);
+    }
+
+    $country = Space::where('country_slug', $country_slug)->select('country')->first();
+    if (!$country) {
+        abort(404);
+    }
+
+    $meta = [];
+    $meta['title'] = \App\Models\Space::CATEGORIES[$category] . " in " . $country->country . " - Coliving App";
+    $meta['description'] = "";
+    $meta['soc_title'] = "";
+    $meta['soc_description'] = "";
+    $meta['image'] = "thumb-world-2-small.png?v=002";
+    $meta['image_w'] = 1900;
+    $meta['image_h'] = 915;
+
+    if (auth()->check()) {
+        $user_id = auth()->user()->id;
+        $mateService = app(MateService::class);
+        $mate = $mateService->getMateWithBookmarks($user_id);
+        return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+    }
+    else {
+        return view('welcome', ['meta' => $meta]);
+    }
+})->name('spaces.country.category');
+
 Route::get('/spaces/{country}', function ($country_slug) {
+    $validCategories = array_keys(\App\Models\Space::CATEGORIES);
+    if (in_array($country_slug, $validCategories)) {
+        // Canonical category URL: /spaces/{category}
+        $meta = [];
+        $meta['title'] = \App\Models\Space::CATEGORIES[$country_slug] . " - Coliving App";
+        $meta['description'] = "";
+        $meta['soc_title'] = "";
+        $meta['soc_description'] = "";
+        $meta['image'] = "thumb-world-2-small.png?v=002";
+        $meta['image_w'] = 1900;
+        $meta['image_h'] = 915;
+
+        if (auth()->check()) {
+            $user_id = auth()->user()->id;
+            $mateService = app(MateService::class);
+            $mate = $mateService->getMateWithBookmarks($user_id);
+            return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+        } else {
+            return view('welcome', ['meta' => $meta]);
+        }
+    }
+
     $spaces = Space::where('country_slug', $country_slug)->get();
     $countries = Space::select('country', 'country_slug')->distinct()->get();
 
     $country = Space::where('country_slug', $country_slug)->select('country')->first();
+    if (!$country) {
+        abort(404);
+    }
 
     $meta = [];
     $meta['title'] = "Coliving Spaces in ". $country->country ." - Coliving App";

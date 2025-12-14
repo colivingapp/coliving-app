@@ -104,7 +104,7 @@ onMounted(fetch);
 
       <div style="height:40px;"></div>
 
-      <div style="margin-top:0px;margin-bottom:30px;font-size:25px;">Current Coliving Mates: <b>{{ matesCount }}</b></div>
+      <div style="margin-top:0px;margin-bottom:30px;font-size:25px;">Current Members: <b>{{ matesCount }}</b></div>
 
       <div v-if="matesCount > 0" v-for="mate in mates" :key="mate.id" >
           <div v-if="mate.status != 'left'">
@@ -116,12 +116,12 @@ onMounted(fetch);
           </div>
       </div>
       <div v-else>
-        You have no current coliving mates yet.
+        You have no current members yet.
       </div>
 
       <div style="height:70px;"></div>
 
-      <div style="margin-top:0px;margin-bottom:30px;font-size:25px;">Past Coliving Mates: <b>{{ matesLeftCount }}</b></div>
+      <div style="margin-top:0px;margin-bottom:30px;font-size:25px;">Past Members: <b>{{ matesLeftCount }}</b></div>
 
       <div v-if="matesLeftCount > 0" v-for="mate in mates" :key="mate.id" >
           <div v-if="mate.status == 'left'">
@@ -133,7 +133,7 @@ onMounted(fetch);
           </div>
       </div>
       <div v-else>
-        You have no past coliving mates yet.
+        You have no past members yet.
       </div>
 
       <div style="height:70px;"></div>
@@ -160,7 +160,7 @@ onMounted(fetch);
 
       <div style="margin-top:0px;margin-bottom:30px;font-size:25px;">Your Feedback</div>
 
-      As a coliving space host, <span style="font-weight:bold;color:rgb(0, 134, 218)!important;"  class="link-footer" @click="modalFeedback = true">let us know</span> what additional data or tools you would like to see in this coliving space dashboard.
+      As a host, <span style="font-weight:bold;color:rgb(0, 134, 218)!important;"  class="link-footer" @click="modalFeedback = true">let us know</span> what additional data or tools you would like to see in this space dashboard.
 
       <div style="height:20px;"></div>
     </div>

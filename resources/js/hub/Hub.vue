@@ -24,7 +24,7 @@
 
                 <router-link :to="'/space/'+$route.params.uid+'/hub/mates'">
                     <div class="page-menu-button-outer" style="margin-left:20px;">
-                        <div class="page-menu-button" @click="$route.name == 'HubMates'"><span class="inbox-type-link" :class="{active : $route.name == 'HubMates'}">Mates</span></div>
+                        <div class="page-menu-button" @click="$route.name == 'HubMates'"><span class="inbox-type-link" :class="{active : $route.name == 'HubMates'}">Members</span></div>
                         <div class="page-menu-underline" v-if="$route.name == 'HubMates'"></div>
                     </div>
                 </router-link>
@@ -86,7 +86,7 @@
                 </router-link>
 
                 <router-link :to="'/space/'+$route.params.uid+'/hub/mates'">
-                    <div class="page-menu-button" @click="$route.name == 'HubMates'" :class="{'btn-active' : $route.name == 'HubMates'}"><span class="inbox-type-link" :class="{active : $route.name == 'HubMates'}">Mates</span></div>
+                    <div class="page-menu-button" @click="$route.name == 'HubMates'" :class="{'btn-active' : $route.name == 'HubMates'}"><span class="inbox-type-link" :class="{active : $route.name == 'HubMates'}">Members</span></div>
                 </router-link>
 
                 <!-- <router-link :to="'/space/'+$route.params.uid+'/hub/voting'">
@@ -114,7 +114,7 @@
                 </div>
 
                 <div v-if="route.name == 'HubMates'">
-                    <h2 style="margin-top:0px;">Mates</h2>
+                    <h2 style="margin-top:0px;">Members</h2>
 
                     <div v-for="mate in mates" :key="mate.id" >
                         <div v-if="mate.status != 'left'">
