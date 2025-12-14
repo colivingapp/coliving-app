@@ -56,6 +56,9 @@
               <option value="senior-coliving">Senior Coliving</option>
               <option value="short-term">Short-Term Coliving</option>
             </select>
+            <div v-if="categoryDescription" style="color:#666;font-size:13px;margin-top:-5px;margin-bottom:10px;max-width:650px;">
+              {{ categoryDescription }}
+            </div>
           </div>
 
           <div class="form-group" v-if="category">
@@ -65,6 +68,9 @@
               <option value="">None</option>
               <option v-for="(label, value) in availableSubcategories" :key="value" :value="value">{{ label }}</option>
             </select>
+            <div v-if="subcategoryDescription" style="color:#666;font-size:13px;margin-top:-5px;margin-bottom:15px;max-width:650px;">
+              {{ subcategoryDescription }}
+            </div>
           </div>
 
           <div class="form-group">
@@ -296,6 +302,7 @@ import MapSpacesSearchable from '../map/MapSpacesSearchable.vue';
 import FormCountriesDropDown from './FormCountriesDropDown.vue';
 import FormGoogleAutoComplete from './FormGoogleAutoComplete.vue';
 import draggable from 'vuedraggable';
+import { CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
 
 export default {
   components: {
@@ -395,54 +402,21 @@ export default {
         return 'create';
       }
     },
+    categoryDescription() {
+      if (!this.category) return '';
+      return CATEGORY_META[this.category]?.description || '';
+    },
+    subcategoryDescription() {
+      if (!this.category || !this.subcategory) return '';
+      return SUBCATEGORY_META[this.category]?.[this.subcategory]?.description || '';
+    },
     availableSubcategories() {
-      const subcategories = {
-        'shared-housing': {
-          'flat-apartment': 'Flat / Apartment',
-          'house-villa': 'House / Villa',
-          'private-room': 'Private Room',
-          'shared-room': 'Shared Room',
-        },
-        'student-housing': {
-          'university-residence': 'University Residence',
-          'private-student-housing': 'Private Student Housing',
-          'exchange-erasmus': 'Exchange / Erasmus',
-          'researcher-phd': 'Researcher / PhD',
-        },
-        'digital-nomad': {
-          'work-first': 'Work-first',
-          'community-first': 'Community-first',
-          'builder-house': 'Builder house',
-          'travel-first': 'Travel-first',
-        },
-        'managed-coliving': {
-          'private-rooms': 'Private rooms',
-          'studios-micro-units': 'Studios / micro-units',
-          'mixed-units': 'Mixed units',
-          'serviced-apartments': 'Serviced apartments',
-          'corporate-housing': 'Corporate Housing',
-          'subscription-membership': 'Subscription / membership model',
-        },
-        'cohousing': {
-          'cohousing-formal': 'Cohousing (Formal)',
-          'commune-informal': 'Commune (Informal)',
-          'eco-community': 'Eco Community',
-          'intentional-community': 'Intentional Community',
-        },
-        'senior-coliving': {
-          'independent-living': 'Independent Living',
-          'assisted-living': 'Assisted Living',
-          'intergenerational': 'Intergenerational',
-          '55-community': '55+ Community',
-        },
-        'short-term': {
-          'seasonal': 'Seasonal',
-          'retreat-based': 'Retreat-Based',
-          'pop-up': 'Pop-Up',
-          'project-based': 'Project-Based',
-        },
-      };
-      return subcategories[this.category] || {};
+      const subs = SUBCATEGORY_META[this.category] || {};
+      const out = {};
+      for (const [slug, meta] of Object.entries(subs)) {
+        out[slug] = meta.label;
+      }
+      return out;
     }
   },
 

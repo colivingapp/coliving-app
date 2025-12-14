@@ -12,6 +12,10 @@
     <div style="height:10px;"></div> 
 
     <h2>{{ category }} in {{ country }}</h2>
+
+    <div v-if="!isLoading && categoryDescription" style="margin-top:0px;margin-bottom:30px;color:#666;max-width:820px;line-height:1.5;">
+      {{ categoryDescription }}
+    </div>
     
     <div v-if="isLoading">
       Loading...
@@ -50,6 +54,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import MapByCountry from '../map/MapByCountry.vue';
+import { getCategoryDescription } from '../spaceTaxonomy.js';
 
 const country = ref('');
 const category = ref('');
@@ -99,6 +104,11 @@ onMounted(fetchSpaces);
 
 const sortedSpaces = computed(() => {
   return spaces.value.sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const categoryDescription = computed(() => {
+  if (!categorySlug.value) return '';
+  return getCategoryDescription(categorySlug.value);
 });
 </script>
 

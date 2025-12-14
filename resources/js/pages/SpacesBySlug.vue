@@ -28,6 +28,10 @@
       <h2 v-if="mode === 'country'">Spaces in {{ country }}</h2>
       <h2 v-else-if="mode === 'category'">{{ category }} Spaces</h2>
 
+      <div v-if="mode === 'category' && categoryDescription" style="margin-top:-10px;margin-bottom:30px;color:#666;max-width:820px;line-height:1.5;">
+        {{ categoryDescription }}
+      </div>
+
       <div v-if="sortedSpaces.length === 0" style="margin-top:20px;">
         No spaces found.
       </div>
@@ -69,6 +73,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import MapByCountry from '../map/MapByCountry.vue';
+import { CATEGORY_META, getCategoryDescription } from '../spaceTaxonomy.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -77,26 +82,18 @@ const isLoading = ref(true);
 const mode = ref(''); // 'country' | 'category'
 const country = ref('');
 const category = ref('');
+const categorySlug = ref('');
 const spaces = ref([]);
 
-const CATEGORY_LABELS = {
-  'managed-coliving': 'Managed Coliving',
-  'shared-housing': 'Shared Housing',
-  'student-housing': 'Student Housing',
-  'digital-nomad': 'Digital Nomad Coliving',
-  'cohousing': 'Cohousing / Communal Living',
-  'senior-coliving': 'Senior Coliving',
-  'short-term': 'Short-Term Coliving',
-};
-
 function isCategorySlug(slug) {
-  return Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, slug);
+  return Object.prototype.hasOwnProperty.call(CATEGORY_META, slug);
 }
 
 async function fetchSpaces() {
   isLoading.value = true;
   country.value = '';
   category.value = '';
+  categorySlug.value = '';
   spaces.value = [];
 
   const slug = route.params.countrySlug; // kept param name for backwards compatibility
@@ -106,6 +103,7 @@ async function fetchSpaces() {
   try {
     if (isCategorySlug(slug)) {
       mode.value = 'category';
+      categorySlug.value = slug;
       const response = await fetch(`/api/spaces/category/${slug}`);
       if (!response.ok) {
         mode.value = '';
@@ -139,6 +137,11 @@ async function fetchSpaces() {
 
 onMounted(fetchSpaces);
 watch(() => route.params.countrySlug, fetchSpaces);
+
+const categoryDescription = computed(() => {
+  if (mode.value !== 'category' || !categorySlug.value) return '';
+  return getCategoryDescription(categorySlug.value);
+});
 
 const sortedSpaces = computed(() => {
   return (spaces.value || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
