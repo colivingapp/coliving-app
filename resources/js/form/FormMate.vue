@@ -74,11 +74,11 @@
 
       
       <div class="form-section">
-        <h2>CoMatch Score</h2>
+        <h2>Lifestyle Match</h2>
 
-        CoMatch Score helps you find coliving spaces and roommates that match your lifestyle. 
+        Lifestyle Match helps you find coliving spaces and roommates that match your lifestyle. 
         <div style="height:10px;"></div>
-        CoMatch Score is in beta version. Let us know your <span style="font-weight:bold;"  class="link" @click="modalFeedback = true">feedback</span>.
+        Lifestyle Match is in beta version. Let us know your <span style="font-weight:bold;"  class="link" @click="modalFeedback = true">feedback</span>.
         
         <div style="height:30px;"></div>
 

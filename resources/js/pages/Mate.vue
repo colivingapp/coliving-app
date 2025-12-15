@@ -60,12 +60,12 @@
 
         <div style="height: 60px;"></div>
 
-        <h2 style="margin-top:0px;">CoMatch Score</h2>
+        <h2 style="margin-top:0px;">Lifestyle Match</h2>
         <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
           
 
           <span v-if="coliveFitScore && userLoggedIn" style="font-size:24px;font-weight:bold;">{{ coliveFitScore.toFixed(2) }}%</span>
-          <span v-else-if="!userLoggedIn">To see the CoMatch score, please <router-link to="/register">sign up</router-link> or <router-link to="/login">log in</router-link>.</span>
+          <span v-else-if="!userLoggedIn">To see the Lifestyle Match, please <router-link to="/register">sign up</router-link> or <router-link to="/login">log in</router-link>.</span>
 
           <div style="height:20px;"></div>
 
@@ -73,7 +73,7 @@
 
           <div style="height:20px;"></div>
         </div>
-        <div style="height: 20px;"></div>
+        <div style="height: 40px;"></div>
 
 
         <h3>References</h3>

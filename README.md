@@ -104,7 +104,7 @@ Gamified social engagement and community-building:
 
 - **Achievements** – unlock badges for contributions, hosting, and community participation.
 - **Leaderboards** – highlight top mates and spaces based on engagement, reviews, and profile completeness.
-- **CoMatch Score** – compatibility score for finding like-minded housemates and communities.
+- **Lifestyle Match** – compatibility score for finding like-minded housemates and communities.
 - **Social Sparks** – lightweight prompts and activities designed to spark new conversations and deeper friendships.
 - **Social Discovery** – connect with people through shared bookmarks, interests, locations, and travel plans.
 - **Global Coliving Ratings** – rate cities, neighborhoods, and countries for coliving quality.

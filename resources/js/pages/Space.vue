@@ -530,26 +530,6 @@ function getSubcategoryLabel(category, subcategory) {
     
     <div class="space-sidebar">
 
-      <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
-        <h2 style="margin-top:0px;">CoMatch Score</h2>
-
-        <div v-if="coliveFitScore && userLoggedIn" style="font-size:24px;font-weight:bold;">
-          {{ coliveFitScore.toFixed(2) }}%
-          <div style="height:10px;"></div>
-        </div>
-
-        <div>This score reflects how well your living habits match with this coliving space. Higher scores mean better compatibility.</div>
-
-        <div v-if="!userLoggedIn">
-          <div style="height:20px;"></div>
-          <router-link to="/login"><b>Log in</b></router-link> to see your score
-        </div>
-
-        <div style="height:20px;"></div>
-      </div>
-
-      <div style="height:20px;"></div>
-
       <div v-if="space">
         <div v-if="space.email">
           <div v-if="!isJoined" style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
@@ -578,8 +558,27 @@ function getSubcategoryLabel(category, subcategory) {
           <div style="height:20px;"></div>
         </div>
       </div>
+      
+      <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
+        <h2 style="margin-top:0px;">Lifestyle Match</h2>
 
+        <div v-if="coliveFitScore && userLoggedIn" style="font-size:24px;font-weight:bold;">
+          {{ coliveFitScore.toFixed(2) }}%
+          <div style="height:10px;"></div>
+        </div>
 
+        <div>This score reflects how well your living habits match with this coliving space. Higher scores mean better compatibility.</div>
+
+        <div v-if="!userLoggedIn">
+          <div style="height:20px;"></div>
+          <router-link to="/login"><b>Log in</b></router-link> to see your score
+        </div>
+
+        <div style="height:20px;"></div>
+      </div>
+
+      <div style="height:20px;"></div>
+      
       <div v-if="space">
         <div  v-if="space.claimed == 0" style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
           <h2 style="margin-top:0px;">Claim This Space</h2>

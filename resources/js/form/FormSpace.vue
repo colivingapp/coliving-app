@@ -236,9 +236,9 @@
 
 
         <div class="form-section" v-if="pageType == 'edit'">
-          <h2>CoMatch Score</h2>
+          <h2>Lifestyle Match</h2>
 
-          CoMatch Score helps you find coliving spaces and roommates that match your lifestyle.
+          Lifestyle Match helps you find coliving spaces and roommates that match your lifestyle.
           <br><br>
           
           <div class="form-group" v-for="(fit, index) in coliveFits" :key="index">
