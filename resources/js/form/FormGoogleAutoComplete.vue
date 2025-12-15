@@ -2,7 +2,7 @@
     <div>
       <vue-google-autocomplete id="map" class="input" classname="form-control" 
         v-on:placechanged="updateLocation"
-        placeholder="Enter your location"
+        placeholder="Start typing an address or place name"
         v-model="enteredText"
         v-on:inputChange="updateInput"
         types=""
@@ -31,6 +31,8 @@
         country_code: "",
         city: "",
         enteredText: "",
+        dropdownCheckInterval: null,
+        mutationObserver: null,
         countries: [
           { code: 'AF', name: 'Afghanistan' },
           { code: 'AX', name: 'Aland Islands' },
@@ -367,11 +369,147 @@
       };
 
       setTimeout(updateAddress, retryInterval);
+
+      // Set up observer to hide dropdown when input has fewer than 3 characters
+      this.$nextTick(() => {
+        this.setupDropdownObserver();
+      });
+    },
+    beforeUnmount() {
+      // Clean up interval when component is destroyed
+      if (this.dropdownCheckInterval) {
+        clearInterval(this.dropdownCheckInterval);
+      }
+      // Disconnect MutationObserver
+      if (this.mutationObserver) {
+        this.mutationObserver.disconnect();
+      }
     },
     methods: {
+      setupDropdownObserver() {
+        const inputElement = this.$refs.address?.$el?.querySelector('input');
+        if (!inputElement) return;
+
+        // Function to check and hide/show dropdown based on input length
+        const checkAndHideDropdown = () => {
+          const inputValue = inputElement.value || '';
+          const dropdowns = document.querySelectorAll('.pac-container');
+          
+          // If coordinates exist, a place was already selected, so close dropdown
+          if (this.coordinates.lat && this.coordinates.lng) {
+            dropdowns.forEach(dropdown => {
+              dropdown.style.display = 'none';
+              dropdown.style.visibility = 'hidden';
+              dropdown.style.opacity = '0';
+              dropdown.style.height = '0';
+              dropdown.style.overflow = 'hidden';
+            });
+            return;
+          }
+          
+          dropdowns.forEach(dropdown => {
+            if (inputValue.length < 3) {
+              dropdown.style.display = 'none';
+              dropdown.style.visibility = 'hidden';
+              dropdown.style.opacity = '0';
+            } else {
+              dropdown.style.display = '';
+              dropdown.style.visibility = '';
+              dropdown.style.opacity = '';
+            }
+          });
+        };
+
+        // Immediate check on input event
+        inputElement.addEventListener('input', () => {
+          checkAndHideDropdown();
+          // Also check after a tiny delay to catch async dropdown creation
+          setTimeout(checkAndHideDropdown, 10);
+          setTimeout(checkAndHideDropdown, 50);
+        });
+
+        // Close dropdown when input loses focus
+        inputElement.addEventListener('blur', () => {
+          setTimeout(() => {
+            this.closeDropdown();
+          }, 200); // Small delay to allow click events on dropdown items to fire first
+        });
+
+        // Use MutationObserver to watch for dropdown being added to DOM
+        this.mutationObserver = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length > 0) {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) { // Element node
+                  if (node.classList && node.classList.contains('pac-container')) {
+                    checkAndHideDropdown();
+                  }
+                  // Also check if pac-container is added as a child
+                  const pacContainer = node.querySelector && node.querySelector('.pac-container');
+                  if (pacContainer) {
+                    checkAndHideDropdown();
+                  }
+                }
+              });
+            }
+            // Also check if display style changes
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+              checkAndHideDropdown();
+            }
+          });
+        });
+
+        // Observe the document body for new dropdowns
+        this.mutationObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class']
+        });
+
+        // Also check periodically as a fallback
+        this.dropdownCheckInterval = setInterval(checkAndHideDropdown, 50);
+      },
       updateInput(val) {
           // console.log("Entered Text Changed:", val.newVal);
           this.locationFormatted = val.newVal;
+          
+          // Immediately hide dropdown if input has fewer than 3 characters
+          const inputValue = val.newVal || '';
+          const dropdowns = document.querySelectorAll('.pac-container');
+          
+          dropdowns.forEach(dropdown => {
+            if (inputValue.length < 3) {
+              dropdown.style.display = 'none';
+              dropdown.style.visibility = 'hidden';
+              dropdown.style.opacity = '0';
+            } else {
+              dropdown.style.display = '';
+              dropdown.style.visibility = '';
+              dropdown.style.opacity = '';
+            }
+          });
+          
+          // Also check after a tiny delay to catch any async dropdown creation
+          if (inputValue.length < 3) {
+            setTimeout(() => {
+              const delayedDropdowns = document.querySelectorAll('.pac-container');
+              delayedDropdowns.forEach(dropdown => {
+                dropdown.style.display = 'none';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.opacity = '0';
+              });
+            }, 10);
+            setTimeout(() => {
+              const delayedDropdowns = document.querySelectorAll('.pac-container');
+              delayedDropdowns.forEach(dropdown => {
+                dropdown.style.display = 'none';
+                dropdown.style.visibility = 'hidden';
+                dropdown.style.opacity = '0';
+              });
+            }, 50);
+          }
+          
           if (this.coordinates.lat) {
               // console.log(this.locationFormatted, this.country, this.city, this.coordinates)
               this.$emit("location-updated", this.locationFormatted, this.country, this.country_code, this.city, this.coordinates);
@@ -391,7 +529,49 @@
             // this.locationFormatted = this.enteredText;
             // console.log(this.locationFormatted, this.country, this.city, this.coordinates)
             // this.$emit("location-updated", this.location, this.locationFormatted, this.country, this.city, this.coordinates);
+            
+            // Close the dropdown completely when a place is selected
+            this.closeDropdown();
         }
+      },
+      closeDropdown() {
+        // Force close all Google Autocomplete dropdowns
+        const dropdowns = document.querySelectorAll('.pac-container');
+        dropdowns.forEach(dropdown => {
+          dropdown.style.display = 'none';
+          dropdown.style.visibility = 'hidden';
+          dropdown.style.opacity = '0';
+          dropdown.style.height = '0';
+          dropdown.style.overflow = 'hidden';
+          dropdown.style.maxHeight = '0';
+          // Also hide all pac-items inside
+          const pacItems = dropdown.querySelectorAll('.pac-item');
+          pacItems.forEach(item => {
+            item.style.display = 'none';
+          });
+        });
+        
+        // Also check after delays to ensure it stays closed
+        const closeDelayed = () => {
+          const delayedDropdowns = document.querySelectorAll('.pac-container');
+          delayedDropdowns.forEach(dropdown => {
+            dropdown.style.display = 'none';
+            dropdown.style.visibility = 'hidden';
+            dropdown.style.opacity = '0';
+            dropdown.style.height = '0';
+            dropdown.style.overflow = 'hidden';
+            dropdown.style.maxHeight = '0';
+            const pacItems = dropdown.querySelectorAll('.pac-item');
+            pacItems.forEach(item => {
+              item.style.display = 'none';
+            });
+          });
+        };
+        
+        setTimeout(closeDelayed, 10);
+        setTimeout(closeDelayed, 50);
+        setTimeout(closeDelayed, 100);
+        setTimeout(closeDelayed, 200);
       }
     }
   };

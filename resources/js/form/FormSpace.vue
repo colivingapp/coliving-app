@@ -112,15 +112,18 @@
         <div class="form-section">
           <h2>Location</h2>
           
-          <label>Address <span style="color:red;">*</span></label>
+          <label>Location <span style="color:red;">*</span></label>
           <FormGoogleAutoComplete :address="address" @location-updated="handleLocationUpdated" />
-
+          <div style="color:#666;font-size:13px;margin-top:-5px;margin-bottom:10px;max-width:650px;">
+            Start typing your space name or address, then select the exact location from the list.
+          </div>
+            
           <div style="height:10px;"></div>
-          <label for="google_url">Google Maps URL</label>
-          <input type="text" id="google_url" v-model="google_url" class="input">
-          
-          <div style="height:20px;"></div>
           <MapSpacesSearchable :location="{ 'latitude': latitude, 'longitude': longitude }"   />
+
+          <div style="height:20px;"></div>
+          <label for="google_url">Google Maps URL (Optional)</label>
+          <input type="text" id="google_url" v-model="google_url" class="input">
         </div>
 
 
