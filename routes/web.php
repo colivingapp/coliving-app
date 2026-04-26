@@ -344,7 +344,7 @@ Route::get('/spaces', function () {
 
     $meta = [];
     // $meta['title'] = "Global Coliving Spaces, Shared Apartments - Coliving App";
-    $meta['title'] = "Coliving App - Spaces";
+    $meta['title'] = "Coliving App - Coliving Spaces Worldwide";
     $meta['description'] = "Discover your perfect blend of community, comfort, and connection as you explore coliving spaces on Coliving App.";
     $meta['soc_title'] = "";
     $meta['soc_description'] = "";

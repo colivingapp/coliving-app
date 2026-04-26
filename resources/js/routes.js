@@ -332,7 +332,7 @@ const routes = [
         name: 'spaces',
         component: Spaces,
         meta: {
-            title: 'Coliving App - Spaces'
+            title: 'Coliving App - Coliving Spaces Worldwide'
         },
     },
 
@@ -341,7 +341,7 @@ const routes = [
         name: 'spaces-by-country',
         component: SpacesBySlug,
         meta: {
-            title: 'Coliving App - Spaces by Country'
+            title: 'Coliving App - Coliving Spaces by Country'
         },
     },
     {
