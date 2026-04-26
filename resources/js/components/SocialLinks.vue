@@ -9,16 +9,6 @@
       </a>
     </div> -->
 
-    <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
-      <a href="https://x.com/colivingapp" title="X" target="_blank">
-        <svg class="svg-button" viewBox="0 0 204.6 204.6">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M102.3,0c56.5,0,102.3,45.8,102.3,102.3s-45.8,102.3-102.3,102.3
-          S0,158.8,0,102.3S45.8,0,102.3,0L102.3,0z M140.5,42.3l-33.6,38.4l-29-38.4h-42l50.2,65.6l-47.6,54.4h20.4l36.7-42l32.1,42h41
-          l-52.3-69.2l44.5-50.8H140.5L140.5,42.3z M133.3,150.1h11.3L71.8,53.8H59.7L133.3,150.1L133.3,150.1z"/>
-        </svg>
-      </a>
-    </div>
-
 
     <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
       <a href="https://github.com/colivingapp" title="GitHub" target="_blank">
@@ -28,7 +18,18 @@
       </a>
     </div>
     
+
     <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
+      <a href="https://x.com/colivingapp" title="X" target="_blank">
+        <svg class="svg-button" viewBox="0 0 204.6 204.6">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M102.3,0c56.5,0,102.3,45.8,102.3,102.3s-45.8,102.3-102.3,102.3
+          S0,158.8,0,102.3S45.8,0,102.3,0L102.3,0z M140.5,42.3l-33.6,38.4l-29-38.4h-42l50.2,65.6l-47.6,54.4h20.4l36.7-42l32.1,42h41
+          l-52.3-69.2l44.5-50.8H140.5L140.5,42.3z M133.3,150.1h11.3L71.8,53.8H59.7L133.3,150.1L133.3,150.1z"/>
+        </svg>
+      </a>
+    </div>
+    
+    <!-- <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
       <a href="https://www.facebook.com/ColivingDotApp" title="Facebook" target="_blank">
         <svg class="svg-button" version="1.1" viewBox="0 0 43.821 43.449" xmlns="http://www.w3.org/2000/svg">
           <g transform="translate(20.355 -168.78)">
@@ -36,7 +37,7 @@
           </g>
         </svg>
       </a>
-    </div>
+    </div> -->
 
     <!-- <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover">
       <a href="https://pinterest.com/colivingapp/" title="Pinterest" target="_blank">
@@ -48,7 +49,7 @@
       </a>
     </div> -->
 
-    <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
+    <!-- <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
       <a href="https://instagram.com/ColivingDotApp/" title="Instagram" target="_blank">
         <svg class="svg-button" version="1.1" viewBox="0 0 43.821 43.708" xmlns="http://www.w3.org/2000/svg">
           <g transform="translate(-154.26 -149.81)">
@@ -56,9 +57,9 @@
           </g>
         </svg>
       </a>
-    </div>
+    </div> -->
 
-    <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
+    <!-- <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
       <a href="https://t.me/colivingapp" title="Telegram" target="_blank">
         <svg class="svg-button" version="1.1" viewBox="0 0 43.821 43.449" xmlns="http://www.w3.org/2000/svg">
           <g transform="translate(20.355 -168.78)">
@@ -66,7 +67,7 @@
           </g>
         </svg>
       </a>
-    </div>
+    </div> -->
 
     <div style="display:inline-block;width:24px;" class="buttons-hover">
       <a href="https://bsky.app/profile/colivingapp.bsky.social" title="Bluesky" target="_blank">

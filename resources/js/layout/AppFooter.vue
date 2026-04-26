@@ -45,12 +45,12 @@ watch(route, () => {
             <div style="height:8px;"></div>
 
             <div style="text-align:center;">
-                Coliving App © 2025
+                Coliving App © 2026
                 <br>
                 v0.1.1-beta
-                <br>
-                <br>
-                <br>
+
+                
+                <!-- <br>
                 <div style="max-width:800px;margin:0 auto;padding:20px;">
                     <div style="background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);padding:0 20px 15px 20px;">
                         <h1><i>Beta Version</i></h1>
@@ -58,7 +58,7 @@ watch(route, () => {
                         <i>This is the first public beta release of the Coliving App. Thank you for being an early adopter! We apologize for any bugs and appreciate your <span style="font-weight:bold;color:rgb(0, 134, 218)!important;"  class="link-footer" @click="modalFeedback = true">feedback</span>.</i>
                         <div style="height:30px;"></div>
                     </div>
-                </div>
+                </div> -->
                 
                 <!-- <br>
                 <br>
@@ -143,7 +143,7 @@ watch(route, () => {
                         <div style="height:10px;"></div>
 
                         <span style="font-size:12px;color:#bbbbbb;">
-                            Coliving App © 2025
+                            Coliving App © 2026
                             <br>
                             v0.1.1-beta
                         </span>
