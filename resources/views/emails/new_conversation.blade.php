@@ -49,7 +49,7 @@
 
         <div style="height:10px;"></div>
 
-        Coliving App © 2025
+        Coliving App © 2026
         
         <div style="height:35px;"></div>
 
