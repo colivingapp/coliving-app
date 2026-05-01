@@ -43,8 +43,16 @@
             Hello,
             <div style="height:15px;"></div>
             Your coliving space <a href="https://coliving.app/space/{{$uid}}" target="_blank" style="color:#00a5ff;text-decoration:underline;"><b>{{ $name }}</b></a> has a new join request!
+            <div style="height:20px;"></div>
+            <b>{{ $from_name }}</b> sent this message:
+            <div style="height:10px;"></div>
+            <div style="padding:15px;border-left:3px solid #00a5ff;background:#f7fbff;white-space:pre-wrap;">{!! nl2br(e($request_message)) !!}</div>
+            <div style="height:15px;"></div>
+            Contact email: <a href="mailto:{{ $from_email }}" style="color:#00a5ff;text-decoration:underline;">{{ $from_email }}</a>
+            <div style="height:10px;"></div>
+            Coliving App profile: <a href="{{ $from_profile_url }}" target="_blank" style="color:#00a5ff;text-decoration:underline;">{{ $from_profile_url }}</a>
             <div style="height:30px;"></div>
-            <b>Claim your Coliving App profile to accept or decline the join request.</b>
+            <b>Claim your Coliving App profile to accept or decline the guest.</b>
             <div style="height:15px;"></div>
             Sign up at <a href="https://coliving.app" target="_blank" style="color:#00a5ff;text-decoration:underline;">https://coliving.app</a> and click on the <b>Claim</b> button in your coliving space <a href="https://coliving.app/space/{{$uid}}" target="_blank" style="color:#00a5ff;text-decoration:underline;">profile</a>.
             <div style="height:30px;"></div>
@@ -53,7 +61,7 @@
 
         <div style="height:10px;"></div>
 
-        Coliving App © 2025
+        Coliving App © 2026
         
         <div style="height:35px;"></div>
 

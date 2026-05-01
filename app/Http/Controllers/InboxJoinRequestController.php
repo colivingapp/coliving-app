@@ -21,8 +21,10 @@ class InboxJoinRequestController extends Controller
 {
     public function store(Request $request, $uid)
     {
-        $sender_id = $request->user()->id;
-        $sender_uid = Mate::where('user_id', $sender_id)->value('uid');
+        $sender = $request->user();
+        $sender_id = $sender->id;
+        $senderMate = Mate::where('user_id', $sender_id)->select('uid', 'name', 'username')->firstOrFail();
+        $sender_uid = $senderMate->uid;
 
         $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
         
@@ -110,21 +112,39 @@ class InboxJoinRequestController extends Controller
             $notifyAdmin = true;
         }
 
-        // $from_name = Mate::where('user_id', $sender_id)->value('name');
+        $from_name = $senderMate->name ?: $sender->name;
 
         $data = [
             'name' => $space_name,
             'uid' => $uid,
-            // 'message' => (string)$request->content,
-            // 'from_name' => $from_name,
+            'request_message' => (string)$request->content,
+            'from_name' => $from_name,
+            'from_email' => $sender->email,
+            'from_profile_url' => 'https://coliving.app/mate/'.$sender_uid,
         ];
 
-        $user = User::with('settingsNotification')->findOrFail($space_user_id);
-        $notificationSettings = $user->settingsNotification;
+        $emailService = new EmailService();
 
-        if ($notificationSettings->new_join_request_received) {
-            $emailService = new EmailService();
+        $emailService->sendEmail($sender->email, 'Your join request was sent', 'join_request_confirmation', [
+            'name' => $space_name,
+            'uid' => $uid,
+            'claimed' => (bool)$space->claimed,
+            'request_message' => (string)$request->content,
+        ]);
+
+        $user = User::with('settingsNotification')->find($space_user_id);
+        $notificationSettings = $user ? $user->settingsNotification : null;
+
+        if ($notificationSettings && $notificationSettings->new_join_request_received) {
             $emailService->sendEmail($to, $subj, $template, $data);
+
+            Log::create([
+                'user_id' => $sender_id,
+                'user_uid' => $sender_uid,
+                'space_uid' => $uid,
+                'other_uid' => (string)$joinRequest->id,
+                'action' => 'join request email sent',
+            ]);
         }
 
         if ($notifyAdmin) {

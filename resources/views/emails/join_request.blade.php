@@ -43,13 +43,21 @@
             Hello,
             <div style="height:15px;"></div>
             Your coliving space <a href="https://coliving.app/space/{{$uid}}" target="_blank" style="color:#00a5ff;text-decoration:underline;"><b>{{ $name }}</b></a> has a new join request on Coliving App!
+            <div style="height:20px;"></div>
+            <b>{{ $from_name }}</b> sent this message:
+            <div style="height:10px;"></div>
+            <div style="padding:15px;border-left:3px solid #00a5ff;background:#f7fbff;white-space:pre-wrap;">{!! nl2br(e($request_message)) !!}</div>
+            <div style="height:15px;"></div>
+            Contact email: <a href="mailto:{{ $from_email }}" style="color:#00a5ff;text-decoration:underline;">{{ $from_email }}</a>
+            <div style="height:10px;"></div>
+            Coliving App profile: <a href="{{ $from_profile_url }}" target="_blank" style="color:#00a5ff;text-decoration:underline;">{{ $from_profile_url }}</a>
             <div style="height:30px;"></div>
             Accept or decline this join request in your <b><a href="https://coliving.app/inbox/my-spaces" target="_blank">Inbox</a></b>.
         </div>
 
         <div style="height:10px;"></div>
 
-        Coliving App © 2025
+        Coliving App © 2026
         
         <div style="height:35px;"></div>
 
