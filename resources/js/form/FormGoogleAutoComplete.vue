@@ -31,6 +31,8 @@
         country_code: "",
         city: "",
         enteredText: "",
+        selectedLocationText: "",
+        isSelectingPlace: false,
         dropdownCheckInterval: null,
         mutationObserver: null,
         countries: [
@@ -394,28 +396,12 @@
         const checkAndHideDropdown = () => {
           const inputValue = inputElement.value || '';
           const dropdowns = document.querySelectorAll('.pac-container');
-          
-          // If coordinates exist, a place was already selected, so close dropdown
-          if (this.coordinates.lat && this.coordinates.lng) {
-            dropdowns.forEach(dropdown => {
-              dropdown.style.display = 'none';
-              dropdown.style.visibility = 'hidden';
-              dropdown.style.opacity = '0';
-              dropdown.style.height = '0';
-              dropdown.style.overflow = 'hidden';
-            });
-            return;
-          }
-          
+
           dropdowns.forEach(dropdown => {
             if (inputValue.length < 3) {
-              dropdown.style.display = 'none';
-              dropdown.style.visibility = 'hidden';
-              dropdown.style.opacity = '0';
+              this.setDropdownVisibility(dropdown, false);
             } else {
-              dropdown.style.display = '';
-              dropdown.style.visibility = '';
-              dropdown.style.opacity = '';
+              this.setDropdownVisibility(dropdown, true);
             }
           });
         };
@@ -473,43 +459,47 @@
       updateInput(val) {
           // console.log("Entered Text Changed:", val.newVal);
           this.locationFormatted = val.newVal;
-          
+
           // Immediately hide dropdown if input has fewer than 3 characters
           const inputValue = val.newVal || '';
+          if (this.isSelectingPlace) {
+            this.selectedLocationText = inputValue;
+            this.isSelectingPlace = false;
+          } else if (this.selectedLocationText && inputValue !== this.selectedLocationText) {
+            this.selectedLocationText = "";
+            this.coordinates.lat = null;
+            this.coordinates.lng = null;
+            this.country = "";
+            this.country_code = "";
+            this.city = "";
+          }
+
           const dropdowns = document.querySelectorAll('.pac-container');
-          
+
           dropdowns.forEach(dropdown => {
             if (inputValue.length < 3) {
-              dropdown.style.display = 'none';
-              dropdown.style.visibility = 'hidden';
-              dropdown.style.opacity = '0';
+              this.setDropdownVisibility(dropdown, false);
             } else {
-              dropdown.style.display = '';
-              dropdown.style.visibility = '';
-              dropdown.style.opacity = '';
+              this.setDropdownVisibility(dropdown, true);
             }
           });
-          
+
           // Also check after a tiny delay to catch any async dropdown creation
           if (inputValue.length < 3) {
             setTimeout(() => {
               const delayedDropdowns = document.querySelectorAll('.pac-container');
               delayedDropdowns.forEach(dropdown => {
-                dropdown.style.display = 'none';
-                dropdown.style.visibility = 'hidden';
-                dropdown.style.opacity = '0';
+                this.setDropdownVisibility(dropdown, false);
               });
             }, 10);
             setTimeout(() => {
               const delayedDropdowns = document.querySelectorAll('.pac-container');
               delayedDropdowns.forEach(dropdown => {
-                dropdown.style.display = 'none';
-                dropdown.style.visibility = 'hidden';
-                dropdown.style.opacity = '0';
+                this.setDropdownVisibility(dropdown, false);
               });
             }, 50);
           }
-          
+
           if (this.coordinates.lat) {
               // console.log(this.locationFormatted, this.country, this.city, this.coordinates)
               this.$emit("location-updated", this.locationFormatted, this.country, this.country_code, this.city, this.coordinates);
@@ -526,6 +516,14 @@
             this.country = place.country;
             this.country_code = this.countries.find(country => country.name === place.country)?.code || '';
             this.city = place.locality;
+            this.isSelectingPlace = true;
+            this.$nextTick(() => {
+              const inputElement = this.$refs.address?.$el?.querySelector('input');
+              this.selectedLocationText = inputElement?.value || this.locationFormatted;
+              setTimeout(() => {
+                this.isSelectingPlace = false;
+              }, 0);
+            });
             // this.locationFormatted = this.enteredText;
             // console.log(this.locationFormatted, this.country, this.city, this.coordinates)
             // this.$emit("location-updated", this.location, this.locationFormatted, this.country, this.city, this.coordinates);
@@ -534,37 +532,31 @@
             this.closeDropdown();
         }
       },
+      setDropdownVisibility(dropdown, isVisible) {
+        dropdown.style.display = isVisible ? '' : 'none';
+        dropdown.style.visibility = isVisible ? '' : 'hidden';
+        dropdown.style.opacity = isVisible ? '' : '0';
+        dropdown.style.height = isVisible ? '' : '0';
+        dropdown.style.overflow = isVisible ? '' : 'hidden';
+        dropdown.style.maxHeight = isVisible ? '' : '0';
+
+        const pacItems = dropdown.querySelectorAll('.pac-item');
+        pacItems.forEach(item => {
+          item.style.display = isVisible ? '' : 'none';
+        });
+      },
       closeDropdown() {
         // Force close all Google Autocomplete dropdowns
         const dropdowns = document.querySelectorAll('.pac-container');
         dropdowns.forEach(dropdown => {
-          dropdown.style.display = 'none';
-          dropdown.style.visibility = 'hidden';
-          dropdown.style.opacity = '0';
-          dropdown.style.height = '0';
-          dropdown.style.overflow = 'hidden';
-          dropdown.style.maxHeight = '0';
-          // Also hide all pac-items inside
-          const pacItems = dropdown.querySelectorAll('.pac-item');
-          pacItems.forEach(item => {
-            item.style.display = 'none';
-          });
+          this.setDropdownVisibility(dropdown, false);
         });
         
         // Also check after delays to ensure it stays closed
         const closeDelayed = () => {
           const delayedDropdowns = document.querySelectorAll('.pac-container');
           delayedDropdowns.forEach(dropdown => {
-            dropdown.style.display = 'none';
-            dropdown.style.visibility = 'hidden';
-            dropdown.style.opacity = '0';
-            dropdown.style.height = '0';
-            dropdown.style.overflow = 'hidden';
-            dropdown.style.maxHeight = '0';
-            const pacItems = dropdown.querySelectorAll('.pac-item');
-            pacItems.forEach(item => {
-              item.style.display = 'none';
-            });
+            this.setDropdownVisibility(dropdown, false);
           });
         };
         
