@@ -99,6 +99,8 @@ watch(route, () => {
                     <div class="footer-column" style="grid-area: col1;">
                         <!-- <span style="font-size: 19px; color: rgb(111, 111, 111);">Menu</span> -->
 
+                        <router-link to="/">Home</router-link>
+                        <br>
                         <router-link to="/spaces">Spaces</router-link>
                         <br>
                         <router-link to="/mates">Members</router-link>
@@ -109,18 +111,9 @@ watch(route, () => {
                         
                         <br>
                         <br>
-                        <router-link to="/space/new">Add New Space</router-link>
-                        <br>
                         <router-link to="/my-spaces">My Spaces</router-link>
-                        <!-- <span class="copyright-desktop">
-                            <br>
-                            <br>
-                            <span style="font-size:13px;color:#bbbbbb;">Coliving App © 2025</span>
-                        </span> -->
-                        
                         <br>
-                        <br>
-                        <router-link to="/">Home</router-link>
+                        <router-link to="/space/new">Add New Space</router-link>
                     </div>
                     <div class="footer-column" style="grid-area: col2;">
                         <!-- <span style="font-size: 19px; color: rgb(111, 111, 111);">Menu</span> -->
