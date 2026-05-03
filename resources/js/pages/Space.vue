@@ -592,6 +592,9 @@ function getSubcategoryLabel(category, subcategory) {
           <div style="height:20px;"></div>
         </div>
       </div>
+        
+      <div style="height:10px;"></div>
+      <router-link to="/space/new"><button class="action-button button-1">Add a Space</button></router-link>
 
     </div>
 
