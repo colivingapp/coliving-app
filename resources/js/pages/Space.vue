@@ -577,24 +577,40 @@ function getSubcategoryLabel(category, subcategory) {
         <div style="height:20px;"></div>
       </div>
 
-      <div style="height:20px;"></div>
       
       <div v-if="space">
-        <div  v-if="space.claimed == 0" style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
-          <h2 style="margin-top:0px;">Claim This Space</h2>
-          If you represent this coliving space, claim your profile now.
-
+        <div v-if="space.claimed == 0">
           <div style="height:20px;"></div>
-          
-          <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/claim`"><button class="action-button button-1" style="width:160px;">Claim</button></router-link>
-          <span v-else><router-link to="/login"><b>Log in</b></router-link> to claim this space</span>
+          <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
+            <h2 style="margin-top:0px;">Claim This Space</h2>
+            If you represent this coliving space, claim your profile now.
 
-          <div style="height:20px;"></div>
+            <div style="height:20px;"></div>
+            
+            <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/claim`"><button class="action-button button-1" style="width:160px;">Claim</button></router-link>
+            <span v-else><router-link to="/login"><b>Log in</b></router-link> to claim this space</span>
+
+            <div style="height:20px;"></div>
+          </div>
         </div>
       </div>
         
-      <div style="height:10px;"></div>
-      <router-link to="/space/new"><button class="action-button button-1">Add a Space</button></router-link>
+      <div style="height:20px;"></div>
+
+      <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
+        <h2 style="margin-top:0px;">Add Your Space</h2>
+
+        <div>List your coliving space or room and start getting requests.</div>
+
+        <div style="height:20px;"></div>
+
+        <router-link to="/space/new"><button class="action-button button-1">Add Space</button></router-link>
+
+        <div style="height:20px;"></div>
+      </div>
+
+
+      <div style="height:20px;"></div>
 
     </div>
 
