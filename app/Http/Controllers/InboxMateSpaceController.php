@@ -19,14 +19,18 @@ class InboxMateSpaceController extends Controller
 
     public function store(Request $request, $uid) {
 
-        $sender_id = $request->user()->id;
-        $sender_uid = Mate::where('user_id', $sender_id)->value('uid');
+        $sender = $request->user();
+        $sender_id = $sender->id;
+        $senderMate = Mate::where('user_id', $sender_id)->select('uid', 'name', 'username')->firstOrFail();
+        $sender_uid = $senderMate->uid;
 
         $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
         $space = Space::where('uid', $uid)->first();
+        $newConversation = false;
 
         // If the conversation does not exist, create it
         if (!$conversation) {
+            $newConversation = true;
             $conv_uid = uniqid();
             
             $conversation = InboxMateSpace::create([
@@ -35,29 +39,6 @@ class InboxMateSpaceController extends Controller
                 'user1' => $sender_uid
             ]);
  
-            // Add space id to conversations table
-            $space_id = $space->id;
-            $user_id = $space->user_id;
-
-            $user = User::with('settingsNotification')->findOrFail($user_id);
-            $notificationSettings = $user->settingsNotification;
-
-            if ($notificationSettings->new_conversation_started) {
-                $user_email = $user->email;
-
-                $to = $user_email;
-                $subj = 'New conversation started';
-                $template = 'new_conversation_space';
-    
-                $data = [
-                    // 'name' => $space_name,
-                    // 'uid' => $uid,
-                ];
-    
-                $emailService = new EmailService();
-                $emailService->sendEmail($to, $subj, $template, $data);
-            }
-
             Log::create([
                 'user_id' => $sender_id,
                 'space_uid' => $uid,
@@ -78,6 +59,38 @@ class InboxMateSpaceController extends Controller
             'sender_uid' => $sender_uid,
             'content' => $request->content,
         ]);
+
+        if ($newConversation) {
+            $user = User::with('settingsNotification')->find($space->user_id);
+            $notificationSettings = $user ? $user->settingsNotification : null;
+
+            if ($notificationSettings && $notificationSettings->new_conversation_started) {
+                $to = $space->email ?: $user->email;
+                $subj = 'New conversation started';
+                $template = 'new_conversation_space';
+                $from_name = $senderMate->name ?: $sender->name;
+
+                $data = [
+                    'name' => $space->name,
+                    'uid' => $uid,
+                    'request_message' => (string)$request->content,
+                    'from_name' => $from_name,
+                    'from_email' => $sender->email,
+                    'from_profile_url' => 'https://coliving.app/mate/'.$sender_uid,
+                ];
+
+                $emailService = new EmailService();
+                $emailService->sendEmail($to, $subj, $template, $data);
+
+                Log::create([
+                    'user_id' => $sender_id,
+                    'user_uid' => $sender_uid,
+                    'space_uid' => $uid,
+                    'other_uid' => (string)$message->id,
+                    'action' => 'space message email sent',
+                ]);
+            }
+        }
     
         // Retrieve the updated conversation
         $conversation = InboxMessage::where('conversation_uid', $conv_uid)

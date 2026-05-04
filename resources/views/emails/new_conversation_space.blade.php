@@ -42,7 +42,15 @@
         <div style="text-align:left;margin:15px;padding:20px;padding-top:30px;padding-bottom:30px;border:1px solid #999;background:#fff;border-radius:5px;color:#222!important;">
             Hello,
             <div style="height:15px;"></div>
-            Your space has received a new message on <a href="https://coliving.app" target="_blank">Coliving App</a>.
+            Your coliving space <a href="https://coliving.app/space/{{$uid}}" target="_blank" style="color:#00a5ff;text-decoration:underline;"><b>{{ $name }}</b></a> has received a new message on <a href="https://coliving.app" target="_blank">Coliving App</a>.
+            <div style="height:20px;"></div>
+            <b>{{ $from_name }}</b> sent this message:
+            <div style="height:10px;"></div>
+            <div style="padding:15px;border-left:3px solid #00a5ff;background:#f7fbff;white-space:pre-wrap;">{!! nl2br(e($request_message)) !!}</div>
+            <div style="height:15px;"></div>
+            Contact email: <a href="mailto:{{ $from_email }}" style="color:#00a5ff;text-decoration:underline;">{{ $from_email }}</a>
+            <div style="height:10px;"></div>
+            Coliving App profile: <a href="{{ $from_profile_url }}" target="_blank" style="color:#00a5ff;text-decoration:underline;">{{ $from_profile_url }}</a>
             <div style="height:15px;"></div>
             Check it out in your <a href="https://coliving.app/inbox/my-spaces" target="_blank">Inbox</a>.
         </div>
