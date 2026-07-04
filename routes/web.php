@@ -11,11 +11,6 @@ use App\Services\MateService;
 // AUTH
 require __DIR__.'/web_auth.php';
 
-// ADMIN DASHBOARD
-if (file_exists(__DIR__.'/web_admin.php')) {
-    require __DIR__.'/web_admin.php';
-}
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes

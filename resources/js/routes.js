@@ -381,8 +381,4 @@ const routes = [
 
 ]
 
-// ADMIN ROUTES ('live' branch only)
-// import adminRoutes from './admin/routes_admin.js';
-// routes.push(...adminRoutes);
-  
 export default { routes };
