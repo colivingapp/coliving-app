@@ -1,21 +1,34 @@
 <template>
     <div class="content">
         <h1>My Bookmarks</h1>
-        
-        <div style="height:10px;"></div>
 
-        <div v-for="bookmark in sortedBookmarks" :key="bookmark.space_uid">
-            <div style="float:left;clear:both;margin-bottom:15px;"><router-link :to="'/space/'+bookmark.space_uid">{{ bookmark.name }}</router-link></div>
-            <div class="delete-button" style="float:left;margin-left:10px;font-size:11px;width:17px;height:17px;padding-top:1px;position:relative;top:0px;" @click="removeBookmark(bookmark.space_uid)">✖</div>
+        <div v-if="!isLoaded">
+            Loading...
         </div>
+        <div v-else-if="!sortedBookmarks.length">
+            You have no bookmarks.
+        </div>
+        <div v-else>
+            <div style="height:10px;"></div>
 
-        <span v-if="!isLoaded">Loading...</span>
-        <span v-if="!sortedBookmarks.length && isLoaded"><br>You have no bookmarks.</span>
+            <map-by-country :locations="sortedBookmarks" />
 
-        <div style="height:40px;clear:both;"></div>
+            <div style="height:10px;"></div>
 
-        <map-by-country :locations="sortedBookmarks" v-if="sortedBookmarks.length" />
+            <h2>Bookmarked Spaces</h2>
 
+            <div class="space-grid">
+                <SpaceCard
+                    v-for="space in sortedBookmarks"
+                    :key="space.uid"
+                    :space="space"
+                    removable
+                    @remove="removeBookmark(space.uid)"
+                />
+            </div>
+
+            <div style="height:50px;"></div>
+        </div>
     </div>
 </template>
 
@@ -23,6 +36,7 @@
     import { onMounted, ref, computed } from 'vue';
 
     import MapByCountry from '../map/MapByCountry.vue';
+    import SpaceCard from '../components/SpaceCard.vue';
 
     let bookmarks = ref([]);
     let isLoaded = ref(false);
@@ -37,16 +51,22 @@
     });
 
     function removeBookmark(uid) {
-        bookmarks.value = bookmarks.value.filter(bookmark => bookmark.space_uid !== uid);
-        
+        bookmarks.value = bookmarks.value.filter(bookmark => (bookmark.uid || bookmark.space_uid) !== uid);
+
         axios.post('/api/bookmark/'+uid)
         .then(res => {})
         .catch(err => {})
     }
 
     const sortedBookmarks = computed(() => {
-        return [...bookmarks.value].sort((a, b) =>
-            new Date(b.created_at) - new Date(a.created_at)
-        );
+        return [...bookmarks.value]
+            .filter(bookmark => bookmark.name)
+            .map(bookmark => ({
+                ...bookmark,
+                uid: bookmark.uid || bookmark.space_uid,
+            }))
+            .sort((a, b) =>
+                new Date(b.created_at) - new Date(a.created_at)
+            );
     });
 </script>

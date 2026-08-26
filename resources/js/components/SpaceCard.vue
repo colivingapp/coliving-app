@@ -21,6 +21,13 @@
         <p v-else-if="space.country" class="space-card-address">{{ space.country }}</p>
       </div>
     </router-link>
+    <button
+      v-if="removable"
+      type="button"
+      class="space-card-remove"
+      aria-label="Remove bookmark"
+      @click.stop="$emit('remove')"
+    >✖</button>
     <div v-if="manageable" class="space-card-actions">
       <router-link :to="'/space/' + space.uid + '/edit'">
         <button type="button" class="button">Edit</button>
@@ -44,7 +51,13 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  removable: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+defineEmits(['remove']);
 </script>
 
 <style>
@@ -56,6 +69,7 @@ defineProps({
 
 .space-card {
   display: block;
+  position: relative;
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
@@ -125,6 +139,29 @@ defineProps({
 .space-card-placeholder img {
   height: 60px;
   opacity: .6;
+}
+
+.space-card-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  color: #444;
+  font-size: 12px;
+  line-height: 28px;
+  cursor: pointer;
+}
+
+.space-card-remove:hover {
+  background: #fff;
+  color: #111;
 }
 
 .space-card-flag {

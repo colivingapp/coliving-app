@@ -1200,41 +1200,52 @@ Route::post('/conversation/hub/{uid}', [InboxHubController::class, 'store'])->mi
 
 Route::get('/my-bookmarks', function() {
     $user_id = Auth::user()->id;
-    $bookmarks = Bookmark::where('user_id', $user_id)->select('space_uid', 'created_at')->get();
+    $bookmarks = Bookmark::where('user_id', $user_id)
+        ->select('space_uid', 'created_at')
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-    foreach ($bookmarks as $bookmark) {
-        $space = Space::where('uid', $bookmark->space_uid)->select('name', 'longitude', 'country', 'country_code', 'latitude')->first();
-        if ($space) {
-            $bookmark->name = $space->name;
-            $bookmark->latitude = $space->latitude;
-            $bookmark->longitude = $space->longitude;
-            $bookmark->country = $space->country;
-            $bookmark->country_code = $space->country_code;
-    
-            $photo = Space::where('uid', $bookmark->space_uid)->select('photo')->get();
-    
-            if ($photo) {
-                $bookmark->photo = true;
-                $latestPhoto = Photo::where('space_uid', $bookmark->space_uid)
-                    ->orderBy('created_at', 'desc')
-                    ->select('filename')
-                    ->first();
-                    
-                if ($latestPhoto) {
-                    $latestPhoto = $latestPhoto->filename;
-                } else {
-                    $latestPhoto = false;
-                }
-            } else {
-                $bookmark->photo = false;
-                $latestPhoto = false;
-            }
-    
-            $bookmark->first_photo = $latestPhoto;
+    $uids = $bookmarks->pluck('space_uid')->filter()->unique()->values();
+    $spaces = Space::whereIn('uid', $uids)
+        ->select('uid', 'name', 'longitude', 'latitude', 'country', 'country_code', 'address', 'photo')
+        ->get()
+        ->keyBy('uid');
+
+    $photos = DB::table('photos')
+        ->whereIn('space_uid', $uids)
+        ->select('space_uid', 'filename', 'id', 'pos')
+        ->get()
+        ->groupBy('space_uid');
+
+    return $bookmarks->map(function ($bookmark) use ($spaces, $photos) {
+        $space = $spaces->get($bookmark->space_uid);
+        if (!$space) {
+            return null;
         }
-    }
 
-    return $bookmarks;
+        $firstPhoto = null;
+        if ($space->photo && $photos->has($space->uid)) {
+            $spacePhotos = $photos->get($space->uid);
+            $pos1 = $spacePhotos->firstWhere('pos', 1);
+            $firstPhoto = $pos1
+                ? $pos1->filename
+                : optional($spacePhotos->sortByDesc('id')->first())->filename;
+        }
+
+        return [
+            'uid' => $space->uid,
+            'space_uid' => $space->uid,
+            'name' => $space->name,
+            'latitude' => $space->latitude,
+            'longitude' => $space->longitude,
+            'country' => $space->country,
+            'country_code' => $space->country_code,
+            'address' => $space->address,
+            'photo' => (bool) $firstPhoto,
+            'first_photo' => $firstPhoto,
+            'created_at' => $bookmark->created_at,
+        ];
+    })->filter()->values();
 })->middleware('auth:sanctum');
 
 
