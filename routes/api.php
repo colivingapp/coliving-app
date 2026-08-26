@@ -781,6 +781,8 @@ Route::get('/space/{uid}/admin/check-invite-email', function($uid) {
 
 Route::get('/spaces', [SpaceController::class, 'getCountries']);
 
+Route::get('/spaces/newest', [SpaceController::class, 'getNewestSpaces']);
+
 Route::get('/spaces/{countrySlug}', [SpaceController::class, 'getSpacesByCountry']);
 Route::get('/spaces/category/{category}', [SpaceController::class, 'getSpacesByCategory']);
 Route::get('/spaces/{countrySlug}/category/{category}', [SpaceController::class, 'getSpacesByCountryCategory']);

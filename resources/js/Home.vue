@@ -45,9 +45,17 @@
     </div>
   </div>
 
-  <div class="content" id="home-content" style="text-align:center;max-width:800px;">
-    
-    <div style="height:50px;"></div>
+  <div v-if="newestSpaces.length" class="content newest-spaces" id="home-content" style="text-align:center;">
+    <div style="height:10px;"></div>
+    <h1 style="margin-bottom:20px;">Newest Spaces</h1>
+    <div class="space-grid">
+      <SpaceCard v-for="space in newestSpaces" :key="space.uid" :space="space" />
+    </div>
+    <div style="height:40px;"></div>
+  </div>
+
+  <div class="content" :id="newestSpaces.length ? undefined : 'home-content'" style="text-align:center;max-width:800px;">
+    <div v-if="!newestSpaces.length" style="height:50px;"></div>
 
     <h1 style="margin-bottom:10px;">Open Coliving</h1>
     <div style="line-height:1.75;">
@@ -131,8 +139,9 @@
 
 
 <script setup>
-  import { ref, computed, watch } from 'vue';
+  import { ref, computed, watch, onMounted } from 'vue';
   import MapHome from './map/MapHome.vue';
+  import SpaceCard from './components/SpaceCard.vue';
 
   import { useRouter } from 'vue-router';
   const router = useRouter();
@@ -144,6 +153,7 @@
   const showResults = ref(false);
 
   const spaces = ref(window.spaces || []);
+  const newestSpaces = ref([]);
 
   if (!window.spaces) {
     async function fetchSpaces() {
@@ -287,6 +297,15 @@
   function scrollToContent() {
     document.getElementById('home-content').scrollIntoView({ behavior: 'smooth' });
   }
+
+  onMounted(async () => {
+    try {
+      const response = await axios.get('/api/spaces/newest');
+      newestSpaces.value = response.data || [];
+    } catch (error) {
+      console.error(error);
+    }
+  });
 </script>
 
 
@@ -340,5 +359,23 @@
     height: 41px;
     font-size: 22px;
     margin-top: -11px;
+  }
+
+  .newest-spaces .space-grid {
+    text-align: left;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media screen and (max-width: 700px) {
+    .newest-spaces .space-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media screen and (min-width: 701px) and (max-width: 799px) {
+    .newest-spaces .space-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 </style>

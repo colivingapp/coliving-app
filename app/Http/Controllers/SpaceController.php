@@ -352,6 +352,35 @@ class SpaceController extends Controller
         ]);
     }
 
+    public function getNewestSpaces()
+    {
+        $spaces = Space::where('status', 'approved')
+            ->where('photo', 1)
+            ->where('claimed', 1)
+            ->where('private', 0)
+            ->select('uid', 'name', 'address', 'country_code', 'country', 'country_slug')
+            ->latest('created_at')
+            ->limit(9)
+            ->get();
+
+        $uids = $spaces->pluck('uid');
+
+        $photoCandidates = DB::table('photos')
+            ->select('space_uid', 'filename')
+            ->whereIn('space_uid', $uids)
+            ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('space_uid')
+            ->map(fn ($rows) => optional($rows->first())->filename);
+
+        $spaces->each(function ($space) use ($photoCandidates) {
+            $space->first_photo = $photoCandidates[$space->uid] ?? null;
+        });
+
+        return response()->json($spaces);
+    }
+
 
     public function getSpacesByCountry($countrySlug)
     {
