@@ -1,26 +1,45 @@
 <template>
     <div class="visited-countries-desktop-mobile" >
-        <div v-if="type == 'form'" id="checkboxes">
-            <div v-for="country in countries" :key="country.code">
-                <input
-                    type="checkbox"
-                    :id="'_'+country.code"
-                    :value="country.code"
-                    @change="toggleCountry(country.code)"
-                    :checked="visitedCountries.includes(country.code)"
-                />
-                <label :for="'_'+country.code" style="user-select: none;">{{ country.name }}</label>
+        <div v-if="type == 'form'" class="visited-countries-form">
+            <input
+                type="text"
+                class="input"
+                v-model="countryFilter"
+                placeholder="Filter countries"
+                aria-label="Filter countries"
+            >
+            <div id="checkboxes">
+                <div v-for="country in filteredCountries" :key="country.code" class="appify-checkbox visited-country-checkbox">
+                    <input
+                        type="checkbox"
+                        :id="'_'+country.code"
+                        :value="country.code"
+                        class="appify-input-checkbox"
+                        @change="toggleCountry(country.code)"
+                        :checked="visitedCountries.includes(country.code)"
+                    />
+                    <label :for="'_'+country.code">
+                        <div class="checkbox-box">
+                          <svg><use xlink:href="#checkmark" /></svg>
+                        </div>
+                        <span :class="'fi fi-' + country.code"></span>
+                        {{ country.name }}
+                    </label>
+                </div>
+                <p v-if="filteredCountries.length === 0" class="visited-countries-empty">No matching countries</p>
             </div>
         </div>
         <div v-else-if="type == 'profile'" id="list">
-            <div v-for="code in sortedCountries" :key="code" >
+            <div v-for="code in sortedCountries" :key="code" class="visited-country-row">
+                <span :class="'fi fi-' + code"></span>
                 {{ getCountryName(code) }}
             </div>
         </div>
-		<div>
+		<div class="visited-countries-map">
 			<svg version="1.1"
-          id="Layer_1" mapsvg:geoViewBox="-169.110266 83.600842 190.486279 -58.508473" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:mapsvg="http://mapsvg.com" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+          id="Layer_1" class="visited-countries-map-svg" mapsvg:geoViewBox="-169.110266 83.600842 190.486279 -58.508473" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:mapsvg="http://mapsvg.com" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
           xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1009.7 666"
+          width="100%" height="100%" preserveAspectRatio="xMidYMid meet"
           >
         <path id="AD" d="M479.7,331.6L479.7,331.6l-0.3,0.2l-0.1,0.1l-0.1,0l-0.1,0l-0.1-0.1l0-0.1l0-0.1l0-0.1l0-0.2l0.1-0.1l0.1-0.1l0.2,0
           l0.4,0.1l0.1,0.1l0,0.1L479.7,331.6L479.7,331.6z"/>
@@ -6443,6 +6462,7 @@
 </template>
 
 <script>
+import "/node_modules/flag-icons/css/flag-icons.min.css";
 // import Map from './Map.vue'; 
 
 export default {
@@ -6452,6 +6472,7 @@ export default {
 	},
     data() {
       return {
+        countryFilter: '',
         countries: [
             { "code": "af", "name": "Afghanistan" },
             { "code": "ax", "name": "Aland Islands" },
@@ -6715,6 +6736,13 @@ export default {
         const nameB = this.getCountryName(b).toLowerCase();
         return nameA.localeCompare(nameB);
       });
+    },
+    filteredCountries() {
+      const query = this.countryFilter.trim().toLowerCase();
+      if (!query) {
+        return this.countries;
+      }
+      return this.countries.filter((country) => country.name.toLowerCase().startsWith(query));
     }
   },
 	watch: {
@@ -6769,17 +6797,76 @@ export default {
 </script>
 
 <style scoped>
-    svg path {
+    #Layer_1 {
+        width: 100%;
+        height: 100%;
+        display: block;
+        max-width: 100%;
+    }
+
+    #Layer_1 path {
         fill: rgb(216, 216, 216);
         border: 1px solid grey;
     }
 
-    #checkboxes {
+    .visited-countries-form {
         max-width: 450px;
         margin: 0 auto;
+    }
+
+    .visited-countries-form .input {
+        margin-bottom: 10px;
+    }
+
+    .visited-countries-empty {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: rgb(89, 89, 89);
+    }
+
+    #checkboxes {
         overflow-y: scroll;
         overflow-x: hidden;
-		max-height: 450px;
+		max-height: 430px;
+    }
+
+    .visited-country-checkbox {
+        padding: 2px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .visited-country-checkbox:last-child {
+        border-bottom: none;
+    }
+
+    .visited-country-checkbox label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        user-select: none;
+    }
+
+    .visited-country-checkbox .checkbox-box {
+        float: none;
+        margin: 0;
+        border-radius: 4px;
+        border-color: #d4d4d4;
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    .visited-country-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .visited-country-checkbox .fi,
+    #list .visited-country-row .fi {
+        width: 1.1em;
+        line-height: 1em;
+        border-radius: 2px;
+        flex-shrink: 0;
     }
 
     #list {
@@ -6789,17 +6876,47 @@ export default {
 		max-height: 450px;
     }
 
+    #list .visited-country-row {
+        padding: 3px 0;
+    }
+
 	.visited-countries-desktop-mobile {
-		display:grid;
-		grid-template-columns:1fr 3fr;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+		gap: 20px;
+		align-items: start;
 	}
 
-	@media screen and (max-width: 400px) {
+	.visited-countries-form,
+	#list {
+		position: relative;
+		z-index: 1;
+		min-width: 0;
+	}
+
+	.visited-countries-map {
+		min-width: 0;
+		width: 100%;
+		aspect-ratio: 1009.7 / 666;
+		overflow: hidden;
+	}
+
+	.visited-countries-map-svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	@media screen and (max-width: 800px) {
 		.visited-countries-desktop-mobile {
-			grid-template-rows:200px 200px;
-			grid-template-columns:1fr;
-			grid-row-gap: 20px;
-            margin-bottom:20px;
+			grid-template-columns: 1fr;
+			grid-template-rows: auto auto;
+			margin-bottom: 20px;
+		}
+
+		.visited-countries-form,
+		#list {
+			max-width: none;
 		}
 	}
 </style>

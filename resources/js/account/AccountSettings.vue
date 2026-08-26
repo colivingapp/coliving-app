@@ -87,82 +87,87 @@ function deleteUser() {
 
 <template>
   <div v-if="!userLoggedIn" class="content">
-    <h1>Account Settings</h1>
-    <br>
+    <div class="page-form-header">
+      <h1>Account Settings</h1>
+    </div>
     <router-link to="/login">Log in</router-link>
   </div>
   <div v-else class="content">
-    <h1>Account Settings</h1>
+    <div class="page-form-header">
+      <h1>Account Settings</h1>
+      <p class="page-form-intro">Notifications, newsletter, and account options.</p>
+    </div>
     
     <div class="form-section">
       <h2>Notifications</h2>
+      <p class="form-hint">Choose which emails you want to receive.</p>
       
-      <div class="appify-checkbox">
-        <input id="notifyNewConvo" type="checkbox" name="notifyNewConvo" class="appify-input-checkbox" v-model="notifyNewConvo"/>
-        <label for="notifyNewConvo">
-          <div class="checkbox-box" style="margin-top:-1px;">  
-            <svg><use xlink:href="#checkmark" /></svg>
-          </div> 
-          New conversation started
-        </label>
+      <div class="settings-stack">
+        <div class="appify-checkbox">
+          <input id="notifyNewConvo" type="checkbox" name="notifyNewConvo" class="appify-input-checkbox" v-model="notifyNewConvo"/>
+          <label for="notifyNewConvo">
+            <div class="checkbox-box" style="margin-top:-1px;">  
+              <svg><use xlink:href="#checkmark" /></svg>
+            </div> 
+            New conversation started
+          </label>
+        </div>
+        
+        <div class="appify-checkbox">
+          <input id="notifySpaceJoinReq" type="checkbox" name="notifySpaceJoinReq" class="appify-input-checkbox" v-model="notifySpaceJoinReq"/>
+          <label for="notifySpaceJoinReq">
+            <div class="checkbox-box" style="margin-top:-1px;">  
+              <svg><use xlink:href="#checkmark" /></svg>
+            </div> 
+            New join request received
+          </label>
+        </div>
+        
+        <div class="appify-checkbox">
+          <input id="notifyNewReview" type="checkbox" name="notifyNewReview" class="appify-input-checkbox" v-model="notifyNewReview"/>
+          <label for="notifyNewReview">
+            <div class="checkbox-box" style="margin-top:-1px;">  
+              <svg><use xlink:href="#checkmark" /></svg>
+            </div> 
+            New review received
+          </label>
+        </div>
       </div>
-      
-      <div style="height:10px;"></div>
-      
-      <div class="appify-checkbox">
-        <input id="notifySpaceJoinReq" type="checkbox" name="notifySpaceJoinReq" class="appify-input-checkbox" v-model="notifySpaceJoinReq"/>
-        <label for="notifySpaceJoinReq">
-          <div class="checkbox-box" style="margin-top:-1px;">  
-            <svg><use xlink:href="#checkmark" /></svg>
-          </div> 
-          New join request received
-        </label>
-      </div>
-      
-      <div style="height:10px;"></div>
-      
-      <div class="appify-checkbox">
-        <input id="notifyNewReview" type="checkbox" name="notifyNewReview" class="appify-input-checkbox" v-model="notifyNewReview"/>
-        <label for="notifyNewReview">
-          <div class="checkbox-box" style="margin-top:-1px;">  
-            <svg><use xlink:href="#checkmark" /></svg>
-          </div> 
-          New review received
-        </label>
-      </div>
-      
-      <div style="height:40px;"></div>
-      
+    </div>
+
+    <div class="form-section">
       <h2>Newsletter</h2>
-      
-      <div class="appify-checkbox" >
-        <input id="newsletter" type="checkbox" name="newsletter" class="appify-input-checkbox" v-model="newsletter"/>
-        <label for="newsletter">
-          <div class="checkbox-box" style="margin-top:-1px;">  
-            <svg><use xlink:href="#checkmark" /></svg>
-          </div> 
-          Subscribe to Coliving App newsletter
-        </label>
-      </div>                    
+      <div class="settings-stack">
+        <div class="appify-checkbox">
+          <input id="newsletter" type="checkbox" name="newsletter" class="appify-input-checkbox" v-model="newsletter"/>
+          <label for="newsletter">
+            <div class="checkbox-box" style="margin-top:-1px;">  
+              <svg><use xlink:href="#checkmark" /></svg>
+            </div> 
+            Subscribe to Coliving App newsletter
+          </label>
+        </div>
+      </div>
     </div>
     
     <div class="form-section">
       <h2>Delete Account</h2>
+      <p class="form-hint">This permanently removes your account. This cannot be undone.</p>
       
-      <button @click="showDeleteAcc = true" v-if="!showDeleteAcc">Delete Account</button>
+      <button type="button" class="form-danger-btn" @click="showDeleteAcc = true" v-if="!showDeleteAcc">Delete Account</button>
       
       <div v-if="showDeleteAcc">
-        Enter your password: <input v-model="accPassword" type="password" style="max-width:180px;">
-        <span style="color:red;font-weight:bold;" v-if="wrongPassword"><br>Wrong password</span>
-        <br><br>
-        <div style="height:20px;">
-          <button v-if="!loading" @click="deleteUser()">Delete Account</button>
-          <span v-else>Please wait...</span>
+        <div class="form-group">
+          <label class="form-label" for="accPassword">Enter your password</label>
+          <input id="accPassword" v-model="accPassword" type="password" class="input" style="max-width:220px;">
+          <p v-if="wrongPassword" class="form-error">Wrong password</p>
         </div>
-        <br>
-        <button @click="showDeleteAcc = false" v-if="showDeleteAcc">Cancel</button>
-        <span v-else>Please wait...</span>
-      </div>                    
+        <div class="form-actions">
+          <button type="button" class="form-danger-btn" v-if="!loading" @click="deleteUser()">Delete Account</button>
+          <span v-else>Please wait...</span>
+          <button type="button" class="form-cancel-btn" @click="showDeleteAcc = false">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -1,58 +1,69 @@
 <template>
   <div class="content">
-    <h1>My Profile</h1>
+    <div class="page-form-header">
+      <h1>My Profile</h1>
+      <p class="page-form-intro">Update how you appear to spaces and other mates.</p>
+    </div>
     
     <form @submit.prevent="submitForm">
 
       <div class="form-section">
         <h2>About</h2>
         <div class="form-group">
-          <label for="name">Name</label>
+          <label class="form-label" for="name">Name</label>
           <input type="text" id="name" v-model="name" class="input form-control">
         </div>
         <div class="form-group">
-          <label for="name">Username</label>
+          <label class="form-label" for="username">Username</label>
           <input type="text" id="username" v-model="username" class="input form-control">
         </div>
 
         <div class="form-group">
-          <label for="hobbies_interests">About me</label>
+          <label class="form-label" for="hobbies_interests">About me</label>
           <textarea id="hobbies_interests" v-model="hobbies_interests" class="textarea"></textarea>
         </div>
       </div>
       
 
-      <div class="form-section">
+      <div class="form-section profile-pic-section">
         <h2>Profile picture</h2>
-        <label for="avatar"><input v-model="profilePic" value="avatar" type="radio" id="avatar" name="profile-picture" style="width:15px;"> Avatar</label>
-        <label for="photo" style="margin-left:10px;"><input v-model="profilePic" value="photo" type="radio" id="photo" name="profile-picture" style="width:15px;"> Photo</label>
-        <br>
-        <br>
-        <div v-if="profilePic == 'avatar'">
-          <!-- Avatar SVG generated via multiavatar — safe from XSS -->
-          <div v-html="avatarSvg" style="height:100px;width:100px;padding:5px;border:2px solid grey;border-radius:50%;"></div>
-          <div style="height:10px;"></div>
-          Avatar name:
-          <br>
-          <input type="text" id="avatar" v-model="avatar" class="input" style="max-width:280px;">
-          <br>
-          Avatar gender:
-          <br>
-          <label for="gender-any"><input v-model="avatarGender" value="any" id="gender-any" type="radio" style="width:15px;"> Any</label>
-          <label for="gender-male" style="margin-left:10px;"><input v-model="avatarGender" value="male" id="gender-male" type="radio" style="width:15px;"> Male</label>
-          <label for="gender-female" style="margin-left:10px;"><input v-model="avatarGender" value="female" type="radio" id="gender-female" style="width:15px;"> Female</label>
-          <br>
-          <br>
-          <span style="font-size:13px;">Powered by <a href="https://multiavatar.com" target="_blank">Multiavatar</a></span>
+        <div class="form-choices">
+          <label class="form-choice" :class="{ 'is-active': profilePic == 'avatar' }" for="avatar">
+            <input v-model="profilePic" value="avatar" type="radio" id="avatar" name="profile-picture">
+            Avatar
+          </label>
+          <label class="form-choice" :class="{ 'is-active': profilePic == 'photo' }" for="photo">
+            <input v-model="profilePic" value="photo" type="radio" id="photo" name="profile-picture">
+            Photo
+          </label>
         </div>
-        <div  v-if="profilePic == 'photo'" style="min-height:150px;">
-          <div class="thumbnails" style="height:100px;width:100px;padding:5px;border:2px solid grey;border-radius:50%;">
-            <img :src="photo"  style="height:86px;width:86px;overflow:hidden;border-radius:50%;" >
+        <div v-if="profilePic == 'avatar'" class="avatar-widget">
+          <!-- Avatar SVG generated via multiavatar — safe from XSS -->
+          <div class="form-avatar" v-html="avatarSvg"></div>
+          <label class="form-label" for="avatar-name">Avatar name</label>
+          <div class="avatar-name-row">
+            <input type="text" id="avatar-name" v-model="avatar" class="input" :disabled="isSpinning">
+            <button
+              type="button"
+              class="avatar-spin-btn"
+              :class="{ 'is-spinning': isSpinning }"
+              :disabled="isSpinning"
+              title="New avatar"
+              aria-label="Generate a new avatar"
+              @click="spinAvatar"
+            >
+              <svg class="avatar-spin-icon" version="1.1" viewBox="0 0 9.8142 9.8427" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="m8.3822 8.39a4.9107 4.9107 0 0 0-2.9686-8.3502 0.38365 0.38365 0 0 0-0.29633 0.0979 0.36777 0.36777 0 0 0-0.12436 0.28575v0.045a0.381 0.381 0 0 0 0.34132 0.37835 4.101 4.101 0 0 1 2.4897 6.985l-0.0926 0.0926a0.15875 0.15875 0 0 1-0.2249 0l-0.8546-0.8546a0.15875 0.15875 0 0 0-0.26458 0.11113v2.503a0.15875 0.15875 0 0 0 0.15875 0.15875h2.5056a0.15346 0.15346 0 0 0 0.14552-0.0979 0.15081 0.15081 0 0 0-0.0344-0.17197l-0.87312-0.86783a0.15875 0.15875 0 0 1 0-0.22225zm-7.5671-3.4687a4.0852 4.0852 0 0 1 1.188-2.9104l0.0926-0.09a0.15346 0.15346 0 0 1 0.22225 0l0.85725 0.85461a0.15875 0.15875 0 0 0 0.26459-0.11113v-2.5056a0.15875 0.15875 0 0 0-0.15875-0.15875h-2.4897a0.15346 0.15346 0 0 0-0.14552 0.0979 0.15081 0.15081 0 0 0 0.0344 0.17198l0.85725 0.85725a0.15875 0.15875 0 0 1 0 0.22225l-0.0926 0.0926a4.908 4.908 0 0 0 2.9686 8.3608 0.38629 0.38629 0 0 0 0.42069-0.38365v-0.0423a0.381 0.381 0 0 0-0.34131-0.381 4.1037 4.1037 0 0 1-3.6777-4.0746z"/>
+              </svg>
+            </button>
           </div>
-          <div style="height:10px;"></div>
-          <div>
-            <input type="file" id="photos" accept="image/*" v-on:change="onFileSelected">
+        </div>
+        <div v-if="profilePic == 'photo'" class="avatar-widget">
+          <div class="form-avatar">
+            <img :src="photo" alt="">
           </div>
+          <label class="form-label" for="photos">Upload photo</label>
+          <input type="file" id="photos" accept="image/*" v-on:change="onFileSelected">
         </div>
       </div>
 
@@ -75,79 +86,96 @@
       
       <div class="form-section">
         <h2>Lifestyle Match</h2>
-
-        Lifestyle Match helps you find coliving spaces and roommates that match your lifestyle. 
-        <div style="height:10px;"></div>
-        Lifestyle Match is in beta version. Let us know your <span style="font-weight:bold;"  class="link" @click="modalFeedback = true">feedback</span>.
-        
-        <div style="height:30px;"></div>
+        <p class="form-hint">
+          Lifestyle Match helps you find coliving spaces and roommates that match your lifestyle.
+        </p>
 
         <div class="form-group" v-for="(fit, index) in coliveFits" :key="index">
-          <div style="display:grid;grid-template-columns: 1fr 0.2fr 1fr;">
-            <span :for="fit.name">{{ fit.labels.left }}</span>
-            <span style="display: block; text-align: center;">&nbsp;|</span>
-            <!-- {{ fit.value }} -->
-            <span style="text-align: right;">{{ fit.labels.right }}</span>
+          <div class="form-range-labels">
+            <span>{{ fit.labels.left }}</span>
+            <span>{{ fit.labels.right }}</span>
           </div>
           <input type="range" :id="fit.name" v-model="fit.value" min="0" max="10" class="form-control-range">
-          <div style="height:10px;"></div>
         </div>
       </div>
 
       
       <div class="form-section">
         <h2>Social networks</h2>
-
-        <div class="form-group">
-          <label for="twitter">Twitter</label>
-          <input type="text" id="twitter" v-model="twitter" class="input">
-        </div>
-        <div class="form-group">
-          <label for="facebook">Facebook</label>
-          <input type="text" id="facebook" v-model="facebook" class="input">
-        </div>
-        <div class="form-group">
-          <label for="instagram">Instagram</label>
-          <input type="text" id="instagram" v-model="instagram" class="input">
-        </div>
-        <div class="form-group">
-          <label for="YouTube">YouTube</label>
-          <input type="text" id="youtube" v-model="youtube" class="input">
-        </div>
-        <div class="form-group">
-          <label for="tiktok">TikTok</label>
-          <input type="text" id="tiktok" v-model="tiktok" class="input">
-        </div>
-        <div class="form-group">
-          <label for="pinterest">Pinterest</label>
-          <input type="text" id="pinterest" v-model="pinterest" class="input">
-        </div>
-        <div class="form-group">
-          <label for="linkedin">LinkedIn</label>
-          <input type="text" id="linkedin" v-model="linkedin" class="input">
-        </div>
-        <!-- <div class="form-group">
-          <label for="linktree">Linktree</label>
-          <input type="text" id="linktree" v-model="linktree" class="input">
-        </div>
-        <div class="form-group">
-          <label for="telegram">Telegram</label>
-          <input type="text" id="telegram" v-model="telegram" class="input">
-        </div> -->
-        <div class="form-group">
-          <label for="github">GitHub</label>
-          <input type="text" id="github" v-model="github" class="input">
-        </div>
-        <div class="form-group">
-          <label for="substack">Substack</label>
-          <input type="text" id="substack" v-model="substack" class="input">
-        </div>
-        <div class="form-group">
-          <label for="medium">Medium</label>
-          <input type="text" id="medium" v-model="medium" class="input">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label social-field-label" for="twitter">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="twitter" /></span>
+              Twitter
+            </label>
+            <input type="text" id="twitter" v-model="twitter" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="facebook">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="facebook" /></span>
+              Facebook
+            </label>
+            <input type="text" id="facebook" v-model="facebook" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="instagram">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="instagram" /></span>
+              Instagram
+            </label>
+            <input type="text" id="instagram" v-model="instagram" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="youtube">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="youtube" /></span>
+              YouTube
+            </label>
+            <input type="text" id="youtube" v-model="youtube" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="tiktok">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="tiktok" /></span>
+              TikTok
+            </label>
+            <input type="text" id="tiktok" v-model="tiktok" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="pinterest">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="pinterest" /></span>
+              Pinterest
+            </label>
+            <input type="text" id="pinterest" v-model="pinterest" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="linkedin">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="linkedin" /></span>
+              LinkedIn
+            </label>
+            <input type="text" id="linkedin" v-model="linkedin" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="github">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="github" /></span>
+              GitHub
+            </label>
+            <input type="text" id="github" v-model="github" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="substack">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="substack" /></span>
+              Substack
+            </label>
+            <input type="text" id="substack" v-model="substack" class="input">
+          </div>
+          <div class="form-group">
+            <label class="form-label social-field-label" for="medium">
+              <span class="social-field-icon" aria-hidden="true"><social-field-icon name="medium" /></span>
+              Medium
+            </label>
+            <input type="text" id="medium" v-model="medium" class="input">
+          </div>
         </div>
       </div>
-
+      
 
       <div class="form-section">
         <h2>Visited Countries</h2>
@@ -157,64 +185,67 @@
 
       <div class="form-section">
         <h2>Current location</h2>
-        
-        Select your current location to be visible on the coliving mates map (coming soon).
-        <div style="height:15px;"></div>
-        <!-- <div class="auth-label">Select country</div> -->
-        <select id="country" class="auth-input" v-model="country">
-            <option value="none">Choose country</option>
-            <option v-for="country in countries" :key="country.code" :value="country.code">
-                {{ country.name }}
-            </option>
-        </select> 
-        <!-- <div style="height:5px;"></div>
-        Precise location (optional)
-        <br>
-        <button>Select...</button> -->
+        <p class="form-hint">Select your current location to be visible on the coliving mates map (coming soon).</p>
+        <label class="form-label" for="country">Country</label>
+        <div class="country-select-wrap">
+          <select id="country" class="input" v-model="country">
+              <option value="none">Choose country</option>
+              <option v-for="country in countries" :key="country.code" :value="country.code">
+                  {{ country.name }}
+              </option>
+          </select>
+          <span v-if="country && country !== 'none'" class="country-select-flag" aria-hidden="true">
+            <span :class="'fi fi-' + country"></span>
+          </span>
+        </div>
       </div>
 
 
       <div class="form-section">
         <h2>Profile visibility</h2>
-        <div class="form-group" style="text-align:left;">
-          <input type="radio" id="public" v-model="private" value="0" style="width:13px;">
-          <label for="public">Public</label>
-          <br>
-          <input type="radio" id="private" v-model="private" value="1" style="width:13px;">
-          <label for="private">Private</label>
+        <div class="form-choices">
+          <label class="form-choice" :class="{ 'is-active': private == 0 }" for="public">
+            <input type="radio" id="public" v-model="private" value="0">
+            Public
+          </label>
+          <label class="form-choice" :class="{ 'is-active': private == 1 }" for="private">
+            <input type="radio" id="private" v-model="private" value="1">
+            Private
+          </label>
         </div>
         
-        <div style="height:10px;"></div>
-        <a v-if="!username" :href="'/mate/'+user_uid" target="_blank">View profile</a>
-        <a v-else :href="'/mate/'+username" target="_blank">View profile</a>
+        <p class="form-hint" style="margin-top:16px;margin-bottom:0;">
+          <a v-if="!username" :href="'/mate/'+user_uid" target="_blank">View profile</a>
+          <a v-else :href="'/mate/'+username" target="_blank">View profile</a>
+        </p>
       </div>
       
-      <div style="height:20px"></div>
-      <button type="submit" class="action-button button-post" :disabled="isUpdating">Save</button>
-      <span v-if="profileUpdated">&nbsp;&nbsp;Updated!</span>
+      <div class="form-actions">
+        <button type="submit" class="action-button button-post" :disabled="isUpdating">{{ isUpdating ? 'Please wait...' : 'Save' }}</button>
+        <span v-if="profileUpdated" class="form-success" :class="{ 'is-fading': profileSavedFading }">Saved!</span>
+      </div>
     </form>
 
-    <div v-if="modalFeedback">
-      <modal-feedback @close="modalFeedback = false" />
-    </div>
   </div>
 </template>
   
 <script>
 // import multiavatar from '@multiavatar/multiavatar/esm'
-import ModalFeedback from '../components/ModalFeedback.vue';
+import "/node_modules/flag-icons/css/flag-icons.min.css";
+import SocialFieldIcon from '../components/SocialFieldIcon.vue';
 import VisitedCountries from './VisitedCountries.vue';
 
 export default {
   components: {
     VisitedCountries,
-    ModalFeedback
+    SocialFieldIcon,
   },
   data() {
     return {
-      modalFeedback: false,
       isUpdating: false, 
       profileUpdated: false,
+      profileSavedFading: false,
+      savedFadeTimer: null,
 
       username: '',
       name: '',
@@ -223,6 +254,8 @@ export default {
 
       avatar: '',
       avatarGender: 'any',
+      isSpinning: false,
+      spinTimer: null,
       photo: '',
       profilePic: 'avatar',
 
@@ -567,7 +600,65 @@ export default {
     this.generateAvatar()
   },
 
+  beforeUnmount() {
+    if (this.spinTimer) {
+      clearTimeout(this.spinTimer);
+    }
+    if (this.savedFadeTimer) {
+      clearTimeout(this.savedFadeTimer);
+    }
+  },
+
   methods: {
+    showSavedMessage() {
+      this.profileUpdated = true;
+      this.profileSavedFading = false;
+      if (this.savedFadeTimer) {
+        clearTimeout(this.savedFadeTimer);
+      }
+      this.savedFadeTimer = setTimeout(() => {
+        this.profileSavedFading = true;
+        this.savedFadeTimer = setTimeout(() => {
+          this.profileUpdated = false;
+          this.profileSavedFading = false;
+        }, 500);
+      }, 2200);
+    },
+    spinAvatar() {
+      if (this.isSpinning) return;
+
+      this.isSpinning = true;
+      const timeClicked = Date.now();
+      const hex = '0123456789abcdef';
+      let randomHash = '';
+      for (let i = 0; i < 8; i++) {
+        randomHash += hex[Math.floor(Math.random() * hex.length)];
+      }
+      let constructed = '';
+
+      const runIt = () => {
+        this.spinTimer = setTimeout(() => {
+          if (constructed.length < 8) {
+            const lastChar = randomHash.substring(randomHash.length - 1);
+            randomHash = randomHash.slice(0, -1);
+            constructed += lastChar;
+            this.avatar = constructed;
+            runIt();
+          } else {
+            const timeDiff = Date.now() - timeClicked;
+            if (timeDiff > 100) {
+              this.isSpinning = false;
+            } else {
+              this.spinTimer = setTimeout(() => {
+                this.isSpinning = false;
+              }, 100 - timeDiff);
+            }
+          }
+        }, 6);
+      };
+
+      runIt();
+    },
     handleSelectedCountriesChanged(countries) {
       // console.log(countries);
       this.visitedCountries = countries;
@@ -637,6 +728,7 @@ export default {
     },
     submitForm() {
       this.isUpdating = true;
+      this.profileUpdated = false;
 
       if (this.avatarGender == 'male') {
         this.avatar = '[m]' + this.avatar;
@@ -683,37 +775,146 @@ export default {
       // Perform the axios request with the FormData object
       axios.post('/api/mate', formData)
       .then(response => {
-        // console.log(response.data);
         window.mate = response.data;
-
         this.isUpdating = false;
-        this.profileUpdated = true;
-        window.location = '/mate/'+this.username;
-        // do something with the response, e.g., show a success message
+        this.showSavedMessage();
       })
       .catch(error => {
-        console.log(error.response.data);
-        // show an error message
+        this.isUpdating = false;
+        console.log(error.response?.data);
       });
     },
   }
 }
 </script>
 
-<style>
-  .form-section {
-    padding:20px;
-    border:1px solid rgb(225, 225, 225);
-    border-radius:5px;
-    margin-bottom:30px;
-    background: #f8fbff;
-  }
+<style scoped>
+.form-actions {
+  margin-top: 28px;
+}
 
-  .form-section h2 {
-    margin-top: 0px;
-  }
+.form-actions .button-post,
+.form-actions .button-post:disabled {
+  width: 260px;
+}
 
-  .form-group {
-    margin-top: 5px;
-  }
+.form-actions .action-button.button-post:disabled {
+  background-color: #8ecf9a;
+  border-color: #8ecf9a;
+  color: #fff;
+}
+
+.form-success {
+  transition: opacity 0.5s ease;
+}
+
+.form-success.is-fading {
+  opacity: 0;
+}
+
+.form-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: rgb(89, 89, 89);
+}
+
+.country-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.country-select-wrap .input {
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: 0;
+}
+
+.country-select-flag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.country-select-flag .fi {
+  width: 2.2em;
+  line-height: 1.65em;
+  border-radius: 3px;
+}
+
+.avatar-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 260px;
+  margin: 20px 0 0;
+  padding: 22px 18px 18px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+}
+
+.avatar-widget .form-label {
+  margin-top: 14px;
+}
+
+.avatar-widget input[type="file"] {
+  width: 100%;
+  max-width: 200px;
+}
+
+.avatar-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.avatar-name-row .input {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.avatar-spin-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border: 1px solid #e4e4e4;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-spin-btn:hover:not(:disabled) {
+  background: #f4faff;
+  border-color: #87c9eb;
+}
+
+.avatar-spin-btn:disabled {
+  cursor: default;
+}
+
+.avatar-spin-icon {
+  width: 18px;
+  height: 18px;
+  fill: #555;
+}
+
+.avatar-spin-btn.is-spinning .avatar-spin-icon {
+  animation: avatar-spin 200ms linear infinite;
+}
+
+@keyframes avatar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(180deg); }
+}
 </style>
