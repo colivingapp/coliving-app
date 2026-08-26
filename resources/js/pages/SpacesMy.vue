@@ -1,13 +1,18 @@
 <template>
   <div class="content">
-    <h1>My Spaces</h1>
-    
-    <div v-if="userLoggedIn" class="my-spaces">
-      <router-link to="/space/new"><button class="button">Add New Space</button></router-link>
+    <div class="my-spaces-header">
+      <div class="my-spaces-heading">
+        <h1>My Spaces</h1>
+        <p v-if="userLoggedIn" class="my-spaces-intro">
+          Add a new listing, or manage the spaces you administer.
+        </p>
+      </div>
+      <router-link v-if="userLoggedIn" to="/space/new" class="my-spaces-add">
+        <button class="action-button button-1">Add New Space</button>
+      </router-link>
+    </div>
 
-      <p class="my-spaces-intro">
-        Below you will find all the spaces where you hold the administrator role.
-      </p>
+    <div v-if="userLoggedIn" class="my-spaces">
 
       <div v-if="isLoading">
         Loading...
@@ -62,12 +67,45 @@
 </script>
 
 <style scoped>
-.my-spaces .button {
-  margin-top: 0;
-  margin-bottom: 0;
+.my-spaces-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 19px;
+  margin-bottom: 40px;
+}
+
+.my-spaces-heading {
+  flex: 1;
+  min-width: 200px;
+}
+
+.my-spaces-header h1 {
+  margin: 0;
+  padding-top: 0;
+}
+
+.my-spaces-add {
+  flex-shrink: 0;
+}
+
+.my-spaces-add .action-button {
+  margin: 0;
 }
 
 .my-spaces-intro {
-  margin: 12px 0 40px;
+  margin: 6px 0 0;
+}
+
+@media screen and (max-width: 600px) {
+  .my-spaces-add {
+    width: 100%;
+  }
+
+  .my-spaces-add .action-button.button-1 {
+    width: 100%;
+  }
 }
 </style>
