@@ -29,24 +29,8 @@
     </div>
 
     
-    <div v-for="space in sortedSpaces" :key="space.id">
-      
-      <router-link :to="'/space/'+space.uid" style="font-size:17px;vertical-align: middle;">
-        <div class="widget-space">
-          <div class="widget-space-inner"><img v-if="space.first_photo" :src="'/storage/spaces/'+space.first_photo" class="img-fit-cover"><img v-else style="height:70px;" src="/img/coliving-app-logo-symbol.png"></div>
-          <div></div>
-          <div>
-            <b>{{ space.name }}</b>
-            <br>
-            <span style="color:rgb(89, 89, 89);font-size:14px;">{{ space.address }}</span>
-          </div>
-        </div>
-      </router-link>
-      
-      <div style="height:10px;"></div>
-      <!-- <router-link :to="`/space/${space.uid}`">
-        {{ space.name }}
-      </router-link> -->
+    <div class="space-grid">
+      <SpaceCard v-for="space in sortedSpaces" :key="space.id" :space="space" />
     </div>
 
     <div v-if="country == 'argentina'">
@@ -89,6 +73,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 import MapByCountry from '../map/MapByCountry.vue';
+import SpaceCard from '../components/SpaceCard.vue';
 
 const country = ref('');
 const spaces = ref([]);
@@ -120,14 +105,6 @@ const sortedSpaces = computed(() => {
     font-size:10px;
     font-style: italic;
     text-align:right;
-  }
-
-  .widget-space {
-    clear:both;margin-top:10px;padding:10px;border:1px solid#aeaeae;border-radius:5px;min-height:90px;display:grid;grid-template-columns:90px 15px 1fr;
-  }
-
-  .widget-space-inner {
-    width:90px;height:70px;overflow:hidden;text-align:center;
   }
 
   .img-fit-cover {
