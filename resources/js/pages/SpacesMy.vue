@@ -4,7 +4,7 @@
       <div class="my-spaces-heading">
         <h1>My Spaces</h1>
         <p v-if="userLoggedIn" class="my-spaces-intro">
-          Add a new listing, or manage the spaces you administer.
+          Add a new listing, or manage the spaces you host.
         </p>
       </div>
       <router-link v-if="userLoggedIn" to="/space/new" class="my-spaces-add">
