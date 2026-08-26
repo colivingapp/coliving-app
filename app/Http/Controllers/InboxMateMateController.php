@@ -3,15 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\InboxMessage;
-use App\Models\Space;
 use App\Models\Mate;
 use App\Models\User;
 use App\Models\InboxMateMate;
 use App\Models\Log;
-use App\Models\SettingsNotification;
 
 use Illuminate\Http\Request;
 
+use App\Services\ChatAuthorization;
 use App\Services\EmailService;
 
 class InboxMateMateController extends Controller
@@ -19,13 +18,28 @@ class InboxMateMateController extends Controller
 
     public function store(Request $request, $uid) {
 
-        $sender_id = $request->user()->id;
-        $sender_uid = Mate::where('user_id', $sender_id)->value('uid');
+        $content = ChatAuthorization::validatedContent($request);
 
-        // Check if a conversation with the provided uid exists
-        // $conversation = InboxMateMate::where('uid', $uid)->first();
-        
-        // $conversation = InboxMateMate::where('user2', $uid)->orWhere('user1', $sender_uid)->first();
+        $sender_id = $request->user()->id;
+        $sender = Mate::where('user_id', $sender_id)->first();
+        if (!$sender) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
+        $sender_uid = $sender->uid;
+
+        if ($uid === $sender_uid) {
+            return response()->json(['message' => 'Cannot message yourself'], 422);
+        }
+
+        $recipient = Mate::where('uid', $uid)->first();
+        if (!$recipient) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if (!ChatAuthorization::canAccessMateConversationTarget($request->user(), $sender, $recipient)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $conversation = InboxMateMate::where(function ($query) use ($uid, $sender_uid) {
             $query->where('user2', $uid)
                     ->where('user1', $sender_uid);
@@ -33,42 +47,23 @@ class InboxMateMateController extends Controller
             $query->where('user2', $sender_uid)
                     ->where('user1', $uid);
         })->first();
-
-        if (!$conversation) {
-            $conversation = InboxMateMate::where('user2', $sender_uid)->where('user1', $uid)->first();
-        }
         
         // If the conversation does not exist, create it
         if (!$conversation) {
             $conv_uid = uniqid();
 
-            // // Add space id to conversations table
-            // $space_id = Space::where('uid', $uid)->value('id');
             $conversation = InboxMateMate::create([
                 'uid' => $conv_uid,
                 'user2' => $uid,
                 'user1' => $sender_uid
             ]);
 
-            $m = Mate::where('uid', $uid)->get();
-            $user_id = $m[0]['user_id'];
-            $user = User::with('settingsNotification')->findOrFail($user_id);
-            $notificationSettings = $user->settingsNotification;
+            $user = User::with('settingsNotification')->find($recipient->user_id);
+            $notificationSettings = $user?->settingsNotification;
 
-            if ($notificationSettings->new_conversation_started) {
-                $user_email = $user->email;
-
-                $to = $user_email;
-                $subj = 'New conversation started';
-                $template = 'new_conversation';
-    
-                $data = [
-                    // 'name' => $space_name,
-                    // 'uid' => $uid,
-                ];
-    
+            if ($notificationSettings && $notificationSettings->new_conversation_started) {
                 $emailService = new EmailService();
-                $emailService->sendEmail($to, $subj, $template, $data);
+                $emailService->sendEmail($user->email, 'New conversation started', 'new_conversation', []);
             }
        
             Log::create([
@@ -80,17 +75,15 @@ class InboxMateMateController extends Controller
 
         }
         else {
-            $conv_uid = $conversation['uid'];
-
-            $conversation->updated_at = now();
-            $conversation->save();
+            $conv_uid = $conversation->uid;
         }
+
+        ChatAuthorization::touchConversation($conversation, $sender_uid);
     
-        // Insert the new message
-        $message = InboxMessage::create([
+        InboxMessage::create([
             'conversation_uid' => $conv_uid,
             'sender_uid' => $sender_uid,
-            'content' => $request->content,
+            'content' => $content,
         ]);
     
         // Retrieve the updated conversation
@@ -114,8 +107,21 @@ class InboxMateMateController extends Controller
     public function showConversation(Request $request, $uid) {
 
         $sender_id = $request->user()->id;
-        $sender_uid =  Mate::where('user_id', $sender_id)->value('uid');
+        $sender = Mate::where('user_id', $sender_id)->first();
+        if (!$sender) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
+        $sender_uid = $sender->uid;
         $conversation_uid = '';
+
+        $recipient = Mate::where('uid', $uid)->first();
+        if (!$recipient) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if (!ChatAuthorization::canAccessMateConversationTarget($request->user(), $sender, $recipient)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
         $participants = [];
 
@@ -150,19 +156,10 @@ class InboxMateMateController extends Controller
         $participants[$uid] = Mate::where('uid', $uid)->select('name', 'username', 'profile_pic', 'photo', 'avatar')->first();
         $participants[$uid]['type'] = 'mate';
     
-        if ($conversation != null && count($conversation) > 0) {
-            return response()->json([
-                'conversation' => $conversation,
-                'participants' => $participants
-            ], 201);
-        }
-        else {
-            // return 'Conversation has not been started.';
-            return response()->json([
-                'conversation' => 'Conversation has not been started.',
-                'participants' => $participants
-            ], 201);
-        }
+        return response()->json([
+            'conversation' => $conversation ?: [],
+            'participants' => $participants
+        ], 200);
     }
     
 

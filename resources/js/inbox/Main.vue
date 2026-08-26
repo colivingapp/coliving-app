@@ -237,8 +237,9 @@ const retrieveConversation = () => {
       conversationWithName.value = getDisplayName(route.params.mate_uid);
     }
       
-    if(response.data.conversation != 'Conversation has not been started.') {
-      conversation.value.messages = Object.values(response.data.conversation);
+    const thread = response.data.conversation;
+    if (thread && thread !== 'Conversation has not been started.') {
+      conversation.value.messages = Object.values(thread);
       conversation.value.messages = conversation.value.messages.reverse();
     }
 
@@ -247,14 +248,16 @@ const retrieveConversation = () => {
   })
   .catch(error => {
     console.error(error);
+    isLoading.value = false;
   });
 }
 
 function toBottom() {
     setTimeout(() => {
       var objDiv = document.getElementById("conv-messages");
-      objDiv.scrollTop = objDiv.scrollHeight;
-
+      if (objDiv) {
+        objDiv.scrollTop = objDiv.scrollHeight;
+      }
     }, 100);
   }
             
@@ -269,12 +272,14 @@ function joinRequestAccept(id) {
   jrProcessing.value = true;
   axios.post('/api/join_requests/'+id+'/accept')
   .then(closeFetch)
+  .catch(() => { jrProcessing.value = false; })
 }
 
 function joinRequestDecline(id) {
   jrProcessing.value = true;
   axios.post('/api/join_requests/'+id+'/'+route.params.mate_uid+'/decline')
   .then(closeFetch)
+  .catch(() => { jrProcessing.value = false; })
 }
 </script>
 

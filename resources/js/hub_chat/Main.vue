@@ -3,11 +3,7 @@
     <div style="height:10px;"></div>
 
     <div v-if="userLoggedIn">
-      <div v-if="$route.params.uid == mate.uid">
-        One cannot chat with oneself.
-      </div>
-      
-      <div v-else class="convo-grid" >
+      <div class="convo-grid" >
         <div>
           <div v-if="isLoading" class="spinner-container">
             <div class="spinner"></div>
@@ -24,7 +20,7 @@
               <div style="display:grid;grid-template-columns:25px 5px 1fr;">
                 <div>
                   <!-- /img/coliving-app-logo-symbol.png -->
-                  <profile-pic :profile_pic="indexedMates[message.sender_uid].profile_pic" :avatar="indexedMates[message.sender_uid].avatar" :photo="indexedMates[message.sender_uid].photo" style="height:25px;width:25px;overflow:hidden;"/>
+                  <profile-pic v-if="indexedMates[message.sender_uid]" :profile_pic="indexedMates[message.sender_uid].profile_pic" :avatar="indexedMates[message.sender_uid].avatar" :photo="indexedMates[message.sender_uid].photo" style="height:25px;width:25px;overflow:hidden;"/>
                 </div>
                 <div></div>
                 <div style="padding-top:5px;">
@@ -110,7 +106,7 @@ const props = defineProps({
 });
 
 // Transform the mates array into an object indexed by uid
-const indexedMates = props.mates.reduce((acc, mate) => {
+const indexedMates = (Array.isArray(props.mates) ? props.mates : []).reduce((acc, mate) => {
   acc[mate.uid] = mate;
   return acc;
 }, {});
@@ -152,12 +148,11 @@ function closeFetch() {
 }
 
 function getDisplayName(uid) {
-  if (!indexedMates[uid].name) {
+  const member = indexedMates[uid];
+  if (!member || !member.name) {
     return uid;
   }
-  else {
-    return indexedMates[uid].name;
-  }
+  return member.name;
 }
 
 let intervalId;
@@ -185,14 +180,16 @@ const retrieveConversation = () => {
     })
     .catch(error => {
       console.error(error);
+      isLoading.value = false;
     });
 }
 
 function toBottom() {
     setTimeout(() => {
       var objDiv = document.getElementById("conv-messages");
-      objDiv.scrollTop = objDiv.scrollHeight;
-
+      if (objDiv) {
+        objDiv.scrollTop = objDiv.scrollHeight;
+      }
     }, 100);
   }
             
@@ -207,12 +204,14 @@ function joinRequestAccept(id) {
   jrProcessing.value = true;
   axios.post('/api/join_requests/'+id+'/accept')
   .then(closeFetch)
+  .catch(() => { jrProcessing.value = false; })
 }
 
 function joinRequestDecline(id) {
   jrProcessing.value = true;
   axios.post('/api/join_requests/'+id+'/'+route.params.mate_uid+'/decline')
   .then(closeFetch)
+  .catch(() => { jrProcessing.value = false; })
 }
 </script>
 

@@ -14,9 +14,14 @@ class InboxMessage extends Model
     // Specify the table name
     protected $table = 'messages';
 
-    public function conversation()
+    public function mateConversation()
     {
-        return $this->belongsTo(InboxConversation::class);
+        return $this->belongsTo(InboxMateMate::class, 'conversation_uid', 'uid');
+    }
+
+    public function spaceConversation()
+    {
+        return $this->belongsTo(InboxMateSpace::class, 'conversation_uid', 'uid');
     }
 
     public function joinRequest()

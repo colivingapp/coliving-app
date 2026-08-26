@@ -723,14 +723,7 @@ export default {
             } 
           }
           else {
-            // console.log(response.data.space.uid);
-
-            if (this.userId == 1 || this.userId == 18) {
-              this.$router.push('/space/'+response.data.space.uid)
-            }
-            else {
-              this.created = true;
-            }
+            this.created = true;
           }
         }
         else if (response.data == 'error_name') {
@@ -831,23 +824,13 @@ export default {
     },
 
     deleteSpace() {
-      if (this.userId == 1) {
+      if (confirm("Are you sure?")) {
         axios.delete('/api/space/'+this.$route.params.uid+'/delete')
         .then(response => {
           if (response.data.message = 'Space deleted successfully') {
             this.$router.push('/')
           }
         })
-        .catch(error => console.log(error))
-      }
-      else if (confirm("Are you sure?")) {
-        axios.delete('/api/space/'+this.$route.params.uid+'/delete')
-        .then(response => {
-            if (response.data.message = 'Space deleted successfully') {
-              this.$router.push('/')
-            }
-          }
-        )
         .catch(error => console.log(error))
       }
     },

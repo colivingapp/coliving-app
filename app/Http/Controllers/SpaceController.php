@@ -30,7 +30,7 @@ class SpaceController extends Controller
                 abort(403); // Space is private and user is not authenticated
             }
 
-            if ($space->user_id != auth()->user()->id && auth()->user()->id != 1) {
+            if ($space->user_id != auth()->user()->id && !auth()->user()->isAdmin()) {
                 echo("<b style='color:red;'>This space is private!</b>");
                 abort(403); // Space is private and user is not the owner
             }
@@ -41,7 +41,7 @@ class SpaceController extends Controller
                 echo("<b style='color:red;'>This space is awaiting approval!</b>");
                 abort(403); // Space has not been approved
             }
-            else if ($space->user_id != auth()->user()->id && auth()->user()->id != 1) {
+            else if ($space->user_id != auth()->user()->id && !auth()->user()->isAdmin()) {
                 echo("<b style='color:red;'>This space is awaiting approval!</b>");
                 abort(403); // Space has not been approved
             }
@@ -251,7 +251,7 @@ class SpaceController extends Controller
     
     public function searchData()
     {
-        $spaces = Space::select('uid', 'name', 'country', 'city', 'formatted_address', 'longitude', 'latitude', 'photo')->where('status', 'approved')->get();
+        $spaces = Space::select('uid', 'name', 'country', 'city', 'formatted_address', 'longitude', 'latitude', 'photo')->where('status', 'approved')->where('private', 0)->get();
 
         foreach ($spaces as $space) {
             if ($space->photo) {

@@ -105,7 +105,7 @@
                       <!-- <router-link to="/inbox">Inbox</router-link> -->
                       <router-link to="/inbox">
                         <!-- <span v-if="mate && (mate.hasUnreadPersonal || mate.hasUnreadSpaces)" style="color:red;">●</span> Inbox -->
-                        <span v-if="inboxStatus.hasUnreadPersonal || inboxStatus.hasUnreadSpaces" style="color:red;">●</span> Inbox
+                        <span v-if="inboxStatus && (inboxStatus.hasUnreadPersonal || inboxStatus.hasUnreadSpaces)" style="color:red;">●</span> Inbox
                       </router-link>
                     </div>
 
@@ -151,7 +151,7 @@
                         <router-link to="/spaces" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Spaces</router-link>
                         <!-- <router-link to="/mates" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Mates</router-link> -->
                         <router-link to="/hub" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Hub</router-link>
-                        <router-link to="/inbox" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Inbox <span v-if="mate && (mate.hasUnreadPersonal || mate.hasUnreadSpaces)" style="color:red;">●</span>
+                        <router-link to="/inbox" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Inbox <span v-if="inboxStatus && (inboxStatus.hasUnreadPersonal || inboxStatus.hasUnreadSpaces)" style="color:red;">●</span>
                         </router-link>
       
                     </template>
@@ -199,7 +199,7 @@ const spaces = ref(window.spaces || []);
   const mate = window.mate;
 
   const showInboxDot = computed(() => {
-    return mate?.hasUnreadPersonal || mate?.hasUnreadSpaces;
+    return inboxStatus?.hasUnreadPersonal || inboxStatus?.hasUnreadSpaces;
   });
 // }
 // let mate = ref(null);

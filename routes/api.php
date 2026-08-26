@@ -19,8 +19,10 @@ use App\Models\InboxMateSpace;
 use App\Models\InboxJoinRequest;
 use App\Models\SettingsNotification;
 
+use App\Services\ChatAuthorization;
 use App\Services\EmailService;
 use App\Services\MateService;
+use App\Services\SpaceClaimAuthorization;
 
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\InboxConversationController;
@@ -67,7 +69,7 @@ Route::middleware('auth:sanctum')->get('/acc_settings', function (Request $reque
     return (['notifications' => $notifications, 'newsletter' => $newsletter]);
 });
 
-Route::middleware('auth:sanctum')->post('/update_settings', function (Request $request) {
+Route::middleware(['auth:sanctum', 'verified'])->post('/update_settings', function (Request $request) {
     $user = Auth::user();
 
     // Update notifications
@@ -156,7 +158,7 @@ Route::post('/space', function (Request $request) {
     $user_id = Auth::user()->id;
 
     if ($type == "edited") {
-        if ($user_id != 1 && $user_id != (int)$space->user_id) {
+        if ($user_id != (int)$space->user_id && !Auth::user()->isAdmin()) {
             return response()->json(['error' => 'Unauthorized action.'], 401);
         }
     }
@@ -327,7 +329,9 @@ Route::post('/space', function (Request $request) {
     if (!empty($imageUrls)) {
         foreach ($imageUrls as $imageUrl) {
             if (isset($imageUrl['id']) && isset($imageUrl['pos']) && $imageUrl['pos'] !== 0) {
-                $photo = Photo::find($imageUrl['id']);
+                $photo = Photo::where('id', $imageUrl['id'])
+                    ->where('space_uid', $space->uid)
+                    ->first();
 
                 if ($photo) {
                     $photo->pos = $imageUrl['pos'];
@@ -358,7 +362,7 @@ Route::post('/space', function (Request $request) {
     }
 
     return response()->json(['message' => 'success', 'space' => $space]);
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'verified']);
 
 
 
@@ -395,20 +399,21 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
     // $spaceMates = SpaceMate::where("space_uid", $uid)->where('status', 'active')->get();
     $spaceMates = SpaceMate::where("space_uid", $uid)->get();
 
-    $user_id = Auth::user()->id;
+    $user = Auth::user();
+    $user_id = $user->id;
     $found = 0;
 
     $mateIds = [];
 
     foreach ($spaceMates as $mate) {
-        if ($mate->user_id == $user_id) {
+        if ($mate->user_id == $user_id && $mate->status == 'active') {
             $found = true;
         }
 
         $mateIds[] = $mate->user_id;
     }
 
-    if(!$found) {
+    if (!$found && !ChatAuthorization::canAccessHub($user, $uid)) {
         return("not_a_member");
     }
 
@@ -450,7 +455,7 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
     $data[0] = $spaceMates;
 
     return ($data); 
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'verified']);
 
 
 Route::post('/space/{uid}/leave', function($uid) {
@@ -469,14 +474,15 @@ Route::post('/space/{uid}/leave', function($uid) {
         'action' => 'mate left space',
     ]);
 
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'verified']);
 
 
 Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
     if (Auth::check()) {
         $spaceMates = SpaceMate::where("space_uid", $uid)->get();
         
-        $user_id = Auth::user()->id;
+        $user = Auth::user();
+        $user_id = $user->id;
         $found = 0;
 
         $mateIds = [];
@@ -490,7 +496,7 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
             $mateIds[$mate->user_id] = $mate->user_id;
         }
 
-        if(!$found) {
+        if (!$found && !ChatAuthorization::canAccessHub($user, $uid)) {
             return("not_a_member");
         }
 
@@ -535,7 +541,7 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
     else {
         return('unauthenticated');
     }
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'verified']);
 
 
 Route::delete('/space/{space_uid}/delete', function (Request $request, $space_uid) {
@@ -547,7 +553,7 @@ Route::delete('/space/{space_uid}/delete', function (Request $request, $space_ui
 
     $user_id = $request->user()->id;
     
-    if ((int)$space->user_id !== $user_id && $user_id != 1) {
+    if ((int)$space->user_id !== $user_id && !$request->user()->isAdmin()) {
         return response()->json(['error' => 'Unauthorized action.'], 401);
     }
 
@@ -614,17 +620,17 @@ Route::post('/space/{space_uid}/claim', function (Request $request, $space_uid) 
     
     $user = $request->user();
     $user_id = $user->id;
-    $user_email = $user->email;
+    $user_email = strtolower(trim((string) $user->email));
 
     $comments = $request->input('comments');
 
     $space = Space::where('uid', $space_uid)->first();
     if (!$space) {
         $space = Space::where('username', $space_uid)->first();
-        $space_uid = $space->uid;
-        if (!space) {
+        if (!$space) {
             return response()->json('space not found', 404);
         }
+        $space_uid = $space->uid;
     }
 
     $existing_claim = Claim::where('space_uid', $space_uid)->where('user_id', $user_id)->first();
@@ -658,8 +664,7 @@ Route::post('/space/{space_uid}/claim', function (Request $request, $space_uid) 
         'action' => 'space claimed',
     ]);
 
-    // Auto-approve if user's email matches the space's email
-    if ($space->email === $user_email) {
+    if (SpaceClaimAuthorization::canAutoApprove($user, $space)) {
         $claim->update(['status' => 'approved']);
         Log::create([
             'user_id' => $user_id,
@@ -687,7 +692,7 @@ Route::post('/space/{space_uid}/claim', function (Request $request, $space_uid) 
     }
 
     return response()->json('success', 200);
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'verified', 'throttle:space-claim']);
 
 
 Route::get('/space/{space_uid}/claim', function (Request $request, $space_uid) {
@@ -746,7 +751,7 @@ Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
 Route::post('/space/{uid}/admin/send-invite-email', function($uid) {
     $user_id = Auth::user()->id;
 
-    if ($user_id != 1) {
+    if (!Auth::user()->isAdmin()) {
         return ('error');
     }
 
@@ -779,7 +784,7 @@ Route::post('/space/{uid}/admin/send-invite-email', function($uid) {
 Route::get('/space/{uid}/admin/check-invite-email', function($uid) {
     $user_id = Auth::user()->id;
 
-    if ($user_id != 1) {
+    if (!Auth::user()->isAdmin()) {
         return ('error');
     }
 
@@ -850,16 +855,16 @@ Route::post('/mate', function (Request $request) {
         'expTrad' => (string)$request->expTrad,
         'multiLocal' => (string)$request->multiLocal,
 
-        'twitter' => (string)$request->twitter,
-        'facebook' => (string)$request->facebook,
-        'instagram' => (string)$request->instagram,
-        'youtube' => (string)$request->youtube,
-        'tiktok'  => (string)$request->tiktok,
-        'pinterest' => (string)$request->pinterest,
-        'linkedin' => (string)$request->linkedin,
-        'github' => (string)$request->github,
-        'substack' => (string)$request->substack,
-        'medium' => (string)$request->medium,
+        'twitter' => ChatAuthorization::safeHttpUrl($request->twitter),
+        'facebook' => ChatAuthorization::safeHttpUrl($request->facebook),
+        'instagram' => ChatAuthorization::safeHttpUrl($request->instagram),
+        'youtube' => ChatAuthorization::safeHttpUrl($request->youtube),
+        'tiktok'  => ChatAuthorization::safeHttpUrl($request->tiktok),
+        'pinterest' => ChatAuthorization::safeHttpUrl($request->pinterest),
+        'linkedin' => ChatAuthorization::safeHttpUrl($request->linkedin),
+        'github' => ChatAuthorization::safeHttpUrl($request->github),
+        'substack' => ChatAuthorization::safeHttpUrl($request->substack),
+        'medium' => ChatAuthorization::safeHttpUrl($request->medium),
 
         'location_country' => (string)$request->location_country,
 
@@ -1161,7 +1166,7 @@ Route::get('/search/', function (SpaceController $spaceController) {
 });
 
 
-Route::post('/join_requests/{uid}', [InboxJoinRequestController::class, 'store'])->middleware('auth:sanctum');
+Route::post('/join_requests/{uid}', [InboxJoinRequestController::class, 'store'])->middleware(['auth:sanctum', 'throttle:join-request']);
 
 Route::post('/join_requests/{uid}/accept', [InboxJoinRequestController::class, 'accept'])->middleware('auth:sanctum');
 
@@ -1176,21 +1181,21 @@ Route::get('/conversations', [InboxConversationController::class, 'showConversat
 
 Route::get('/conversation/mate/{uid}', [InboxMateMateController::class, 'showConversation'])->middleware('auth:sanctum');
 
-Route::post('/conversation/mate/{uid}', [InboxMateMateController::class, 'store'])->middleware('auth:sanctum');
+Route::post('/conversation/mate/{uid}', [InboxMateMateController::class, 'store'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
 Route::get('/conversation/space/{uid}', [InboxMateSpaceController::class, 'showConversation'])->middleware('auth:sanctum');
 
-Route::post('/conversation/space/{uid}', [InboxMateSpaceController::class, 'store'])->middleware('auth:sanctum');
+Route::post('/conversation/space/{uid}', [InboxMateSpaceController::class, 'store'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
 
 Route::get('/conversation/space/{space_uid}/mate/{mate_uid}', [InboxMateSpaceController::class, 'showConversationSpacePOV'])->middleware('auth:sanctum');
 
-Route::post('/conversation/space/{space_uid}/mate/{mate_uid}', [InboxMateSpaceController::class, 'storeSpacePOV'])->middleware('auth:sanctum');
+Route::post('/conversation/space/{space_uid}/mate/{mate_uid}', [InboxMateSpaceController::class, 'storeSpacePOV'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
 
 Route::get('/conversation/hub/{uid}', [InboxHubController::class, 'showConversation'])->middleware('auth:sanctum');
 
-Route::post('/conversation/hub/{uid}', [InboxHubController::class, 'store'])->middleware('auth:sanctum');
+Route::post('/conversation/hub/{uid}', [InboxHubController::class, 'store'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
 
 Route::get('/my-bookmarks', function() {

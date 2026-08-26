@@ -20,35 +20,35 @@
 
         <div style="height:20px;"></div>
 
-        <span v-if="mate.twitter != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.twitter" target="_blank" rel="nofollow noopener"><icons :iconName="'twitter'" /></a></div>
+        <span v-if="safeExternalUrl(mate.twitter)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.twitter)" target="_blank" rel="nofollow noopener"><icons :iconName="'twitter'" /></a></div>
         </span>
-        <span v-if="mate.facebook != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.facebook" target="_blank" rel="nofollow noopener"><icons :iconName="'facebook'" /></a></div>
+        <span v-if="safeExternalUrl(mate.facebook)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.facebook)" target="_blank" rel="nofollow noopener"><icons :iconName="'facebook'" /></a></div>
         </span>
-        <span v-if="mate.instagram != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.instagram" target="_blank" rel="nofollow noopener"><icons :iconName="'instagram'" /></a></div>
+        <span v-if="safeExternalUrl(mate.instagram)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.instagram)" target="_blank" rel="nofollow noopener"><icons :iconName="'instagram'" /></a></div>
         </span>
-        <span v-if="mate.pinterest != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.pinterest" target="_blank" rel="nofollow noopener"><icons :iconName="'pinterest'" /></a></div>
+        <span v-if="safeExternalUrl(mate.pinterest)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.pinterest)" target="_blank" rel="nofollow noopener"><icons :iconName="'pinterest'" /></a></div>
         </span>
-        <span v-if="mate.github != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.github" target="_blank" rel="nofollow noopener"><icons :iconName="'github'" /></a></div>
+        <span v-if="safeExternalUrl(mate.github)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.github)" target="_blank" rel="nofollow noopener"><icons :iconName="'github'" /></a></div>
         </span>
-        <span v-if="mate.youtube != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.youtube" target="_blank" rel="nofollow noopener"><icons :iconName="'youtube'" /></a></div>
+        <span v-if="safeExternalUrl(mate.youtube)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.youtube)" target="_blank" rel="nofollow noopener"><icons :iconName="'youtube'" /></a></div>
         </span>
-        <span v-if="mate.tiktok != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.tiktok" target="_blank" rel="nofollow noopener"><icons :iconName="'tiktok'" /></a></div>
+        <span v-if="safeExternalUrl(mate.tiktok)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.tiktok)" target="_blank" rel="nofollow noopener"><icons :iconName="'tiktok'" /></a></div>
         </span>
-        <span v-if="mate.linkedin != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.linkedin" target="_blank" rel="nofollow noopener"><icons :iconName="'linkedin'" /></a></div>
+        <span v-if="safeExternalUrl(mate.linkedin)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.linkedin)" target="_blank" rel="nofollow noopener"><icons :iconName="'linkedin'" /></a></div>
         </span>
-        <span v-if="mate.substack != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.substack" target="_blank" rel="nofollow noopener"><icons :iconName="'substack'" /></a></div>
+        <span v-if="safeExternalUrl(mate.substack)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.substack)" target="_blank" rel="nofollow noopener"><icons :iconName="'substack'" /></a></div>
         </span>
-        <span v-if="mate.medium != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="mate.medium" target="_blank" rel="nofollow noopener"><icons :iconName="'medium'" /></a></div>
+        <span v-if="safeExternalUrl(mate.medium)">
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.medium)" target="_blank" rel="nofollow noopener"><icons :iconName="'medium'" /></a></div>
         </span>
 
 
@@ -192,6 +192,31 @@ function formatTimestamp(timestamp) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+function safeExternalUrl(url) {
+  if (!url) {
+    return '';
+  }
+
+  let value = String(url).trim();
+  if (!value) {
+    return '';
+  }
+
+  if (!/^https?:\/\//i.test(value)) {
+    value = 'https://' + value;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '';
+    }
+    return parsed.href;
+  } catch (error) {
+    return '';
+  }
 }
 
 const fetchMate = async () => {

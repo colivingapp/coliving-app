@@ -12,8 +12,7 @@ use App\Models\InboxMateSpace;
 use App\Models\InboxJoinRequest;
 use App\Models\InboxMessage;
 
-use App\Models\SettingsNotification;
-
+use App\Services\ChatAuthorization;
 use App\Services\EmailService;
 use App\Models\Log;
 
@@ -21,14 +20,23 @@ class InboxJoinRequestController extends Controller
 {
     public function store(Request $request, $uid)
     {
+        $content = ChatAuthorization::validatedContent($request);
+
         $sender = $request->user();
         $sender_id = $sender->id;
-        $senderMate = Mate::where('user_id', $sender_id)->select('uid', 'name', 'username')->firstOrFail();
+        $senderMate = Mate::where('user_id', $sender_id)->select('uid', 'name', 'username')->first();
+        if (!$senderMate) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
         $sender_uid = $senderMate->uid;
+
+        $space = ChatAuthorization::spaceByUid($uid);
+        if (!$space) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
 
         $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
         
-        // If the conversation does not exist, create it
         if (!$conversation) {
             $conv_uid = uniqid();
 
@@ -39,27 +47,21 @@ class InboxJoinRequestController extends Controller
             ]);
         }
         else {
-            $conv_uid = $conversation['uid'];
-
-            if ($conversation['user1'] == $sender_uid) {
-                $conversation->user1_checked = now();
-            } else {
-                $conversation->user2_checked = now();
-            }
-            $conversation->save();
+            $conv_uid = $conversation->uid;
         }
 
-        // Insert the new message
+        ChatAuthorization::touchConversation($conversation, $sender_uid);
+
         $message = InboxMessage::create([
             'conversation_uid' => $conv_uid,
             'sender_uid' => $sender_uid,
-            'content' => $request->content,
+            'content' => $content,
         ]);
 
-        // Update any existing join requests to 'expired'
         InboxJoinRequest::where('mate_id', $sender_id)
-        ->where('status', 'pending')
-        ->update(['status' => 'expired']);
+            ->where('space_uid', $uid)
+            ->where('status', 'pending')
+            ->update(['status' => 'expired']);
 
         // store join request
         $joinRequest = new InboxJoinRequest;
@@ -78,8 +80,8 @@ class InboxJoinRequestController extends Controller
 
         $participants[$sender_uid] = Mate::where('uid', $sender_uid)->select('name', 'username', 'avatar')->first();
         $participants[$sender_uid]['type'] = 'mate';
-        $participants[$uid] = Mate::where('uid', $sender_uid)->select('name', 'username', 'avatar')->first();
-        $participants[$uid]['type'] = 'mate';
+        $participants[$uid] = Space::where('uid', $uid)->select('name', 'photo')->first();
+        $participants[$uid]['type'] = 'space';
      
         // $space_name = Space::where('uid', $uid)->value('name');
         $space = Space::where('uid', $uid)->select('name', 'user_id', 'claimed', 'email')->first();
@@ -117,7 +119,7 @@ class InboxJoinRequestController extends Controller
         $data = [
             'name' => $space_name,
             'uid' => $uid,
-            'request_message' => (string)$request->content,
+            'request_message' => $content,
             'from_name' => $from_name,
             'from_email' => $sender->email,
             'from_profile_url' => 'https://coliving.app/mate/'.$sender_uid,
@@ -129,7 +131,7 @@ class InboxJoinRequestController extends Controller
             'name' => $space_name,
             'uid' => $uid,
             'claimed' => (bool)$space->claimed,
-            'request_message' => (string)$request->content,
+            'request_message' => $content,
         ]);
 
         $user = User::with('settingsNotification')->find($space_user_id);
@@ -167,34 +169,33 @@ class InboxJoinRequestController extends Controller
 
     public function decline(Request $request, $id, $mate_uid)
     {
-        $host_id = $request->user()->id;
-
         $jr = InboxJoinRequest::where('id', $id)->first();
-        if (empty($jr)) { 
-            return('join request does not exist'); 
+        if (empty($jr)) {
+            return response()->json(['message' => 'Join request does not exist'], 404);
         }
 
-        // return([$host_id, $jr->mate_uid, $mate_uid]);
-
-        if ($jr && $jr->mate_uid == $mate_uid) {
-            $jr->status = 'declined';
-            $jr->save();
+        $space = Space::where('uid', $jr->space_uid)->first();
+        if (!$space || (int) $space->user_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // Send email
-        $space = Space::where('uid', $jr->space_uid)->select('name')->first();
+        if ($jr->mate_uid !== $mate_uid) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        if ($jr->status !== 'pending') {
+            return response()->json(['message' => 'Join request is not pending'], 409);
+        }
+
+        $jr->status = 'declined';
+        $jr->save();
 
         $to = User::where('id', $jr->mate_id)->value('email');
-        $template = 'join_request_declined';
-
-        $data = [
+        $emailService = new EmailService();
+        $emailService->sendEmail($to, 'Join Request Declined', 'join_request_declined', [
             'name' => $space->name,
             'uid' => $jr->space_uid
-        ];
-
-        $emailService = new EmailService();
-        $emailService->sendEmail($to, 'Join Request Declined', $template, $data);
-
+        ]);
 
         Log::create([
             'user_id' => $jr->mate_id,
@@ -203,29 +204,32 @@ class InboxJoinRequestController extends Controller
             'action' => 'join request declined',
         ]);
 
-        return('success');
+        return response()->json(['message' => 'success'], 200);
     }
     
     public function accept(Request $request, $id)
     {
-        $host_id = $request->user()->id;
-
         $jr = InboxJoinRequest::where('id', $id)->first();
-        if (empty($jr)) { 
-            return('join request does not exist'); 
+        if (empty($jr)) {
+            return response()->json(['message' => 'Join request does not exist'], 404);
         }
 
-        // $space_user_id = Space::where('uid', $jr->space_uid)->value('user_id');
-        $space = Space::where('uid', $jr->space_uid)->select('user_id', 'name')->first();
-        $space_user_id = $space->user_id;
-        
+        $space = Space::where('uid', $jr->space_uid)->select('user_id', 'name', 'uid')->first();
+        if (!$space) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if ((int) $request->user()->id !== (int) $space->user_id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        if ($jr->status !== 'pending') {
+            return response()->json(['message' => 'Join request is not pending'], 409);
+        }
+
         $isJoined = SpaceMate::where('space_uid', $jr->space_uid)->where('user_id', $jr->mate_id)->where('status', 'active')->first();
         if (!empty($isJoined)) {
-            return('already joined');
-        }
-            
-        if ( $host_id != $space_user_id) {
-            return('only the owner can approve join req');
+            return response()->json(['message' => 'Already joined'], 409);
         }
 
         $jr->status = 'accepted';
@@ -260,6 +264,6 @@ class InboxJoinRequestController extends Controller
             'action' => 'join request accepted',
         ]);
 
-        return('success');
+        return response()->json(['message' => 'success'], 200);
     }
 }

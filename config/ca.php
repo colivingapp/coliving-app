@@ -7,5 +7,8 @@ return [
     'ga_site_id' => env('GA_SITE_ID', ''),
     'example_space_uid' => env('EXAMPLE_SPACE_UID'),
     'google_api_key' => env('GOOGLE_API_KEY'),
-    'admins' => array_map('intval', explode(',', env('ADMINS', ''))),
+    'admins' => array_values(array_filter(
+        array_map('intval', explode(',', (string) env('ADMINS', ''))),
+        fn (int $id) => $id > 0
+    )),
 ];

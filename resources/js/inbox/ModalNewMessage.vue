@@ -164,6 +164,7 @@ const sendMessage = () => {
     })
     .catch(error => {
       console.error(error);
+      buttonClicked.value = false;
     });
 };
 </script>

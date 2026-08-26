@@ -28,6 +28,24 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('chat-message', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('join-request', function (Request $request) {
+            $userKey = $request->user()?->id ?: $request->ip();
+            $spaceKey = (string) $request->route('uid');
+
+            return [
+                Limit::perMinute(5)->by($userKey.'|'.$spaceKey),
+                Limit::perHour(20)->by($userKey),
+            ];
+        });
+
+        RateLimiter::for('space-claim', function (Request $request) {
+            return Limit::perHour(5)->by($request->user()?->id ?: $request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

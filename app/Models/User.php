@@ -31,6 +31,9 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_confirmed_at',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
     ];
 
     /**
@@ -56,5 +59,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function settingsNotification()
     {
         return $this->hasOne(SettingsNotification::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array((int) $this->id, config('ca.admins', []), true);
     }
 }

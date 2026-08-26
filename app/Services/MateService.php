@@ -7,7 +7,6 @@ use App\Models\Space;
 use App\Models\InboxMateMate;
 use App\Models\InboxMateSpace;
 use App\Http\Controllers\SpaceController;
-use Illuminate\Support\Facades\Log;
 
 class MateService
 {
@@ -20,8 +19,6 @@ class MateService
 
     public function getMateWithBookmarks($userId)
     {
-        Log::info('🔥 getMateWithBookmarks was called', ['userId' => $userId]);
-
         $mate = Mate::with(['bookmarks' => function ($query) {
             $query->select('user_id', 'space_uid');
         }])->where('user_id', $userId)->first();
@@ -30,60 +27,65 @@ class MateService
 
         $mate->bookmarks = collect($mate->bookmarks)->pluck('space_uid');
 
-        // ✅ Spaces the user joined (coliving), but these should NOT be used for inbox red dot
         $joinedSpaces = $this->spaceController->myColivingSpaces();
         $mate->myColivingSpaces = $joinedSpaces[0];
 
-        // ✅ Spaces the user OWNS
-        $ownedSpaces = Space::where('user_id', $userId)->pluck('uid')->toArray();
-
+        $ownedSpaces = Space::where('user_id', $userId)->pluck('uid');
         $userUid = $mate->uid;
-        $validUserUids = Mate::pluck('uid')->toArray();
-        $validSpaceUids = Space::pluck('uid')->toArray();
 
-        // ✅ PART 1: Personal (mate-to-mate)
         $hasUnreadMateMate = InboxMateMate::where(function ($q) use ($userUid) {
             $q->where(function ($sub) use ($userUid) {
                 $sub->where('user1', $userUid)
                     ->where(function ($cond) {
                         $cond->whereNull('user1_checked')
-                            ->orWhereRaw('updated_at > user1_checked');
+                            ->orWhereColumn('updated_at', '>', 'user1_checked');
+                    })
+                    ->whereExists(function ($exists) {
+                        $exists->selectRaw('1')
+                            ->from('mates')
+                            ->whereColumn('mates.uid', 'inbox_mate_mate.user2');
                     });
             })->orWhere(function ($sub) use ($userUid) {
                 $sub->where('user2', $userUid)
                     ->where(function ($cond) {
                         $cond->whereNull('user2_checked')
-                            ->orWhereRaw('updated_at > user2_checked');
+                            ->orWhereColumn('updated_at', '>', 'user2_checked');
+                    })
+                    ->whereExists(function ($exists) {
+                        $exists->selectRaw('1')
+                            ->from('mates')
+                            ->whereColumn('mates.uid', 'inbox_mate_mate.user1');
                     });
             });
-        })
-        ->where(function ($q) use ($userUid, $validUserUids) {
-            $q->where('user1', $userUid)->whereIn('user2', $validUserUids)
-              ->orWhere('user2', $userUid)->whereIn('user1', $validUserUids);
-        })
-        ->exists();
+        })->exists();
 
-        // ✅ PART 2: User’s personal convo with a space (stored in inbox_mate_space)
         $hasUnreadSpaceConvo = InboxMateSpace::where('user1', $userUid)
             ->where(function ($q) {
                 $q->whereNull('user1_checked')
-                  ->orWhereRaw('updated_at > user1_checked');
+                    ->orWhereColumn('updated_at', '>', 'user1_checked');
             })
-            ->whereIn('user2', $validSpaceUids)
+            ->whereExists(function ($exists) {
+                $exists->selectRaw('1')
+                    ->from('spaces')
+                    ->whereColumn('spaces.uid', 'inbox_mate_space.user2');
+            })
             ->exists();
 
-        // 🔴 Combine both for Personal inbox red dot
         $mate->hasUnreadPersonal = $hasUnreadMateMate || $hasUnreadSpaceConvo;
 
-        // ✅ SPACES UNREAD (shown in "My Spaces" for space *owners*)
-        $mate->hasUnreadSpaces = InboxMateSpace::whereIn('user2', $ownedSpaces)
-            ->where(function ($q) {
-                $q->whereNull('user2_checked')
-                  ->orWhereRaw('updated_at > user2_checked');
-            })
-            ->whereIn('user1', $validUserUids)
-            ->whereIn('user2', $validSpaceUids)
-            ->exists();
+        $mate->hasUnreadSpaces = $ownedSpaces->isEmpty()
+            ? false
+            : InboxMateSpace::whereIn('user2', $ownedSpaces)
+                ->where(function ($q) {
+                    $q->whereNull('user2_checked')
+                        ->orWhereColumn('updated_at', '>', 'user2_checked');
+                })
+                ->whereExists(function ($exists) {
+                    $exists->selectRaw('1')
+                        ->from('mates')
+                        ->whereColumn('mates.uid', 'inbox_mate_space.user1');
+                })
+                ->exists();
 
         return $mate;
     }

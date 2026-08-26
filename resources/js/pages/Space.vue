@@ -40,10 +40,28 @@ function formatTimestamp(timestamp) {
 
 // Helper function to ensure external URLs are absolute
 function formatExternalUrl(url) {
-  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-    return `https://${url}`;
+  if (!url) {
+    return '';
   }
-  return url;
+
+  let value = String(url).trim();
+  if (!value) {
+    return '';
+  }
+
+  if (!/^https?:\/\//i.test(value)) {
+    value = 'https://' + value;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '';
+    }
+    return parsed.href;
+  } catch (error) {
+    return '';
+  }
 }
 
 let isLoaded = ref(false);

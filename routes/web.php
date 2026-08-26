@@ -126,7 +126,7 @@ Route::get('/space/{uid}/edit', function ($uid) {
         $space = Space::where('uid', $uid)->first();
         $user_id = auth()->user()->id;
         
-        if ((int)$space->user_id !== $user_id && $user_id != 1) {
+        if ((int)$space->user_id !== $user_id && !auth()->user()->isAdmin()) {
             abort(403);
         }
         $mateService = app(MateService::class);

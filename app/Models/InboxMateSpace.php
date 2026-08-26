@@ -18,16 +18,16 @@ class InboxMateSpace extends Model
     // Define the relationships
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(InboxMessage::class, 'conversation_uid', 'uid');
     }
 
     public function mate()
     {
-        return $this->belongsTo(Mate::class);
+        return $this->belongsTo(Mate::class, 'user1', 'uid');
     }
 
     public function space()
     {
-        return $this->belongsTo(Space::class);
+        return $this->belongsTo(Space::class, 'user2', 'uid');
     }
 }

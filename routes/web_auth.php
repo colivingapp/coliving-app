@@ -149,7 +149,7 @@ Route::middleware('auth:sanctum')->post('/user/delete', function (Request $reque
 
     // return($request['user_id']);
 
-    if ($request['user_id'] && $id_user == 1) {
+    if ($request['user_id'] && Auth::user()->isAdmin()) {
         // delete user as admin
         $user = User::find($user_id);
         $id_user = $user_id;

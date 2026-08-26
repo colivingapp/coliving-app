@@ -13,6 +13,7 @@ class SpaceMate extends Model
 
     protected $fillable = [
         'space_uid',
+        'user_id',
         'mate_uid',
         'joined_at',
         'left_at',
