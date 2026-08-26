@@ -1,24 +1,35 @@
 <template>
-  <router-link :to="'/space/' + space.uid" class="space-card">
-    <div class="space-card-photo">
-      <img
-        v-if="space.first_photo"
-        :src="'/storage/spaces/' + space.first_photo"
-        class="space-card-img"
-        :alt="space.name"
-      >
-      <div v-else class="space-card-placeholder">
-        <img src="/img/coliving-app-logo-symbol.png" alt="">
+  <div class="space-card">
+    <router-link :to="'/space/' + space.uid" class="space-card-link">
+      <div class="space-card-photo">
+        <img
+          v-if="space.first_photo"
+          :src="'/storage/spaces/' + space.first_photo"
+          class="space-card-img"
+          :alt="space.name"
+        >
+        <div v-else class="space-card-placeholder">
+          <img src="/img/coliving-app-logo-symbol.png" alt="">
+        </div>
+        <span v-if="space.country_code" class="space-card-flag">
+          <span :class="'fi fi-' + space.country_code.toLowerCase()"></span>
+        </span>
       </div>
-      <span v-if="space.country_code" class="space-card-flag">
-        <span :class="'fi fi-' + space.country_code.toLowerCase()"></span>
-      </span>
+      <div class="space-card-body" :class="{ 'space-card-body-actions': manageable }">
+        <p class="space-card-title">{{ space.name }}</p>
+        <p v-if="space.address" class="space-card-address">{{ space.address }}</p>
+        <p v-else-if="space.country" class="space-card-address">{{ space.country }}</p>
+      </div>
+    </router-link>
+    <div v-if="manageable" class="space-card-actions">
+      <router-link :to="'/space/' + space.uid + '/edit'">
+        <button type="button" class="button">Edit</button>
+      </router-link>
+      <router-link :to="'/space/' + space.uid + '/dashboard'">
+        <button type="button" class="button">Manage</button>
+      </router-link>
     </div>
-    <div class="space-card-body">
-      <p class="space-card-title">{{ space.name }}</p>
-      <p v-if="space.address" class="space-card-address">{{ space.address }}</p>
-    </div>
-  </router-link>
+  </div>
 </template>
 
 <script setup>
@@ -28,6 +39,10 @@ defineProps({
   space: {
     type: Object,
     required: true,
+  },
+  manageable: {
+    type: Boolean,
+    default: false,
   },
 });
 </script>
@@ -54,6 +69,35 @@ defineProps({
   box-shadow: 0 4px 10px rgba(0, 0, 0, .1), 0 14px 28px rgba(0, 0, 0, .09);
   text-decoration: none;
   color: inherit;
+}
+
+.space-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.space-card-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.space-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.space-card-actions .button {
+  width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.space-card-actions a {
+  flex: 1;
+  min-width: 0;
 }
 
 .space-card-photo {
@@ -106,6 +150,10 @@ defineProps({
 
 .space-card-body {
   padding: 12px 14px 14px;
+}
+
+.space-card-body-actions {
+  padding-bottom: 10px;
 }
 
 .space-card-title {

@@ -718,16 +718,27 @@ Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
     }
     
     // Query and return data from join_requests table
-    $joinRequests = DB::table('join_requests')->where('space_uid', $space_uid)->get();
+    $joinRequests = DB::table('join_requests')->where('space_uid', $space_uid)->orderByDesc('created_at')->get();
 
-    // return($claim);
-    
-    if (!empty($joinRequests)) {
-        return($joinRequests);
-    }
-    else {
-        return(false);
-    }
+    $mateIds = $joinRequests->pluck('mate_id')->unique()->values();
+
+    $matesData = Mate::whereIn('user_id', $mateIds)
+        ->select('user_id', 'uid', 'name', 'username', 'avatar', 'profile_pic', 'photo')
+        ->get()
+        ->keyBy('user_id');
+
+    $joinRequests = $joinRequests->map(function ($jr) use ($matesData) {
+        $jr = (array) $jr;
+        $mate = $matesData->get($jr['mate_id']);
+        $jr['mate_name'] = $mate->name ?? null;
+        $jr['mate_username'] = $mate->username ?? null;
+        $jr['mate_avatar'] = $mate->avatar ?? null;
+        $jr['mate_profile_pic'] = $mate->profile_pic ?? null;
+        $jr['mate_photo'] = $mate->photo ?? null;
+        return $jr;
+    });
+
+    return response()->json($joinRequests->values());
 
 })->middleware('auth:sanctum');
 

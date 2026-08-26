@@ -94,7 +94,7 @@ class SpaceController extends Controller
 
     public function mySpaces()
     {
-        $spaces = Space::select('name', 'uid', 'country', 'country_slug', 'country_code', 'photo')
+        $spaces = Space::select('name', 'uid', 'country', 'country_slug', 'country_code', 'address', 'photo')
             ->where('user_id', auth()->user()->id)
             ->limit(100)
             ->get();
