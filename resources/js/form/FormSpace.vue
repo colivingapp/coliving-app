@@ -8,7 +8,7 @@
   </div>
   <div v-else>
     <div v-if="!userLoggedIn" class="content">
-      <h1>Add New Coliving Space</h1>
+      <h1>New Coliving Space</h1>
       Add a new coliving space to Coliving App to enhance your space's visibility, connect directly with potential guests, and manage coliving experiences through our platform.
 
       <div style="height:30px;"></div>
@@ -24,14 +24,35 @@
       <router-link to="/register"><button class="auth-button">Sign Up</button></router-link> 
     </div>
     <div v-else class="content">
-      <h1 v-if="pageType == 'create'">Add New Coliving Space</h1>
+      <h1 v-if="pageType == 'create'">New Coliving Space</h1>
       <h1 v-else>Edit Coliving Space</h1>
       
       <div style="height:10px;"></div>
 
       <form @submit.prevent="submitForm">
 
-        <div class="form-section">
+        <div v-if="pageType == 'create'" class="space-create-progress">
+          <div
+            v-for="(step, index) in createSteps"
+            :key="step.key"
+            class="space-create-step"
+            :class="{ active: activeCreateStep === step.key, complete: index < activeCreateStepIndex }"
+          >
+            <span class="space-create-step-number">{{ index + 1 }}</span>
+            <span>{{ step.label }}</span>
+          </div>
+        </div>
+
+        <div v-if="errors" class="form-error-summary">
+          <span v-if="error1">* The name is required. Please enter your space name to proceed.<br></span>
+          <span v-if="error6">* Category is required. Please select a category for your space.<br></span>
+          <span v-if="error2">* Email address is required for communication. Please enter your space email.<br></span>
+          <span v-if="error3">* Country is required. Please select the country where your space is located.<br></span>
+          <span v-if="error4">* Address is required. Please enter the address of your space.</span>
+          <span v-if="error5">* Unknown error. Please contact site admin.</span>
+        </div>
+
+        <div class="form-section" v-if="isSectionVisible('general')">
           <span v-if="userId == 1 && pageType == 'create' && true == false">
             <textarea v-model="json"></textarea>
           </span>
@@ -87,7 +108,7 @@
           </div>
         </div>
 
-        <div class="form-section">
+        <div class="form-section" v-if="isSectionVisible('contact')">
           <h2>Contacts</h2>
 
           <div class="form-group">
@@ -106,10 +127,97 @@
             <label for="whatsapp">WhatsApp</label>
             <input type="text" id="whatsapp" v-model="whatsapp" class="input">
           </div>
+
+          <div v-if="pageType == 'create'" class="space-create-expand">
+            <button type="button" class="button-function" @click="showCreateSocials = !showCreateSocials">
+              {{ showCreateSocials ? 'Hide social networks' : 'Add social networks' }}
+            </button>
+          </div>
+
+          <div v-if="pageType == 'create' && showCreateSocials" class="form-grid space-social-grid">
+            <div class="form-group">
+              <label class="form-label social-field-label" for="twitter">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="twitter" /></span>
+                Twitter
+              </label>
+              <input type="text" id="twitter" v-model="twitter" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="facebook">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="facebook" /></span>
+                Facebook
+              </label>
+              <input type="text" id="facebook" v-model="facebook" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="instagram">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="instagram" /></span>
+                Instagram
+              </label>
+              <input type="text" id="instagram" v-model="instagram" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="youtube">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="youtube" /></span>
+                YouTube
+              </label>
+              <input type="text" id="youtube" v-model="youtube" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="tiktok">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="tiktok" /></span>
+                TikTok
+              </label>
+              <input type="text" id="tiktok" v-model="tiktok" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="pinterest">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="pinterest" /></span>
+                Pinterest
+              </label>
+              <input type="text" id="pinterest" v-model="pinterest" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="linkedin">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="linkedin" /></span>
+                LinkedIn
+              </label>
+              <input type="text" id="linkedin" v-model="linkedin" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="linktree">Linktree</label>
+              <input type="text" id="linktree" v-model="linktree" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="telegram">Telegram</label>
+              <input type="text" id="telegram" v-model="telegram" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="github">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="github" /></span>
+                GitHub
+              </label>
+              <input type="text" id="github" v-model="github" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="substack">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="substack" /></span>
+                Substack
+              </label>
+              <input type="text" id="substack" v-model="substack" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="medium">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="medium" /></span>
+                Medium
+              </label>
+              <input type="text" id="medium" v-model="medium" class="input">
+            </div>
+          </div>
         </div>
 
 
-        <div class="form-section">
+        <div class="form-section" v-if="isSectionVisible('location')">
           <h2>Location</h2>
           
           <label>Location <span style="color:red;">*</span></label>
@@ -127,7 +235,7 @@
         </div>
 
 
-        <div class="form-section">
+        <div class="form-section" v-if="isSectionVisible('photos')">
           <h2>Photos</h2>
 
           <div>
@@ -154,53 +262,85 @@
         <div class="form-section" v-if="pageType == 'edit'">
           <h2>Social networks</h2>
 
-          <div class="form-group">
-            <label for="twitter">Twitter</label>
-            <input type="text" id="twitter" v-model="twitter" class="input">
-          </div>
-          <div class="form-group">
-            <label for="facebook">Facebook</label>
-            <input type="text" id="facebook" v-model="facebook" class="input">
-          </div>
-          <div class="form-group">
-            <label for="instagram">Instagram</label>
-            <input type="text" id="instagram" v-model="instagram" class="input">
-          </div>
-          <div class="form-group">
-            <label for="YouTube">YouTube</label>
-            <input type="text" id="youtube" v-model="youtube" class="input">
-          </div>
-          <div class="form-group">
-            <label for="tiktok">TikTok</label>
-            <input type="text" id="tiktok" v-model="tiktok" class="input">
-          </div>
-          <div class="form-group">
-            <label for="pinterest">Pinterest</label>
-            <input type="text" id="pinterest" v-model="pinterest" class="input">
-          </div>
-          <div class="form-group">
-            <label for="linkedin">LinkedIn</label>
-            <input type="text" id="linkedin" v-model="linkedin" class="input">
-          </div>
-          <div class="form-group">
-            <label for="linktree">Linktree</label>
-            <input type="text" id="linktree" v-model="linktree" class="input">
-          </div>
-          <div class="form-group">
-            <label for="telegram">Telegram</label>
-            <input type="text" id="telegram" v-model="telegram" class="input">
-          </div>
-          <div class="form-group">
-            <label for="github">GitHub</label>
-            <input type="text" id="github" v-model="github" class="input">
-          </div>
-          <div class="form-group">
-            <label for="substack">Substack</label>
-            <input type="text" id="substack" v-model="substack" class="input">
-          </div>
-          <div class="form-group">
-            <label for="medium">Medium</label>
-            <input type="text" id="medium" v-model="medium" class="input">
+          <div class="form-grid space-social-grid">
+            <div class="form-group">
+              <label class="form-label social-field-label" for="twitter">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="twitter" /></span>
+                Twitter
+              </label>
+              <input type="text" id="twitter" v-model="twitter" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="facebook">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="facebook" /></span>
+                Facebook
+              </label>
+              <input type="text" id="facebook" v-model="facebook" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="instagram">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="instagram" /></span>
+                Instagram
+              </label>
+              <input type="text" id="instagram" v-model="instagram" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="youtube">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="youtube" /></span>
+                YouTube
+              </label>
+              <input type="text" id="youtube" v-model="youtube" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="tiktok">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="tiktok" /></span>
+                TikTok
+              </label>
+              <input type="text" id="tiktok" v-model="tiktok" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="pinterest">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="pinterest" /></span>
+                Pinterest
+              </label>
+              <input type="text" id="pinterest" v-model="pinterest" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="linkedin">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="linkedin" /></span>
+                LinkedIn
+              </label>
+              <input type="text" id="linkedin" v-model="linkedin" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="linktree">Linktree</label>
+              <input type="text" id="linktree" v-model="linktree" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="telegram">Telegram</label>
+              <input type="text" id="telegram" v-model="telegram" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="github">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="github" /></span>
+                GitHub
+              </label>
+              <input type="text" id="github" v-model="github" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="substack">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="substack" /></span>
+                Substack
+              </label>
+              <input type="text" id="substack" v-model="substack" class="input">
+            </div>
+            <div class="form-group">
+              <label class="form-label social-field-label" for="medium">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="medium" /></span>
+                Medium
+              </label>
+              <input type="text" id="medium" v-model="medium" class="input">
+            </div>
           </div>
         </div>
 
@@ -242,7 +382,7 @@
         </div>
 
         
-        <div class="form-section">
+        <div class="form-section" v-if="pageType == 'edit'">
           <h2>Profile visibility</h2>
           <div class="form-group" style="text-align:left;">
             <input type="radio" id="public" v-model="private" value="0" style="width:13px;">
@@ -257,22 +397,12 @@
           <a v-else-if="pageType != 'create'" :href="'/space/'+username" target="_blank">View profile</a>
         </div>
 
-
-        <div v-if="errors" style="color:red;font-weight:bold;">
-          <br>
-          <br>
-          <span v-if="error1">* The name is required. Please enter your space name to proceed.<br></span>
-          <span v-if="error6">* Category is required. Please select a category for your space.<br></span>
-          <span v-if="error2">* Email address is required for communication. Please enter your space email.<br></span>
-          <span v-if="error3">* Country is required. Please select the country where your space is located.<br></span>
-          <span v-if="error4">* Address is required. Please enter the address of your space.</span>
-          <span v-if="error5">* Unknown error. Please contact site admin.</span>
-        </div>
-        
         <div style="height:20px"></div>
 
-        <div v-if="pageType == 'create'" >
-          <button type="submit" :disabled="isUpdating" class="action-button button-post">Submit</button>
+        <div v-if="pageType == 'create'" class="space-create-actions">
+          <button v-if="activeCreateStepIndex > 0" type="button" class="button space-create-back" :disabled="isUpdating" @click="previousCreateStep">Back</button>
+          <button v-if="!isLastCreateStep" type="button" class="action-button button-post" @click="nextCreateStep">Continue</button>
+          <button v-else type="submit" :disabled="isUpdating" class="action-button button-post">Submit space</button>
         </div>
         <div v-else>
           <button :disabled="isUpdating" type="submit" class="action-button button-post">Update</button>
@@ -294,6 +424,7 @@ import FormCountriesDropDown from './FormCountriesDropDown.vue';
 import FormGoogleAutoComplete from './FormGoogleAutoComplete.vue';
 import draggable from 'vuedraggable';
 import { CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
+import SocialFieldIcon from '../components/SocialFieldIcon.vue';
 
 export default {
   components: {
@@ -301,11 +432,14 @@ export default {
     FormCountriesDropDown,
     draggable,
     FormGoogleAutoComplete,
+    SocialFieldIcon,
   },
   data() {
     return {
       isUpdating: false,
       json: '',
+      activeCreateStep: 'general',
+      showCreateSocials: false,
 
       uid: '',
       name: '',
@@ -391,6 +525,20 @@ export default {
       } else {
         return 'create';
       }
+    },
+    createSteps() {
+      return [
+        { key: 'general', label: 'General info' },
+        { key: 'contact', label: 'Contact' },
+        { key: 'location', label: 'Location' },
+        { key: 'photos', label: 'Photos' },
+      ];
+    },
+    activeCreateStepIndex() {
+      return this.createSteps.findIndex(step => step.key === this.activeCreateStep);
+    },
+    isLastCreateStep() {
+      return this.activeCreateStepIndex === this.createSteps.length - 1;
     },
     categoryDescription() {
       if (!this.category) return '';
@@ -560,6 +708,70 @@ export default {
   },
 
   methods: {
+    isSectionVisible(section) {
+      return this.pageType == 'edit' || this.activeCreateStep === section;
+    },
+
+    clearValidationErrors() {
+      this.errors = false;
+      this.error1 = false;
+      this.error2 = false;
+      this.error3 = false;
+      this.error4 = false;
+      this.error5 = false;
+      this.error6 = false;
+    },
+
+    validateCreateStep(step) {
+      this.clearValidationErrors();
+
+      if (step === 'general') {
+        if (!this.name) {
+          this.errors = true;
+          this.error1 = true;
+          return false;
+        }
+
+        if (!this.category) {
+          this.errors = true;
+          this.error6 = true;
+          return false;
+        }
+      }
+
+      if (step === 'contact' && !this.email) {
+        this.errors = true;
+        this.error2 = true;
+        return false;
+      }
+
+      if (step === 'location' && !this.address) {
+        this.errors = true;
+        this.error4 = true;
+        return false;
+      }
+
+      return true;
+    },
+
+    nextCreateStep() {
+      if (!this.validateCreateStep(this.activeCreateStep)) return;
+
+      const nextStep = this.createSteps[this.activeCreateStepIndex + 1];
+      if (nextStep) {
+        this.activeCreateStep = nextStep.key;
+        this.clearValidationErrors();
+      }
+    },
+
+    previousCreateStep() {
+      const previousStep = this.createSteps[this.activeCreateStepIndex - 1];
+      if (previousStep) {
+        this.activeCreateStep = previousStep.key;
+        this.clearValidationErrors();
+      }
+    },
+
     updatePhotoPositions(event) {
       // Update 'pos' property based on the new order
       this.imageUrls.forEach((photo, index) => {
@@ -600,11 +812,16 @@ export default {
 
     submitForm() {
       // Form validation
-      this.errors = false;
-      this.error1 = false;
-      this.error2 = false;
-      this.error3 = false;
-      this.error4 = false;
+      this.clearValidationErrors();
+
+      if (this.pageType == 'create') {
+        for (const step of ['general', 'contact', 'location']) {
+          if (!this.validateCreateStep(step)) {
+            this.activeCreateStep = step;
+            return;
+          }
+        }
+      }
       
       if (!this.name) {
         this.errors = true;
@@ -827,3 +1044,118 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.space-create-progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.space-create-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #e4e4e4;
+  border-radius: 999px;
+  background: #fff;
+  color: #555;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.space-create-step.active {
+  border-color: #00abff;
+  background: aliceblue;
+  color: #0086da;
+}
+
+.space-create-step.complete {
+  border-color: #bfe8fb;
+  color: #0086da;
+}
+
+.space-create-step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f1f1;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.space-create-step.active .space-create-step-number,
+.space-create-step.complete .space-create-step-number {
+  background: #00abff;
+  color: #fff;
+}
+
+.space-create-expand {
+  margin-top: 18px;
+}
+
+.form-error-summary {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #f2c1bd;
+  border-radius: 10px;
+  background: #fff6f5;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.space-social-grid {
+  margin-top: 12px;
+}
+
+.space-create-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.space-create-actions .action-button,
+.space-create-actions .button {
+  margin: 0;
+}
+
+.space-create-back {
+  background: transparent;
+}
+
+@media screen and (max-width: 700px) {
+  .space-create-progress {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .space-create-step {
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px;
+    border-radius: 999px;
+  }
+
+  .space-create-step span:last-child {
+    display: none;
+  }
+
+  .space-create-actions {
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .space-create-actions .button-post {
+    flex: 1;
+  }
+}
+</style>

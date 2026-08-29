@@ -920,51 +920,65 @@ select {
 }
 
 .form-section input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
   background: #d4d4d4;
 }
 
 .form-section input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  border: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border: 3px solid #fff;
   border-radius: 50%;
-  background: #555;
-  box-shadow: 0 0 0 0 transparent;
-  transition: box-shadow 0.15s ease;
+  background: linear-gradient(145deg, #8ecac8 0%, #55b2b0 52%, #00abff 100%);
+  box-shadow: 0 2px 7px rgba(0, 105, 105, .25), 0 0 0 1px rgba(0, 105, 105, .08);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .form-section input[type="range"]:hover::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(135, 201, 235, .55);
+  box-shadow: 0 2px 8px rgba(0, 105, 105, .3), 0 0 0 5px rgba(142, 202, 200, .35);
+  transform: scale(1.06);
 }
 
 .form-section input[type="range"]::-moz-range-track {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
   background: #d4d4d4;
 }
 
 .form-section input[type="range"]::-moz-range-progress {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
   background: #bdbdbd;
 }
 
 .form-section input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: none;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
   border-radius: 50%;
-  background: #555;
-  box-shadow: 0 0 0 0 transparent;
-  transition: box-shadow 0.15s ease;
+  background: linear-gradient(145deg, #8ecac8 0%, #55b2b0 52%, #00abff 100%);
+  box-shadow: 0 2px 7px rgba(0, 105, 105, .25), 0 0 0 1px rgba(0, 105, 105, .08);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .form-section input[type="range"]:hover::-moz-range-thumb {
-  box-shadow: 0 0 0 3px rgba(135, 201, 235, .55);
+  box-shadow: 0 2px 8px rgba(0, 105, 105, .3), 0 0 0 5px rgba(142, 202, 200, .35);
+  transform: scale(1.06);
+}
+
+.form-section input[type="range"]:focus-visible {
+  outline: none;
+}
+
+.form-section input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 2px 8px rgba(0, 105, 105, .3), 0 0 0 5px rgba(0, 171, 255, .25);
+}
+
+.form-section input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 2px 8px rgba(0, 105, 105, .3), 0 0 0 5px rgba(0, 171, 255, .25);
 }
 
 .form-section input[type="password"] {
