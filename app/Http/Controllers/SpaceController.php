@@ -7,7 +7,9 @@ use App\Models\SpacesRating;
 use App\Models\Mate;
 use App\Models\SpaceMate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Photo;
+use App\Services\ChatAuthorization;
 
 class SpaceController extends Controller
 {
@@ -166,7 +168,7 @@ class SpaceController extends Controller
 
         // fetch base space data, keyed by uid
         $spacesByUid = Space::whereIn('uid', $allUids)
-            ->select('uid', 'name', 'country_slug', 'photo')
+            ->select('uid', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo')
             ->get()
             ->keyBy('uid');
 
@@ -185,26 +187,192 @@ class SpaceController extends Controller
             return $spaces->map(function ($item) use ($spacesByUid, $photoCandidates) {
                 $space = $spacesByUid->get($item->space_uid);
                 if ($space) {
+                    $item->uid          = $space->uid;
                     $item->name         = $space->name;
+                    $item->country      = $space->country;
                     $item->country_slug = $space->country_slug;
+                    $item->country_code = $space->country_code;
+                    $item->address      = $space->address;
                     $item->first_photo  = $photoCandidates[$space->uid] ?? null;
                 } else {
-                    $item->name = $item->country_slug = $item->first_photo = null;
+                    $item->uid = $item->name = $item->country = $item->country_slug = $item->country_code = $item->address = $item->first_photo = null;
                 }
                 return $item;
             });
         };
 
+        $currentSpaces = $attach($colivingSpaces);
+        $pastSpaces = $attach($pastColivingSpaces);
+
+        $ownedSpaces = Space::where('user_id', $userId)
+            ->select('uid', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo', 'created_at')
+            ->get();
+
+        $ownedUids = $ownedSpaces->pluck('uid');
+        $ownedPhotos = DB::table('photos')
+            ->select('space_uid', 'filename', 'pos', 'id')
+            ->whereIn('space_uid', $ownedUids)
+            ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('space_uid')
+            ->map(fn ($rows) => optional($rows->first())->filename);
+
+        $activeMemberCounts = collect();
+        if ($ownedUids->isNotEmpty()) {
+            $activeMemberCounts = SpaceMate::whereIn('space_uid', $ownedUids)
+                ->where('status', 'active')
+                ->selectRaw('space_uid, COUNT(*) as members_count')
+                ->groupBy('space_uid')
+                ->pluck('members_count', 'space_uid');
+        }
+
+        $toOwnedItem = function ($space) use ($ownedPhotos) {
+            return (object) [
+                'uid' => $space->uid,
+                'space_uid' => $space->uid,
+                'name' => $space->name,
+                'country' => $space->country,
+                'country_slug' => $space->country_slug,
+                'country_code' => $space->country_code,
+                'address' => $space->address,
+                'first_photo' => $ownedPhotos[$space->uid] ?? null,
+                'joined_at' => $space->created_at,
+                'left_at' => null,
+                'role' => 'admin',
+            ];
+        };
+
+        $vacantSpaces = $ownedSpaces
+            ->filter(fn ($space) => (int) ($activeMemberCounts[$space->uid] ?? 0) === 0)
+            ->map($toOwnedItem)
+            ->values();
+
+        $ownedWithMembers = $ownedSpaces
+            ->filter(fn ($space) => (int) ($activeMemberCounts[$space->uid] ?? 0) > 0)
+            ->map($toOwnedItem)
+            ->values();
+
+        // Coliving: currently living, or admin of a space that has members
+        $currentSpaces = $ownedWithMembers
+            ->merge($currentSpaces)
+            ->unique('space_uid')
+            ->values();
+
+        // Past: left memberships (exclude spaces still shown as coliving/vacant admin)
+        $activeUids = $currentSpaces->pluck('space_uid')
+            ->merge($vacantSpaces->pluck('space_uid'))
+            ->filter()
+            ->unique();
+        $pastSpaces = $pastSpaces
+            ->reject(fn ($space) => $activeUids->contains($space->space_uid))
+            ->values();
+
+        $activityUids = $currentSpaces->pluck('space_uid')
+            ->merge($vacantSpaces->pluck('space_uid'))
+            ->merge($pastSpaces->pluck('space_uid'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $lastActivityByUid = $this->lastHubActivityBySpaceUids($activityUids);
+
+        $attachActivity = function ($spaces) use ($lastActivityByUid) {
+            return $spaces->map(function ($item) use ($lastActivityByUid) {
+                $at = $lastActivityByUid[$item->space_uid] ?? null;
+
+                if ($at instanceof \DateTimeInterface) {
+                    $at = $at->format('Y-m-d H:i:s');
+                }
+
+                $item->last_activity_at = $at;
+                return $item;
+            })->sortByDesc(function ($item) {
+                return $item->last_activity_at ?: '1970-01-01 00:00:00';
+            })->values();
+        };
+
         return [
-            $attach($colivingSpaces),
-            $attach($pastColivingSpaces),
+            $attachActivity($currentSpaces),
+            $attachActivity($pastSpaces),
+            $attachActivity($vacantSpaces),
         ];
+    }
+
+    private function lastHubActivityBySpaceUids(array $spaceUids): array
+    {
+        if (empty($spaceUids)) {
+            return [];
+        }
+
+        $latest = [];
+
+        $remember = function ($rows) use (&$latest) {
+            foreach ($rows as $uid => $at) {
+                if (!$at) {
+                    continue;
+                }
+                if (!isset($latest[$uid]) || $at > $latest[$uid]) {
+                    $latest[$uid] = $at;
+                }
+            }
+        };
+
+        if (Schema::hasTable('space_mates')) {
+            $remember(DB::table('space_mates')
+                ->whereIn('space_uid', $spaceUids)
+                ->select('space_uid', DB::raw('MAX(GREATEST(
+                    COALESCE(joined_at, created_at),
+                    COALESCE(left_at, created_at),
+                    COALESCE(updated_at, created_at)
+                )) as last_activity_at'))
+                ->groupBy('space_uid')
+                ->pluck('last_activity_at', 'space_uid'));
+        }
+
+        if (Schema::hasTable('hub_threads')) {
+            $remember(DB::table('hub_threads')
+                ->whereIn('space_uid', $spaceUids)
+                ->where('type', '!=', 'space_info')
+                ->select('space_uid', DB::raw('MAX(COALESCE(last_post_at, created_at)) as last_activity_at'))
+                ->groupBy('space_uid')
+                ->pluck('last_activity_at', 'space_uid'));
+        }
+
+        if (Schema::hasTable('hub_posts') && Schema::hasTable('hub_threads')) {
+            $remember(DB::table('hub_posts')
+                ->join('hub_threads', 'hub_threads.id', '=', 'hub_posts.hub_thread_id')
+                ->whereIn('hub_posts.space_uid', $spaceUids)
+                ->where('hub_threads.type', '!=', 'space_info')
+                ->select('hub_posts.space_uid', DB::raw('MAX(GREATEST(hub_posts.created_at, hub_posts.updated_at)) as last_activity_at'))
+                ->groupBy('hub_posts.space_uid')
+                ->pluck('last_activity_at', 'space_uid'));
+        }
+
+        if (Schema::hasTable('hub_events')) {
+            $remember(DB::table('hub_events')
+                ->whereIn('space_uid', $spaceUids)
+                ->select('space_uid', DB::raw('MAX(GREATEST(created_at, updated_at)) as last_activity_at'))
+                ->groupBy('space_uid')
+                ->pluck('last_activity_at', 'space_uid'));
+        }
+
+        if (Schema::hasTable('hub_messages')) {
+            $remember(DB::table('hub_messages')
+                ->whereIn('space_uid', $spaceUids)
+                ->select('space_uid', DB::raw('MAX(created_at) as last_activity_at'))
+                ->groupBy('space_uid')
+                ->pluck('last_activity_at', 'space_uid'));
+        }
+
+        return $latest;
     }
     
 
     public function hub($uid)
     {
-        $space = Space::where('uid', $uid)->select('uid', 'user_id', 'name', 'info', 'photo')->first();
+        $space = Space::where('uid', $uid)->select('uid', 'user_id', 'name', 'address', 'country', 'info', 'photo', 'created_at')->first();
         
         // Add first photo if space has photos (using efficient query like myColivingSpaces)
         if ($space && $space->photo) {
@@ -226,10 +394,39 @@ class SpaceController extends Controller
         }
         
         $mates = SpaceMate::where('space_uid', $uid)->where('status', 'active')->select('user_id')->get();
+        $m = [];
         foreach ($mates as $mate) {
             $m[] = $mate['user_id'];
         }
-        return ['mates' => $m, 'space' => $space];
+
+        $isAdmin = $space && auth()->check() && ChatAuthorization::isHubAdmin(auth()->user(), $space);
+        $latestMemberships = SpaceMate::where('space_uid', $uid)
+            ->orderByDesc('id')
+            ->get(['id', 'user_id', 'status'])
+            ->unique('user_id');
+        $currentMembers = $latestMemberships->where('status', 'active')->count();
+        $pastMemberships = $latestMemberships->where('status', 'left');
+        $pastUserIds = $pastMemberships->pluck('user_id')->unique()->values()->all();
+        $existingPastUserIds = $pastUserIds
+            ? Mate::whereIn('user_id', $pastUserIds)->pluck('user_id')->all()
+            : [];
+        $leftMembers = count($existingPastUserIds);
+        $deletedMembers = max(0, count($pastUserIds) - $leftMembers);
+        $pendingRequests = DB::table('join_requests')->where('space_uid', $uid)->where('status', 'pending')->count();
+
+        return [
+            'mates' => $m,
+            'space' => $space,
+            'is_admin' => $isAdmin,
+            'current_user_id' => auth()->check() ? (int) auth()->id() : null,
+            'stats' => [
+                'current_members' => $currentMembers,
+                'left_members' => $leftMembers,
+                'deleted_members' => $deletedMembers,
+                'past_members' => $leftMembers + $deletedMembers,
+                'pending_join_requests' => $pendingRequests,
+            ],
+        ];
     }
 
 

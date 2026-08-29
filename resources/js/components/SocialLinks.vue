@@ -49,7 +49,7 @@
       </a>
     </div> -->
 
-    <!-- <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
+    <div style="display:inline-block;width:24px;" class="buttons-hover">
       <a href="https://instagram.com/ColivingDotApp/" title="Instagram" target="_blank">
         <svg class="svg-button" version="1.1" viewBox="0 0 43.821 43.708" xmlns="http://www.w3.org/2000/svg">
           <g transform="translate(-154.26 -149.81)">
@@ -57,7 +57,7 @@
           </g>
         </svg>
       </a>
-    </div> -->
+    </div>
 
     <!-- <div style="display:inline-block;width:24px;margin-right:12px;" class="buttons-hover">
       <a href="https://t.me/colivingapp" title="Telegram" target="_blank">
@@ -69,7 +69,7 @@
       </a>
     </div> -->
 
-    <div style="display:inline-block;width:24px;" class="buttons-hover">
+    <!-- <div style="display:inline-block;width:24px;" class="buttons-hover">
       <a href="https://bsky.app/profile/colivingapp.bsky.social" title="Bluesky" target="_blank">
         <svg class="svg-button" viewBox="0 0 204.6 204.6">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M102.3,0C45.8,0,0,45.8,0,102.3s45.8,102.3,102.3,102.3
@@ -79,7 +79,7 @@
           c-14.7-15-7.9-30.1,18.8-34.6c-15.3,2.6-32.4-1.7-37.1-18.5c-1.4-4.8-3.7-34.7-3.7-38.7C36.3,43.6,54,49.9,64.9,58.1L64.9,58.1z"/>
         </svg>
       </a>
-    </div>
+    </div> -->
 
   </div>
 </template>

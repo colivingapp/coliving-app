@@ -1,13 +1,11 @@
 <script setup>
 import SocialLinks from '../components/SocialLinks.vue';
-import ModalFeedback from '../components/ModalFeedback.vue';
 
 import { useRoute } from 'vue-router';
 
 import { ref, watch } from 'vue';
 
 let forceFullFooter = ref(false);
-let modalFeedback = ref(false);
 
 function openFooter() {
     forceFullFooter.value = true;
@@ -47,7 +45,7 @@ watch(route, () => {
             <div style="text-align:center;">
                 Coliving App © 2026
                 <br>
-                v0.1.1-beta
+                v0.3.0-beta
 
                 
                 <!-- <br>
@@ -103,17 +101,15 @@ watch(route, () => {
                         <br>
                         <router-link to="/spaces">Spaces</router-link>
                         <br>
-                        <router-link to="/mates">Members</router-link>
+                        <router-link to="/hub">Hub</router-link>
                         <br>
                         <router-link to="/inbox">Inbox</router-link>
-                        <br>
-                        <router-link to="/account">Account</router-link>
                         
                         <br>
                         <br>
                         <router-link to="/my-spaces">My Spaces</router-link>
                         <br>
-                        <router-link to="/space/new">Add New Space</router-link>
+                        <router-link to="/space/new">New Space</router-link>
                     </div>
                     <div class="footer-column" style="grid-area: col2;">
                         <!-- <span style="font-size: 19px; color: rgb(111, 111, 111);">Menu</span> -->
@@ -125,9 +121,6 @@ watch(route, () => {
                         <router-link to="/privacy">Privacy</router-link>
                         <br>
                         <router-link to="/contacts">Contacts</router-link>
-                        <br>
-                        <br>
-                        <span style="font-weight:bold;"  class="link-footer" @click="modalFeedback = true">Send Feedback</span>
                     </div>
                     <div class="footer-column" style="grid-area: col3;">
                         
@@ -138,7 +131,7 @@ watch(route, () => {
                         <span style="font-size:12px;color:#bbbbbb;">
                             Coliving App © 2026
                             <br>
-                            v0.1.1-beta
+                            v0.3.0-beta
                         </span>
 
                         <div class="footer-bottom-spacer"></div>
@@ -146,10 +139,6 @@ watch(route, () => {
                     <div style="clear: both; height: 40px;"></div>
                 </div>
             </div>
-        </div>
-
-        <div v-if="modalFeedback">
-            <modal-feedback @close="modalFeedback = false" />
         </div>
     </div>
 </template>

@@ -71,6 +71,10 @@
             <script>
                 pastColivingSpaces = @json($pastColivingSpaces);
             </script>
+        <?php } if (isset($vacantColivingSpaces)) { ?>
+            <script>
+                vacantColivingSpaces = @json($vacantColivingSpaces);
+            </script>
         <?php } ?>
 
         <script>mate = null</script>

@@ -26,6 +26,7 @@ const requestsFilter = ref('pending');
 const modalFeedback = ref(false);
 
 function mateDisplayName(mate) {
+  if (mate.account_deleted) return 'Deleted account';
   if (mate.name) return mate.name;
   if (mate.username) return mate.username;
   return mate.uid;
@@ -69,7 +70,10 @@ function fetchMembers() {
         mates.value = [];
       } else {
         const list = result.data[0] || [];
-        list.forEach(mate => { mate.displayName = mateDisplayName(mate); });
+        list.forEach(mate => {
+          mate.account_deleted = !!mate.account_deleted;
+          mate.displayName = mateDisplayName(mate);
+        });
         mates.value = list;
       }
     })
@@ -227,21 +231,40 @@ onMounted(() => {
         </div>
 
         <div v-else>
-          <div v-if="pastMembers.length === 0" class="dash-empty">You have no past members yet.</div>
+          <div v-if="pastMembers.length === 0" class="dash-empty">No past members yet.</div>
           <div v-else class="dash-list dash-members-grid">
-            <router-link
+            <component
+              :is="mate.account_deleted ? 'div' : 'router-link'"
               v-for="mate in pastMembers"
               :key="mate.id"
-              :to="'/mate/' + (mate.username ? mate.username : mate.uid)"
+              :to="mate.account_deleted ? undefined : '/mate/' + (mate.username ? mate.username : mate.uid)"
               class="dash-row"
             >
-              <profile-pic :profile_pic="mate.profile_pic" :avatar="mate.avatar" :photo="mate.photo" class="dash-row-avatar" />
+              <img
+                v-if="mate.account_deleted"
+                src="/img/coliving-app-logo-symbol.png"
+                alt=""
+                class="dash-row-avatar dash-row-avatar-logo"
+              >
+              <profile-pic
+                v-else
+                :profile_pic="mate.profile_pic"
+                :avatar="mate.avatar"
+                :photo="mate.photo"
+                class="dash-row-avatar"
+              />
               <div class="dash-row-body">
                 <div class="dash-row-name">{{ mate.displayName }}</div>
-                <div class="dash-row-meta">Joined {{ mate.joined_at }} &middot; Left {{ mate.left_at }}</div>
+                <div class="dash-row-meta">
+                  <span v-if="mate.joined_at">Joined {{ mate.joined_at }}</span>
+                  <span v-if="mate.joined_at && mate.left_at"> &middot; </span>
+                  <span v-if="mate.left_at">Left {{ mate.left_at }}</span>
+                </div>
               </div>
-              <span class="dash-status dash-status-declined">Left</span>
-            </router-link>
+              <span class="dash-status" :class="mate.account_deleted ? 'dash-status-left' : 'dash-status-declined'">
+                {{ mate.account_deleted ? 'Account Deleted' : 'Left Space' }}
+              </span>
+            </component>
           </div>
         </div>
       </div>
@@ -500,6 +523,13 @@ a.dash-row:hover {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.dash-row-avatar-logo {
+  object-fit: contain;
+  padding: 6px;
+  background: #f7f7f7;
+  opacity: .7;
 }
 
 .dash-row-name {

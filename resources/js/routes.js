@@ -13,7 +13,6 @@ import FormMate from './form/FormMate.vue';
 import FormSpace from './form/FormSpace.vue';
 
 import ClaimSpace from './pages/SpaceClaim.vue';
-import ManageSpace from './pages/SpaceManage.vue';
 import Bookmarks from './pages/Bookmarks.vue';
 import Spaces from './pages/Spaces.vue';
 import SpacesCities from './pages/SpacesCities.vue';
@@ -183,7 +182,7 @@ const routes = [
     {
         path: '/space/:uid/hub/chat',
         name: 'HubChat',
-        component: HubSpace,
+        redirect: (to) => `/space/${to.params.uid}/hub`,
         meta: {
             title: 'Coliving App'
         },
@@ -199,8 +198,35 @@ const routes = [
     },
 
     {
+        path: '/space/:uid/hub/topics/:threadId',
+        name: 'HubThread',
+        component: HubSpace,
+        meta: {
+            title: 'Coliving App'
+        },
+    },
+
+    {
         path: '/space/:uid/hub/mates',
         name: 'HubMates',
+        component: HubSpace,
+        meta: {
+            title: 'Coliving App'
+        },
+    },
+
+    {
+        path: '/space/:uid/hub/calendar',
+        name: 'HubCalendar',
+        component: HubSpace,
+        meta: {
+            title: 'Coliving App'
+        },
+    },
+
+    {
+        path: '/space/:uid/hub/requests',
+        name: 'HubRequests',
         component: HubSpace,
         meta: {
             title: 'Coliving App'
@@ -228,7 +254,7 @@ const routes = [
     {
         path: '/space/:uid/dashboard',
         name: 'ManageSpace',
-        component: ManageSpace,
+        redirect: (to) => `/space/${to.params.uid}/hub`,
         meta: {
             title: 'Coliving App'
         },

@@ -28,7 +28,11 @@ class MateService
         $mate->bookmarks = collect($mate->bookmarks)->pluck('space_uid');
 
         $joinedSpaces = $this->spaceController->myColivingSpaces();
-        $mate->myColivingSpaces = $joinedSpaces[0];
+        // Include vacant admin spaces so hub access checks still see owned empty spaces
+        $mate->myColivingSpaces = collect($joinedSpaces[0] ?? [])
+            ->merge($joinedSpaces[2] ?? [])
+            ->unique('space_uid')
+            ->values();
 
         $ownedSpaces = Space::where('user_id', $userId)->pluck('uid');
         $userUid = $mate->uid;

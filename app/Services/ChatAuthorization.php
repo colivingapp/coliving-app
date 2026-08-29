@@ -53,6 +53,36 @@ class ChatAuthorization
             ->exists();
     }
 
+    public static function isHubAdmin(User $user, Space $space): bool
+    {
+        if ((int) $space->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return SpaceMate::where('space_uid', $space->uid)
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('role', 'admin')
+            ->exists();
+    }
+
+    public static function hubAdminUserIds(Space $space, ?int $exceptUserId = null): array
+    {
+        $ids = SpaceMate::where('space_uid', $space->uid)
+            ->where('status', 'active')
+            ->where('role', 'admin')
+            ->when($exceptUserId !== null, fn ($query) => $query->where('user_id', '!=', $exceptUserId))
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($exceptUserId === null || (int) $space->user_id !== $exceptUserId) {
+            $ids[] = (int) $space->user_id;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
     public static function canAccessHub(User $user, string $spaceUid): bool
     {
         $space = self::spaceByUid($spaceUid);

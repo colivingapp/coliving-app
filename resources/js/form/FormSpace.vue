@@ -224,18 +224,6 @@
 
 
         <div class="form-section" v-if="pageType == 'edit'">
-          <h2>Hub</h2>
-
-          Hub is where your space mates gather. Provide some general information about your space, like cleaning timetable, house rules, entrance codes, contact info, agenda, etc. This information will be visible under the Info section in your space hub.
-          <br><br>
-          <div>
-            <label for="info">Space info for the Hub</label>
-            <textarea id="info" v-model="info" class="textarea" placeholder="Hub info" style="height:200px;"></textarea>
-          </div>
-        </div>
-
-
-        <div class="form-section" v-if="pageType == 'edit'">
           <h2>Lifestyle Match</h2>
 
           Lifestyle Match helps you find coliving spaces and roommates that match your lifestyle.
@@ -323,7 +311,6 @@ export default {
       name: '',
       username: '',
       description: '',
-      info: '',
       category: '',
       subcategory: '',
       country: '',
@@ -443,7 +430,6 @@ export default {
           this.username = m.username; 
         }
         this.description = m.description;
-        this.info = m.info;
         this.category = m.category || '';
         this.subcategory = m.subcategory || '';
 
@@ -647,7 +633,6 @@ export default {
       formData.append('name', this.name);
       formData.append('username', this.username);
       formData.append('description', this.description);
-      formData.append('info', this.info);
       formData.append('category', this.category);
       formData.append('subcategory', this.subcategory || '');
       

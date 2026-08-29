@@ -140,24 +140,8 @@ Route::get('/space/{uid}/edit', function ($uid) {
 
 
 Route::get('/space/{uid}/dashboard', function ($uid) {
-    $meta = [];
-    $meta['title'] = "Coliving App";
-    $meta['description'] = "";
-    $meta['soc_title'] = "";
-    $meta['soc_description'] = "";
-    $meta['image'] = "thumb-disco.png";
-    $meta['image_w'] = 1270;
-    $meta['image_h'] = 760;
-
     if (auth()->check()) {
-        $user_id = auth()->user()->id;
-        $mateService = app(MateService::class);
-        $mate = $mateService->getMateWithBookmarks($user_id);
-        $space = Space::where('uid', $uid)->where('user_id', $user_id)->first();
-        if(!$space) {
-            return response()->json(['error' => 'Unauthenticated.'], 401);
-        }
-        return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+        return redirect('/space/'.$uid.'/hub');
     }
     else {
         return response()->json(['error' => 'Unauthenticated.'], 401);
@@ -268,6 +252,72 @@ Route::get('/space/{uid}/hub', function () {
 
 
 Route::get('/space/{uid}/hub/chat', function () {
+    $meta = [];
+    $meta['title'] = "Coliving App";
+    $meta['description'] = "";
+    $meta['soc_title'] = "";
+    $meta['soc_description'] = "";
+    $meta['image'] = "thumb-disco.png";
+    $meta['image_w'] = 1270;
+    $meta['image_h'] = 760;
+
+    if (auth()->check()) {
+        $user_id = auth()->user()->id;
+        $mateService = app(MateService::class);
+        $mate = $mateService->getMateWithBookmarks($user_id);
+        return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+    }
+    else {
+        return view('welcome', ['meta' => $meta]);
+    }
+})->middleware(['auth:sanctum']);
+
+
+Route::get('/space/{uid}/hub/topics/{thread}', function () {
+    $meta = [];
+    $meta['title'] = "Coliving App";
+    $meta['description'] = "";
+    $meta['soc_title'] = "";
+    $meta['soc_description'] = "";
+    $meta['image'] = "thumb-disco.png";
+    $meta['image_w'] = 1270;
+    $meta['image_h'] = 760;
+
+    if (auth()->check()) {
+        $user_id = auth()->user()->id;
+        $mateService = app(MateService::class);
+        $mate = $mateService->getMateWithBookmarks($user_id);
+        return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+    }
+    else {
+        return view('welcome', ['meta' => $meta]);
+    }
+})->middleware(['auth:sanctum']);
+
+
+Route::get('/space/{uid}/hub/calendar', function () {
+    $meta = [];
+    $meta['title'] = "Coliving App";
+    $meta['description'] = "";
+    $meta['soc_title'] = "";
+    $meta['soc_description'] = "";
+    $meta['image'] = "thumb-disco.png";
+    $meta['image_w'] = 1270;
+    $meta['image_h'] = 760;
+
+    if (auth()->check()) {
+        $user_id = auth()->user()->id;
+        $mateService = app(MateService::class);
+        $mate = $mateService->getMateWithBookmarks($user_id);
+        return view('welcome', ['meta' => $meta, 'mate' => $mate]);
+    }
+    else {
+        return view('welcome', ['meta' => $meta]);
+    }
+})->middleware(['auth:sanctum']);
+
+
+Route::get('/space/{uid}/hub/requests', function () {
     $meta = [];
     $meta['title'] = "Coliving App";
     $meta['description'] = "";
@@ -527,7 +577,14 @@ Route::get('/my-spaces', function (SpaceController $spaceController) {
         $mate = $mateService->getMateWithBookmarks($user_id);
         $spaces = $spaceController->mySpaces();
         $coliving_spaces = $spaceController->myColivingSpaces();
-        return view('welcome', ['meta' => $meta, 'mySpaces' => $spaces, 'myColivingSpaces' => $coliving_spaces[0], 'pastColivingSpaces' => $coliving_spaces[1], 'mate' => $mate]);
+        return view('welcome', [
+            'meta' => $meta,
+            'mySpaces' => $spaces,
+            'myColivingSpaces' => $coliving_spaces[0],
+            'pastColivingSpaces' => $coliving_spaces[1],
+            'vacantColivingSpaces' => $coliving_spaces[2] ?? [],
+            'mate' => $mate,
+        ]);
     }
     else {
         return view('welcome', ['meta' => $meta]);

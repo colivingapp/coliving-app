@@ -7,6 +7,8 @@ use App\Models\User;
 
 use App\Models\MatesRating;
 use App\Models\SpacesRating;
+use App\Models\HubPost;
+use App\Models\HubThread;
 use App\Models\Mate;
 use App\Models\Space;
 use App\Models\SpaceMate;
@@ -31,6 +33,7 @@ use App\Http\Controllers\InboxJoinRequestController;
 use App\Http\Controllers\InboxMateSpaceController;
 use App\Http\Controllers\InboxMateMateController;
 use App\Http\Controllers\InboxHubController;
+use App\Http\Controllers\HubController;
 
 use Illuminate\Support\Facades\DB;
 
@@ -179,7 +182,9 @@ Route::post('/space', function (Request $request) {
     $space->phone = (string)$request->input('phone');
     $space->whatsapp = (string)$request->input('whatsapp');
     $space->description = (string)$request->input('description');
-    $space->info = (string)$request->input('info');
+    if ($type == "created") {
+        $space->info = (string) ($request->input('info') ?? '');
+    }
     $space->category = (string)$request->input('category');
     $space->subcategory = (string)$request->input('subcategory') ?: null;
     if ($type == "created") {
@@ -224,6 +229,39 @@ Route::post('/space', function (Request $request) {
     }
 
     $space->save();
+
+    if ($type == "edited") {
+        $spaceInfoThread = \App\Models\HubThread::firstOrCreate(
+            ['space_uid' => $space->uid, 'type' => 'space_info'],
+            [
+                'author_user_id' => $space->user_id,
+                'title' => 'Space Info',
+                'is_sticky' => true,
+                'last_post_at' => now(),
+            ]
+        );
+
+        $spaceInfoThread->is_sticky = true;
+        $spaceInfoThread->title = 'Space Info';
+        $spaceInfoThread->save();
+
+        $spaceInfoPost = \App\Models\HubPost::where('hub_thread_id', $spaceInfoThread->id)
+            ->orderBy('created_at')
+            ->first();
+
+        if (!$spaceInfoPost) {
+            \App\Models\HubPost::create([
+                'hub_thread_id' => $spaceInfoThread->id,
+                'space_uid' => $space->uid,
+                'author_user_id' => $space->user_id,
+                'author_uid' => Mate::where('user_id', $space->user_id)->value('uid'),
+                'content' => $space->info,
+            ]);
+        } else {
+            $spaceInfoPost->content = $space->info;
+            $spaceInfoPost->save();
+        }
+    }
 
 
     // DELETE PHOTOS (if any)
@@ -452,6 +490,40 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
         $spaceMates[] = $uniqueMate;
     }
 
+    if (!empty($data['space'])) {
+        $ownerId = $data['space']->user_id;
+        $hasOwner = false;
+        foreach ($spaceMates as $spaceMate) {
+            if ((int) $spaceMate->user_id === (int) $ownerId) {
+                $spaceMate->role = 'admin';
+                $hasOwner = true;
+            }
+        }
+
+        if (!$hasOwner) {
+            $ownerMate = Mate::where('user_id', $ownerId)
+                ->select('user_id', 'uid', 'name', 'username', 'avatar', 'profile_pic', 'photo')
+                ->first();
+
+            if ($ownerMate) {
+                $spaceMates[] = (object) [
+                    'id' => 'admin-'.$ownerId,
+                    'user_id' => $ownerId,
+                    'uid' => $ownerMate->uid,
+                    'name' => $ownerMate->name,
+                    'username' => $ownerMate->username,
+                    'avatar' => $ownerMate->avatar,
+                    'profile_pic' => $ownerMate->profile_pic,
+                    'photo' => $ownerMate->photo,
+                    'status' => 'active',
+                    'role' => 'admin',
+                    'joined_at' => $data['space']->created_at,
+                    'left_at' => null,
+                ];
+            }
+        }
+    }
+
     $data[0] = $spaceMates;
 
     return ($data); 
@@ -459,20 +531,33 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
 
 
 Route::post('/space/{uid}/leave', function($uid) {
-    $user_id = Auth::user()->id;
+    $user = Auth::user();
+    $user_id = $user->id;
+    $space = Space::where('uid', $uid)->first();
 
-    // if ($response == 'Message Sent!') {
-        $spaceMate = SpaceMate::where('user_id', $user_id)->where('space_uid', $uid)->where('status', 'active')->first();
-        $spaceMate->left_at = now();
-        $spaceMate->status = 'left';
-        $spaceMate->save();
-    // }
-    
+    if ($space && ChatAuthorization::isHubAdmin($user, $space) && (int) $space->user_id === (int) $user_id) {
+        return response()->json([
+            'message' => 'Make another member an admin, then leave as admin. That also leaves the space.',
+        ], 422);
+    }
+
+    $spaceMate = SpaceMate::where('user_id', $user_id)->where('space_uid', $uid)->where('status', 'active')->first();
+    if (!$spaceMate) {
+        return response()->json(['message' => 'You are not an active member of this space.'], 422);
+    }
+
+    $spaceMate->left_at = now();
+    $spaceMate->status = 'left';
+    $spaceMate->role = 'member';
+    $spaceMate->save();
+
     Log::create([
         'user_id' => $user_id,
         'space_uid' => $uid,
         'action' => 'mate left space',
     ]);
+
+    return response()->json(['ok' => true]);
 
 })->middleware(['auth:sanctum', 'verified']);
 
@@ -496,26 +581,13 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
             $mateIds[$mate->user_id] = $mate->user_id;
         }
 
+        $space = Space::where('uid', $uid)->select('user_id', 'created_at')->first();
+
         if (!$found && !ChatAuthorization::canAccessHub($user, $uid)) {
             return("not_a_member");
         }
 
-        $matesData = Mate::whereIn('user_id', $mateIds)
-        ->select('id', 'user_id', 'uid', 'name', 'username', 'avatar', 'profile_pic', 'photo')
-        ->get();
-
-        foreach ($matesData as $mateData) {
-            foreach ($spaceMates as $spaceMate) {
-                if ($spaceMate->user_id == $mateData->user_id) {
-                    $spaceMate->uid = $mateData->uid;
-                    $spaceMate->name = $mateData->name;
-                    $spaceMate->username = $mateData->username;
-                    $spaceMate->avatar = $mateData->avatar;
-                    $spaceMate->profile_pic = $mateData->profile_pic;
-                    $spaceMate->photo = $mateData->photo;
-                }
-            }
-        }
+        Mate::attachHubProfiles($spaceMates, $user_id);
 
         $uniqueMates = [];
 
@@ -534,6 +606,75 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
         $spaceMates = [];
         foreach ($uniqueMates as $uniqueMate) {
             $spaceMates[] = $uniqueMate;
+        }
+
+        if ($space) {
+            $ownerId = $space->user_id;
+            $hasOwner = false;
+            foreach ($spaceMates as $spaceMate) {
+                if ((int) $spaceMate->user_id === (int) $ownerId) {
+                    $spaceMate->role = 'admin';
+                    $hasOwner = true;
+                }
+            }
+
+            if (!$hasOwner) {
+                $ownerMate = Mate::where('user_id', $ownerId)
+                    ->select(Mate::hubSelectColumns())
+                    ->first();
+
+                if ($ownerMate) {
+                    $ownerMember = (object) [
+                        'id' => 'admin-'.$ownerId,
+                        'user_id' => $ownerId,
+                        'status' => 'active',
+                        'role' => 'admin',
+                        'joined_at' => $space->created_at,
+                        'left_at' => null,
+                    ];
+                    $ownerMember->profile_fill_score = $ownerMate->profileFillScore();
+                    $ownerMate->fillHubMember($ownerMember, $user_id);
+                    $ownerMember->account_deleted = false;
+                    $spaceMates[] = $ownerMember;
+                }
+            }
+        }
+
+        $threadCounts = HubThread::where('space_uid', $uid)
+            ->where('type', 'discussion')
+            ->select('author_user_id', DB::raw('count(*) as c'))
+            ->groupBy('author_user_id')
+            ->pluck('c', 'author_user_id');
+
+        $postCounts = HubPost::where('space_uid', $uid)
+            ->select('author_user_id', DB::raw('count(*) as c'))
+            ->groupBy('author_user_id')
+            ->pluck('c', 'author_user_id');
+
+        foreach ($spaceMates as $spaceMate) {
+            $memberUserId = (int) $spaceMate->user_id;
+            $spaceMate->profile_fill_score = (int) ($spaceMate->profile_fill_score ?? 0)
+                + Mate::hubActivityScore(
+                    (int) ($threadCounts[$memberUserId] ?? 0),
+                    (int) ($postCounts[$memberUserId] ?? 0)
+                );
+        }
+
+        usort($spaceMates, function ($a, $b) {
+            $scoreA = !empty($a->account_deleted) ? -1 : (int) ($a->profile_fill_score ?? 0);
+            $scoreB = !empty($b->account_deleted) ? -1 : (int) ($b->profile_fill_score ?? 0);
+            if ($scoreA !== $scoreB) {
+                return $scoreB <=> $scoreA;
+            }
+
+            $nameA = strtolower((string) ($a->name ?: $a->username ?: $a->uid ?: ''));
+            $nameB = strtolower((string) ($b->name ?: $b->username ?: $b->uid ?: ''));
+
+            return $nameA <=> $nameB;
+        });
+
+        foreach ($spaceMates as $spaceMate) {
+            unset($spaceMate->profile_fill_score);
         }
 
         return json_encode([$spaceMates]);
@@ -714,11 +855,9 @@ Route::get('/space/{space_uid}/claim', function (Request $request, $space_uid) {
 
 Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
 
-    $user_id = $request->user()->id;
-
     $space = Space::where('uid', $space_uid)->first();
 
-    if($space->user_id != $user_id) {
+    if (!$space || !ChatAuthorization::isHubAdmin($request->user(), $space)) {
         return response()->json('Wrong user', 403); // Forbidden access
     }
     
@@ -818,7 +957,12 @@ Route::get('/my-spaces', function(SpaceController $spaceController) {
 Route::get('/hub-all', function(SpaceController $spaceController) {
     $coliving_spaces = $spaceController->myColivingSpaces();
     $mate = Mate::where('user_id', auth()->user()->id)->get();
-    return (['myColivingSpaces' => $coliving_spaces[0], 'pastColivingSpaces' => $coliving_spaces[1], 'mate' => $mate]); 
+    return ([
+        'myColivingSpaces' => $coliving_spaces[0],
+        'pastColivingSpaces' => $coliving_spaces[1],
+        'vacantColivingSpaces' => $coliving_spaces[2] ?? [],
+        'mate' => $mate,
+    ]);
 })->middleware('auth:sanctum');
 
 
@@ -927,35 +1071,53 @@ Route::post('/mate', function (Request $request) {
 
 
 Route::get('/mate/{mate}', function ($mate) {
+    $current_user_uid = null;
+    if (auth()->check()) {
+        $current_user_uid = Mate::where('user_id', auth()->id())->value('uid');
+    }
 
     $m = Mate::where('uid', $mate)->get();
-    
-    if (sizeof($m) == 0) {
+    if ($m->isEmpty()) {
         $m = Mate::where('username', $mate)->get();
     }
 
-    if ($m[0]['private']) {
-        if (!auth()->check()) {
-            abort(403);
-        }
-
-        if ($m[0]['user_id'] !== auth()->user()->id) {
-            abort(403);
-        }
+    if ($m->isEmpty()) {
+        return [[], [], $current_user_uid];
     }
 
-    $ratings = MatesRating::where('user_id', $m[0]['user_id'])
-    ->with(['ratedByUser' => function ($query) {
-        $query->select('user_id', 'uid', 'username', 'name', 'profile_pic', 'photo', 'avatar');
-    }])
-    ->get();
+    $profile = $m[0];
+    $isOwner = auth()->check() && (int) $profile->user_id === (int) auth()->id();
 
-    $current_user_uid = null;
-    if (auth()->check()) {
-        $current_user_uid = Mate::where('user_id', auth()->user()->id)->value('uid');
+    if ($profile->private && ! $isOwner) {
+        $profile->hobbies_interests = '';
+        $profile->visited_countries = '[]';
+        $profile->twitter = '';
+        $profile->facebook = '';
+        $profile->instagram = '';
+        $profile->youtube = '';
+        $profile->tiktok = '';
+        $profile->pinterest = '';
+        $profile->linkedin = '';
+        $profile->github = '';
+        $profile->substack = '';
+        $profile->medium = '';
+        $profile->orgSpont = null;
+        $profile->quietLoud = null;
+        $profile->earlyNight = null;
+        $profile->workFun = null;
+        $profile->expTrad = null;
+        $profile->multiLocal = null;
+
+        return [$m, [], $current_user_uid];
     }
 
-    return([$m, $ratings, $current_user_uid]);
+    $ratings = MatesRating::where('user_id', $profile->user_id)
+        ->with(['ratedByUser' => function ($query) {
+            $query->select('user_id', 'uid', 'username', 'name', 'profile_pic', 'photo', 'avatar');
+        }])
+        ->get();
+
+    return [$m, $ratings, $current_user_uid];
 });
 
 
@@ -1196,6 +1358,18 @@ Route::post('/conversation/space/{space_uid}/mate/{mate_uid}', [InboxMateSpaceCo
 Route::get('/conversation/hub/{uid}', [InboxHubController::class, 'showConversation'])->middleware('auth:sanctum');
 
 Route::post('/conversation/hub/{uid}', [InboxHubController::class, 'store'])->middleware(['auth:sanctum', 'throttle:chat-message']);
+
+Route::get('/space/{uid}/hub/topics', [HubController::class, 'threads'])->middleware('auth:sanctum');
+Route::post('/space/{uid}/hub/topics', [HubController::class, 'createThread'])->middleware(['auth:sanctum', 'throttle:chat-message']);
+Route::get('/space/{uid}/hub/topics/{thread}', [HubController::class, 'showThread'])->middleware('auth:sanctum');
+Route::delete('/space/{uid}/hub/topics/{thread}', [HubController::class, 'destroyThread'])->middleware('auth:sanctum');
+Route::post('/space/{uid}/hub/topics/{thread}/posts', [HubController::class, 'createPost'])->middleware(['auth:sanctum', 'throttle:chat-message']);
+Route::put('/space/{uid}/hub/space-info', [HubController::class, 'updateSpaceInfo'])->middleware(['auth:sanctum', 'verified']);
+Route::post('/space/{uid}/hub/admins', [HubController::class, 'makeAdmin'])->middleware(['auth:sanctum', 'verified']);
+Route::post('/space/{uid}/hub/leave-admin', [HubController::class, 'leaveAdmin'])->middleware(['auth:sanctum', 'verified']);
+Route::get('/space/{uid}/hub/events', [HubController::class, 'events'])->middleware('auth:sanctum');
+Route::post('/space/{uid}/hub/events', [HubController::class, 'createEvent'])->middleware(['auth:sanctum', 'verified']);
+Route::delete('/space/{uid}/hub/events/{event}', [HubController::class, 'destroyEvent'])->middleware(['auth:sanctum', 'verified']);
 
 
 Route::get('/my-bookmarks', function() {

@@ -552,7 +552,7 @@ function getSubcategoryLabel(category, subcategory) {
         <div v-if="space.email">
           <div v-if="!isJoined" style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
             <h2 style="margin-top:0px;">Join This Space</h2>
-            Start a conversation with the host. To join the space, include the join request.
+            Start a conversation with the Admin. To join the space, include the join request.
 
             <div style="height:20px;"></div>
             

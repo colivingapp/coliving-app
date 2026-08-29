@@ -15,39 +15,39 @@
           <span v-if="mate">Name: <span v-if="mate.name"><b>{{ mate.name }}</b></span><span v-else>Not specified</span><br></span>
           <span v-if="mate">Username: <b>{{ mate.username }}</b></span>
           <br><br>
-          <span style="white-space: pre-line">{{ mate.hobbies_interests }}</span>
+          <span v-if="showDetails" style="white-space: pre-line">{{ mate.hobbies_interests }}</span>
         </span>
 
         <div style="height:20px;"></div>
 
-        <span v-if="safeExternalUrl(mate.twitter)">
+        <span v-if="showDetails && safeExternalUrl(mate.twitter)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.twitter)" target="_blank" rel="nofollow noopener"><icons :iconName="'twitter'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.facebook)">
+        <span v-if="showDetails && safeExternalUrl(mate.facebook)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.facebook)" target="_blank" rel="nofollow noopener"><icons :iconName="'facebook'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.instagram)">
+        <span v-if="showDetails && safeExternalUrl(mate.instagram)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.instagram)" target="_blank" rel="nofollow noopener"><icons :iconName="'instagram'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.pinterest)">
+        <span v-if="showDetails && safeExternalUrl(mate.pinterest)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.pinterest)" target="_blank" rel="nofollow noopener"><icons :iconName="'pinterest'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.github)">
+        <span v-if="showDetails && safeExternalUrl(mate.github)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.github)" target="_blank" rel="nofollow noopener"><icons :iconName="'github'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.youtube)">
+        <span v-if="showDetails && safeExternalUrl(mate.youtube)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.youtube)" target="_blank" rel="nofollow noopener"><icons :iconName="'youtube'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.tiktok)">
+        <span v-if="showDetails && safeExternalUrl(mate.tiktok)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.tiktok)" target="_blank" rel="nofollow noopener"><icons :iconName="'tiktok'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.linkedin)">
+        <span v-if="showDetails && safeExternalUrl(mate.linkedin)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.linkedin)" target="_blank" rel="nofollow noopener"><icons :iconName="'linkedin'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.substack)">
+        <span v-if="showDetails && safeExternalUrl(mate.substack)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.substack)" target="_blank" rel="nofollow noopener"><icons :iconName="'substack'" /></a></div>
         </span>
-        <span v-if="safeExternalUrl(mate.medium)">
+        <span v-if="showDetails && safeExternalUrl(mate.medium)">
           <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="safeExternalUrl(mate.medium)" target="_blank" rel="nofollow noopener"><icons :iconName="'medium'" /></a></div>
         </span>
 
@@ -58,6 +58,7 @@
         <router-link to="/login" v-else-if="!userLoggedIn"><button class="action-button button-1">Send message</button></router-link>
         
 
+        <template v-if="showDetails">
         <div style="height: 60px;"></div>
 
         <h2 style="margin-top:0px;">Lifestyle Match</h2>
@@ -129,10 +130,11 @@
           <span v-else>Sending...</span>
           <div style="height: 20px;"></div>
         </div>
+        </template>
       </div>
 
 
-      <div v-if="mate.visited_countries.length > 0">
+      <div v-if="showDetails && mate.visited_countries && mate.visited_countries.length > 0">
         <div style="height: 60px;"></div>
 
         <h2 style="margin-top:0px;">Visited Countries</h2>
@@ -178,6 +180,12 @@ let coliveFitScore = ref(null);
 let isLoaded = ref(false);
 let ratingSubmitted = ref(false);
 
+const showDetails = computed(() => {
+  if (!mate.value) return false;
+  if (Number(mate.value.private) === 0) return true;
+  return !!currentMateUID.value && currentMateUID.value === mate.value.uid;
+});
+
 onMounted(() => {
   fetchMate();
 });
@@ -221,53 +229,62 @@ function safeExternalUrl(url) {
 
 const fetchMate = async () => {
   document.title =  'Coliving Mate - ' + route.params.mate;
-  const response = await fetch('/api/mate/' + route.params.mate);
-  const data = await response.json();
-  // console.log('data', data)
-  mate.value = data[0][0];
   try {
-    mate.value.visited_countries = JSON.parse(data[0][0].visited_countries);
-  } catch (error) {
-    console.error('Error parsing visitedCountries:', error);
-    mate.value.visited_countries = [];
-  }
-
-  ratingsAll.value = data[1];
-  currentMateUID.value = data[2];
-  for (let i = 0; i < ratingsAll.value.length; i++) {
-    // console.log("zzz", ratingsAll.value[i])
-    if (ratingsAll.value[i].rated_by_user && (ratingsAll.value[i].rated_by_user.uid == currentMateUID.value)) {
-      currentUserRated.value = true;
-      ratingsAll.value[i].rated_by_user.currentUser = 'true';
-      referenceTextEdit.value = ratingsAll.value[i].reference;
-      ratingEdit.value = ratingsAll.value[i].rating;
+    const response = await fetch('/api/mate/' + encodeURIComponent(route.params.mate));
+    const data = await response.json();
+    const profile = data?.[0]?.[0];
+    if (!profile) {
+      mate.value = null;
+      return;
     }
-    // ratings.forEach(rating => {
-    //   console.log(rating)
-    // })
-  }
-  isLoaded.value = true;
-  
-  let user1 = {
-    orgSpont: mate.value.orgSpont,
-    quietLoud: mate.value.quietLoud,
-    earlyNight: mate.value.earlyNight,
-    workFun: mate.value.workFun,
-    expTrad: mate.value.expTrad,
-    multiLocal: mate.value.multiLocal
-  }
 
-  let user2 = {
-    orgSpont: window.mate.orgSpont,
-    quietLoud: window.mate.quietLoud,
-    earlyNight: window.mate.earlyNight,
-    workFun: window.mate.workFun,
-    expTrad: window.mate.expTrad,
-    multiLocal: window.mate.multiLocal
+    mate.value = profile;
+    const rawVisited = profile.visited_countries;
+    if (Array.isArray(rawVisited)) {
+      mate.value.visited_countries = rawVisited;
+    } else {
+      try {
+        const parsed = JSON.parse(rawVisited || '[]');
+        mate.value.visited_countries = Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        mate.value.visited_countries = [];
+      }
+    }
+
+    ratingsAll.value = Array.isArray(data[1]) ? data[1] : [];
+    currentMateUID.value = data[2] || '';
+    for (let i = 0; i < ratingsAll.value.length; i++) {
+      if (ratingsAll.value[i].rated_by_user && (ratingsAll.value[i].rated_by_user.uid == currentMateUID.value)) {
+        currentUserRated.value = true;
+        ratingsAll.value[i].rated_by_user.currentUser = 'true';
+        referenceTextEdit.value = ratingsAll.value[i].reference;
+        ratingEdit.value = ratingsAll.value[i].rating;
+      }
+    }
+
+    if (window.mate) {
+      coliveFitScore.value = calculateColiveFitScore({
+        orgSpont: mate.value.orgSpont,
+        quietLoud: mate.value.quietLoud,
+        earlyNight: mate.value.earlyNight,
+        workFun: mate.value.workFun,
+        expTrad: mate.value.expTrad,
+        multiLocal: mate.value.multiLocal
+      }, {
+        orgSpont: window.mate.orgSpont,
+        quietLoud: window.mate.quietLoud,
+        earlyNight: window.mate.earlyNight,
+        workFun: window.mate.workFun,
+        expTrad: window.mate.expTrad,
+        multiLocal: window.mate.multiLocal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    mate.value = null;
+  } finally {
+    isLoaded.value = true;
   }
-  
-  // console.log(user1, user2)
-  coliveFitScore.value = calculateColiveFitScore(user1, user2)
 };
 
 

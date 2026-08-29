@@ -1,6 +1,6 @@
 <template>
   <div class="space-card">
-    <router-link :to="'/space/' + space.uid" class="space-card-link">
+    <router-link :to="linkTo" class="space-card-link">
       <div class="space-card-photo">
         <img
           v-if="space.first_photo"
@@ -29,23 +29,28 @@
       @click.stop="$emit('remove')"
     >✖</button>
     <div v-if="manageable" class="space-card-actions">
-      <router-link :to="'/space/' + space.uid + '/edit'">
+      <router-link :to="'/space/' + spaceUid + '/edit'">
         <button type="button" class="button">Edit</button>
       </router-link>
-      <router-link :to="'/space/' + space.uid + '/dashboard'">
-        <button type="button" class="button">Manage</button>
+      <router-link :to="'/space/' + spaceUid + '/hub'">
+        <button type="button" class="button">Hub</button>
       </router-link>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import "/node_modules/flag-icons/css/flag-icons.min.css";
 
-defineProps({
+const props = defineProps({
   space: {
     type: Object,
     required: true,
+  },
+  to: {
+    type: String,
+    default: '',
   },
   manageable: {
     type: Boolean,
@@ -58,12 +63,15 @@ defineProps({
 });
 
 defineEmits(['remove']);
+
+const spaceUid = computed(() => props.space.uid || props.space.space_uid);
+const linkTo = computed(() => props.to || '/space/' + spaceUid.value);
 </script>
 
 <style>
 .space-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   gap: 20px;
 }
 

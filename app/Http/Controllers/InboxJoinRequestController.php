@@ -175,7 +175,7 @@ class InboxJoinRequestController extends Controller
         }
 
         $space = Space::where('uid', $jr->space_uid)->first();
-        if (!$space || (int) $space->user_id !== (int) $request->user()->id) {
+        if (!$space || !ChatAuthorization::isHubAdmin($request->user(), $space)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -219,7 +219,7 @@ class InboxJoinRequestController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if ((int) $request->user()->id !== (int) $space->user_id) {
+        if (!ChatAuthorization::isHubAdmin($request->user(), $space)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
