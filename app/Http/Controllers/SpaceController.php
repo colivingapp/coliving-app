@@ -16,14 +16,10 @@ class SpaceController extends Controller
     
     public function show($uid)
     {
-        // Ignore the $country_slug parameter and just query based on $uid
-        $space = Space::where('uid', $uid)->first();
+        $space = Space::findByUidOrUsername($uid);
 
         if (!$space) {
-            $space = Space::where('username', $uid)->first();
-            if (!$space) {
-                abort(404);
-            }
+            abort(404);
         }
 
         if ($space->private) {
@@ -168,7 +164,7 @@ class SpaceController extends Controller
 
         // fetch base space data, keyed by uid
         $spacesByUid = Space::whereIn('uid', $allUids)
-            ->select('uid', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo')
+            ->select('uid', 'governance_type', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo')
             ->get()
             ->keyBy('uid');
 
@@ -188,6 +184,7 @@ class SpaceController extends Controller
                 $space = $spacesByUid->get($item->space_uid);
                 if ($space) {
                     $item->uid          = $space->uid;
+                    $item->governance_type = $space->governance_type;
                     $item->name         = $space->name;
                     $item->country      = $space->country;
                     $item->country_slug = $space->country_slug;
@@ -195,7 +192,7 @@ class SpaceController extends Controller
                     $item->address      = $space->address;
                     $item->first_photo  = $photoCandidates[$space->uid] ?? null;
                 } else {
-                    $item->uid = $item->name = $item->country = $item->country_slug = $item->country_code = $item->address = $item->first_photo = null;
+                    $item->uid = $item->governance_type = $item->name = $item->country = $item->country_slug = $item->country_code = $item->address = $item->first_photo = null;
                 }
                 return $item;
             });
@@ -205,7 +202,7 @@ class SpaceController extends Controller
         $pastSpaces = $attach($pastColivingSpaces);
 
         $ownedSpaces = Space::where('user_id', $userId)
-            ->select('uid', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo', 'created_at')
+            ->select('uid', 'governance_type', 'name', 'country', 'country_slug', 'country_code', 'address', 'photo', 'created_at')
             ->get();
 
         $ownedUids = $ownedSpaces->pluck('uid');
@@ -231,6 +228,7 @@ class SpaceController extends Controller
             return (object) [
                 'uid' => $space->uid,
                 'space_uid' => $space->uid,
+                'governance_type' => $space->governance_type,
                 'name' => $space->name,
                 'country' => $space->country,
                 'country_slug' => $space->country_slug,
@@ -239,7 +237,7 @@ class SpaceController extends Controller
                 'first_photo' => $ownedPhotos[$space->uid] ?? null,
                 'joined_at' => $space->created_at,
                 'left_at' => null,
-                'role' => 'admin',
+                'role' => $space->governance_type === Space::GOVERNANCE_SELF_MANAGED ? 'member' : 'admin',
             ];
         };
 
@@ -372,8 +370,9 @@ class SpaceController extends Controller
 
     public function hub($uid)
     {
-        $space = Space::where('uid', $uid)->select('uid', 'user_id', 'name', 'address', 'country', 'info', 'photo', 'created_at')->first();
-        
+        $space = Space::findByUidOrUsername($uid);
+        $spaceUid = $space?->uid;
+
         // Add first photo if space has photos (using efficient query like myColivingSpaces)
         if ($space && $space->photo) {
             $firstPhoto = DB::table('photos')
@@ -393,17 +392,21 @@ class SpaceController extends Controller
             ]);
         }
         
-        $mates = SpaceMate::where('space_uid', $uid)->where('status', 'active')->select('user_id')->get();
+        $mates = $spaceUid
+            ? SpaceMate::where('space_uid', $spaceUid)->where('status', 'active')->select('user_id')->get()
+            : collect();
         $m = [];
         foreach ($mates as $mate) {
             $m[] = $mate['user_id'];
         }
 
         $isAdmin = $space && auth()->check() && ChatAuthorization::isHubAdmin(auth()->user(), $space);
-        $latestMemberships = SpaceMate::where('space_uid', $uid)
-            ->orderByDesc('id')
-            ->get(['id', 'user_id', 'status'])
-            ->unique('user_id');
+        $latestMemberships = $spaceUid
+            ? SpaceMate::where('space_uid', $spaceUid)
+                ->orderByDesc('id')
+                ->get(['id', 'user_id', 'status'])
+                ->unique('user_id')
+            : collect();
         $currentMembers = $latestMemberships->where('status', 'active')->count();
         $pastMemberships = $latestMemberships->where('status', 'left');
         $pastUserIds = $pastMemberships->pluck('user_id')->unique()->values()->all();
@@ -412,7 +415,9 @@ class SpaceController extends Controller
             : [];
         $leftMembers = count($existingPastUserIds);
         $deletedMembers = max(0, count($pastUserIds) - $leftMembers);
-        $pendingRequests = DB::table('join_requests')->where('space_uid', $uid)->where('status', 'pending')->count();
+        $pendingRequests = $spaceUid
+            ? DB::table('join_requests')->where('space_uid', $spaceUid)->where('status', 'pending')->count()
+            : 0;
 
         return [
             'mates' => $m,

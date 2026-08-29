@@ -44,12 +44,45 @@
         </div>
 
         <div v-if="errors" class="form-error-summary">
+          <span v-if="error7">* Space type is required. Please choose how this space is managed.<br></span>
           <span v-if="error1">* The name is required. Please enter your space name to proceed.<br></span>
           <span v-if="error6">* Category is required. Please select a category for your space.<br></span>
           <span v-if="error2">* Email address is required for communication. Please enter your space email.<br></span>
           <span v-if="error3">* Country is required. Please select the country where your space is located.<br></span>
           <span v-if="error4">* Address is required. Please enter the address of your space.</span>
           <span v-if="error5">* Unknown error. Please contact site admin.</span>
+        </div>
+
+        <div class="form-section" v-if="isSectionVisible('spaceType')">
+          <h2>Choose Space Type</h2>
+
+          <div class="space-type-options">
+            <button
+              type="button"
+              class="space-type-card"
+              :class="{ selected: governance_type === 'hosted' }"
+              @click="governance_type = 'hosted'"
+            >
+              <span class="space-type-title">Hosted Coliving Space</span>
+              <span class="space-type-description">
+                For spaces managed by a host, company, property owner, or organizer.
+                The host reviews applications, manages members, and sets the rules.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              class="space-type-card"
+              :class="{ selected: governance_type === 'self-managed' }"
+              @click="governance_type = 'self-managed'"
+            >
+              <span class="space-type-title">Self-Managed Coliving Group</span>
+              <span class="space-type-description">
+                For groups where members decide together who joins and who leaves.
+                There is no single admin. Applications and removals are handled by majority vote.
+              </span>
+            </button>
+          </div>
         </div>
 
         <div class="form-section" v-if="isSectionVisible('general')">
@@ -76,6 +109,7 @@
               <option value="cohousing">Cohousing / Communal Living</option>
               <option value="senior-coliving">Senior Coliving</option>
               <option value="short-term">Short-Term Coliving</option>
+              <option value="popup-temporary">Popup / Temporary Space</option>
             </select>
             <div v-if="categoryDescription" style="color:#666;font-size:13px;margin-top:-5px;margin-bottom:10px;max-width:650px;">
               {{ categoryDescription }}
@@ -424,6 +458,7 @@ import FormCountriesDropDown from './FormCountriesDropDown.vue';
 import FormGoogleAutoComplete from './FormGoogleAutoComplete.vue';
 import draggable from 'vuedraggable';
 import { CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
+import { spacePhotoUrl } from '../mediaUrls.js';
 import SocialFieldIcon from '../components/SocialFieldIcon.vue';
 
 export default {
@@ -438,13 +473,14 @@ export default {
     return {
       isUpdating: false,
       json: '',
-      activeCreateStep: 'general',
+      activeCreateStep: 'spaceType',
       showCreateSocials: false,
 
       uid: '',
       name: '',
       username: '',
       description: '',
+      governance_type: 'hosted',
       category: '',
       subcategory: '',
       country: '',
@@ -512,6 +548,7 @@ export default {
       error4: false,
       error5: false,
       error6: false,
+      error7: false,
 
       userId: null,
       created: false,
@@ -528,6 +565,7 @@ export default {
     },
     createSteps() {
       return [
+        { key: 'spaceType', label: 'Space type' },
         { key: 'general', label: 'General info' },
         { key: 'contact', label: 'Contact' },
         { key: 'location', label: 'Location' },
@@ -578,6 +616,7 @@ export default {
           this.username = m.username; 
         }
         this.description = m.description;
+        this.governance_type = m.governance_type || 'hosted';
         this.category = m.category || '';
         this.subcategory = m.subcategory || '';
 
@@ -647,7 +686,7 @@ export default {
         .map((photo, index) => ({
           id: photo.id,
           pos: photo.pos,
-          url: `/storage/spaces/${photo.filename}`,
+          url: spacePhotoUrl(photo.filename),
         }));
 
       } catch (error) {
@@ -720,10 +759,17 @@ export default {
       this.error4 = false;
       this.error5 = false;
       this.error6 = false;
+      this.error7 = false;
     },
 
     validateCreateStep(step) {
       this.clearValidationErrors();
+
+      if (step === 'spaceType' && !this.governance_type) {
+        this.errors = true;
+        this.error7 = true;
+        return false;
+      }
 
       if (step === 'general') {
         if (!this.name) {
@@ -815,7 +861,7 @@ export default {
       this.clearValidationErrors();
 
       if (this.pageType == 'create') {
-        for (const step of ['general', 'contact', 'location']) {
+        for (const step of ['spaceType', 'general', 'contact', 'location']) {
           if (!this.validateCreateStep(step)) {
             this.activeCreateStep = step;
             return;
@@ -850,6 +896,7 @@ export default {
       formData.append('name', this.name);
       formData.append('username', this.username);
       formData.append('description', this.description);
+      formData.append('governance_type', this.governance_type);
       formData.append('category', this.category);
       formData.append('subcategory', this.subcategory || '');
       
@@ -1048,7 +1095,7 @@ export default {
 <style scoped>
 .space-create-progress {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 22px;
 }
@@ -1099,6 +1146,47 @@ export default {
   margin-top: 18px;
 }
 
+.space-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+  max-width: 820px;
+}
+
+.space-type-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 170px;
+  padding: 18px;
+  border: 1px solid #e4e4e4;
+  border-radius: 14px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.space-type-card:hover,
+.space-type-card.selected {
+  border-color: #00abff;
+  background: aliceblue;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+}
+
+.space-type-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.space-type-description {
+  color: #555;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .form-error-summary {
   margin-bottom: 16px;
   padding: 12px 14px;
@@ -1133,7 +1221,7 @@ export default {
 
 @media screen and (max-width: 700px) {
   .space-create-progress {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
   }
 
@@ -1156,6 +1244,10 @@ export default {
 
   .space-create-actions .button-post {
     flex: 1;
+  }
+
+  .space-type-options {
+    grid-template-columns: 1fr;
   }
 }
 </style>

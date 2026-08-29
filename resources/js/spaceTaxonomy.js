@@ -27,6 +27,10 @@ export const CATEGORY_META = {
     label: 'Short-Term Coliving',
     description: 'Temporary community living such as retreats, pop-ups, seasonal stays, or project-based houses.',
   },
+  'popup-temporary': {
+    label: 'Popup / Temporary Space',
+    description: 'A temporary coliving group or house that runs for fixed dates, usually days, weeks, or a few months.',
+  },
 };
 
 export const CATEGORY_ORDER = [
@@ -37,6 +41,7 @@ export const CATEGORY_ORDER = [
   'cohousing',
   'senior-coliving',
   'short-term',
+  'popup-temporary',
 ];
 
 export const SUBCATEGORY_META = {
@@ -172,6 +177,20 @@ export const SUBCATEGORY_META = {
     'project-based': {
       label: 'Project-Based',
       description: 'Temporary living built around a project, residency, or focused collaboration.',
+    },
+  },
+  'popup-temporary': {
+    'popup-house': {
+      label: 'Popup Space',
+      description: 'A temporary apartment, house, villa, hostel, or similar space opened for a limited period.',
+    },
+    'temporary-community': {
+      label: 'Temporary Community',
+      description: 'A time-bound group formed around living together and sharing community life.',
+    },
+    'fixed-dates': {
+      label: 'Fixed Dates',
+      description: 'A space with clearly defined start and end dates.',
     },
   },
 };

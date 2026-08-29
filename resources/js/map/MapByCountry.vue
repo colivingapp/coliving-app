@@ -7,6 +7,7 @@
 <script>
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 export default {
   name: 'MapComponent',
@@ -67,7 +68,7 @@ export default {
 
         let photo_url = '/img/coliving-app-logo-symbol.png';
         if (location.photo) {
-          photo_url = '/storage/spaces/'+location.first_photo;
+          photo_url = spacePhotoUrl(location.first_photo);
         }
 
         const markerIcon = L.icon({

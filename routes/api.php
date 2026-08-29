@@ -19,10 +19,12 @@ use App\Models\Bookmark;
 use App\Models\InboxMateMate;
 use App\Models\InboxMateSpace;
 use App\Models\InboxJoinRequest;
+use App\Models\JoinRequestVote;
 use App\Models\SettingsNotification;
 
 use App\Services\ChatAuthorization;
 use App\Services\EmailService;
+use App\Services\ImageStorage;
 use App\Services\MateService;
 use App\Services\SpaceClaimAuthorization;
 
@@ -185,6 +187,11 @@ Route::post('/space', function (Request $request) {
     if ($type == "created") {
         $space->info = (string) ($request->input('info') ?? '');
     }
+    $governanceType = (string) $request->input('governance_type', Space::GOVERNANCE_HOSTED);
+    if (!array_key_exists($governanceType, Space::GOVERNANCE_TYPES)) {
+        $governanceType = Space::GOVERNANCE_HOSTED;
+    }
+    $space->governance_type = $governanceType;
     $space->category = (string)$request->input('category');
     $space->subcategory = (string)$request->input('subcategory') ?: null;
     if ($type == "created") {
@@ -298,10 +305,9 @@ Route::post('/space', function (Request $request) {
 
     // Delete photo files
     if (!empty($fileNamesToDelete)) {
+        $imageStorage = app(ImageStorage::class);
         foreach ($fileNamesToDelete as $fileName) {
-            // return($fileName);
-            $existingPhoto = str_replace('/storage/spaces/', 'public/spaces/', '/storage/spaces/'.$fileName);
-            Storage::delete($existingPhoto);
+            $imageStorage->deleteSpacePhoto($fileName);
         }
     }
 
@@ -310,13 +316,9 @@ Route::post('/space', function (Request $request) {
 
     $photosSaved = false;
     
-    // Save the uploaded photos (also resize and compress)
-    $photosSaved = false;
-    
     if ($request->hasFile('photos')) {
         $files = $request->file('photos');
     
-        // Validation for file format, size, and count (remains the same)
         foreach ($files as $file) {
             $allowedFormats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedFormats)) {
@@ -330,22 +332,11 @@ Route::post('/space', function (Request $request) {
             return response()->json(['error' => 'Maximum 20 files allowed.'], 400);
         }
 
-        // Initialize the Image Manager for Version 2
-        $manager = new \Intervention\Image\ImageManager(['driver' => 'gd']);
+        $imageStorage = app(ImageStorage::class);
     
         foreach ($files as $photo) {
             try {
-                $filename = uniqid() . '.' . $photo->getClientOriginalExtension();
-                
-                $image = $manager->make($photo)
-                    ->orientate(); // <-- ADD THIS LINE
-
-                $image->resize(1280, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-
-                $image->save(storage_path('app/public/spaces/' . $filename), 80);
+                $filename = $imageStorage->storeSpacePhoto($photo);
                 
                 $photoModel = new Photo(['filename' => $filename, 'space_uid' => $space->uid]);
                 $space->photos()->save($photoModel);
@@ -433,7 +424,11 @@ Route::get('/mates', function(SpaceController $spaceController) {
 
 Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) {
     $data = $spaceController->hub($uid);
-   
+    if (empty($data['space'])) {
+        return("not_a_member");
+    }
+    $uid = $data['space']->uid;
+
     // $spaceMates = SpaceMate::where("space_uid", $uid)->where('status', 'active')->get();
     $spaceMates = SpaceMate::where("space_uid", $uid)->get();
 
@@ -492,10 +487,11 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
 
     if (!empty($data['space'])) {
         $ownerId = $data['space']->user_id;
+        $ownerRole = ChatAuthorization::isSelfManaged($data['space']) ? 'member' : 'admin';
         $hasOwner = false;
         foreach ($spaceMates as $spaceMate) {
             if ((int) $spaceMate->user_id === (int) $ownerId) {
-                $spaceMate->role = 'admin';
+                $spaceMate->role = $ownerRole;
                 $hasOwner = true;
             }
         }
@@ -516,7 +512,7 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
                     'profile_pic' => $ownerMate->profile_pic,
                     'photo' => $ownerMate->photo,
                     'status' => 'active',
-                    'role' => 'admin',
+                    'role' => $ownerRole,
                     'joined_at' => $data['space']->created_at,
                     'left_at' => null,
                 ];
@@ -533,7 +529,8 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
 Route::post('/space/{uid}/leave', function($uid) {
     $user = Auth::user();
     $user_id = $user->id;
-    $space = Space::where('uid', $uid)->first();
+    $space = Space::findByUidOrUsername($uid);
+    $uid = $space?->uid ?? $uid;
 
     if ($space && ChatAuthorization::isHubAdmin($user, $space) && (int) $space->user_id === (int) $user_id) {
         return response()->json([
@@ -564,6 +561,8 @@ Route::post('/space/{uid}/leave', function($uid) {
 
 Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
     if (Auth::check()) {
+        $resolvedSpace = Space::findByUidOrUsername($uid);
+        $uid = $resolvedSpace?->uid ?? $uid;
         $spaceMates = SpaceMate::where("space_uid", $uid)->get();
         
         $user = Auth::user();
@@ -581,7 +580,7 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
             $mateIds[$mate->user_id] = $mate->user_id;
         }
 
-        $space = Space::where('uid', $uid)->select('user_id', 'created_at')->first();
+        $space = $resolvedSpace;
 
         if (!$found && !ChatAuthorization::canAccessHub($user, $uid)) {
             return("not_a_member");
@@ -610,10 +609,11 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
 
         if ($space) {
             $ownerId = $space->user_id;
+            $ownerRole = ChatAuthorization::isSelfManaged($space) ? 'member' : 'admin';
             $hasOwner = false;
             foreach ($spaceMates as $spaceMate) {
                 if ((int) $spaceMate->user_id === (int) $ownerId) {
-                    $spaceMate->role = 'admin';
+                    $spaceMate->role = $ownerRole;
                     $hasOwner = true;
                 }
             }
@@ -628,7 +628,7 @@ Route::get('/space/{uid}/space-data', function (Request $request, $uid) {
                         'id' => 'admin-'.$ownerId,
                         'user_id' => $ownerId,
                         'status' => 'active',
-                        'role' => 'admin',
+                        'role' => $ownerRole,
                         'joined_at' => $space->created_at,
                         'left_at' => null,
                     ];
@@ -721,10 +721,9 @@ Route::delete('/space/{space_uid}/delete', function (Request $request, $space_ui
     
         // Delete photo files
         if (!empty($fileNamesToDelete)) {
+            $imageStorage = app(ImageStorage::class);
             foreach ($fileNamesToDelete as $fileName) {
-                // return($fileName);
-                $existingPhoto = str_replace('/storage/spaces/', 'public/spaces/', '/storage/spaces/'.$fileName);
-                Storage::delete($existingPhoto);
+                $imageStorage->deleteSpacePhoto($fileName);
             }
         }
     }
@@ -742,6 +741,8 @@ Route::delete('/space/{space_uid}/delete', function (Request $request, $space_ui
     Bookmark::where('space_uid', $space->uid)->delete();
 
     // Delete join requests
+    $joinRequestIds = InboxJoinRequest::where('space_uid', $space->uid)->pluck('id');
+    JoinRequestVote::whereIn('join_request_id', $joinRequestIds)->delete();
     InboxJoinRequest::where('space_uid', $space->uid)->delete();
 
     // Delete the space
@@ -855,14 +856,14 @@ Route::get('/space/{space_uid}/claim', function (Request $request, $space_uid) {
 
 Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
 
-    $space = Space::where('uid', $space_uid)->first();
+    $space = Space::findByUidOrUsername($space_uid);
 
-    if (!$space || !ChatAuthorization::isHubAdmin($request->user(), $space)) {
+    if (!$space || !ChatAuthorization::canViewJoinRequests($request->user(), $space)) {
         return response()->json('Wrong user', 403); // Forbidden access
     }
     
     // Query and return data from join_requests table
-    $joinRequests = DB::table('join_requests')->where('space_uid', $space_uid)->orderByDesc('created_at')->get();
+    $joinRequests = DB::table('join_requests')->where('space_uid', $space->uid)->orderByDesc('created_at')->get();
 
     $mateIds = $joinRequests->pluck('mate_id')->unique()->values();
 
@@ -871,7 +872,23 @@ Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
         ->get()
         ->keyBy('user_id');
 
-    $joinRequests = $joinRequests->map(function ($jr) use ($matesData) {
+    $acceptVotesByRequest = JoinRequestVote::whereIn('join_request_id', $joinRequests->pluck('id'))
+        ->where('vote', 'accept')
+        ->select('join_request_id', DB::raw('count(*) as votes_count'))
+        ->groupBy('join_request_id')
+        ->pluck('votes_count', 'join_request_id');
+    $declineVotesByRequest = JoinRequestVote::whereIn('join_request_id', $joinRequests->pluck('id'))
+        ->where('vote', 'decline')
+        ->select('join_request_id', DB::raw('count(*) as votes_count'))
+        ->groupBy('join_request_id')
+        ->pluck('votes_count', 'join_request_id');
+    $userVotes = JoinRequestVote::whereIn('join_request_id', $joinRequests->pluck('id'))
+        ->where('user_id', $request->user()->id)
+        ->pluck('vote', 'join_request_id');
+    $requiredVotes = intdiv(count(ChatAuthorization::activeHubMemberUserIds($space)), 2) + 1;
+    $canVote = ChatAuthorization::canVoteOnJoinRequests($request->user(), $space);
+
+    $joinRequests = $joinRequests->map(function ($jr) use ($matesData, $acceptVotesByRequest, $declineVotesByRequest, $userVotes, $requiredVotes, $canVote, $space) {
         $jr = (array) $jr;
         $mate = $matesData->get($jr['mate_id']);
         $jr['mate_name'] = $mate->name ?? null;
@@ -879,6 +896,13 @@ Route::get('/space/{space_uid}/jr', function (Request $request, $space_uid) {
         $jr['mate_avatar'] = $mate->avatar ?? null;
         $jr['mate_profile_pic'] = $mate->profile_pic ?? null;
         $jr['mate_photo'] = $mate->photo ?? null;
+        $jr['accept_votes_count'] = (int) ($acceptVotesByRequest[$jr['id']] ?? 0);
+        $jr['decline_votes_count'] = (int) ($declineVotesByRequest[$jr['id']] ?? 0);
+        $jr['votes_count'] = $jr['accept_votes_count'];
+        $jr['votes_required'] = $requiredVotes;
+        $jr['user_vote'] = $userVotes[$jr['id']] ?? null;
+        $jr['can_vote'] = $canVote && $jr['status'] === 'pending' && (int) $jr['mate_id'] !== (int) auth()->id();
+        $jr['self_managed'] = ChatAuthorization::isSelfManaged($space);
         return $jr;
     });
 
@@ -1024,27 +1048,10 @@ Route::post('/mate', function (Request $request) {
         $mate = Mate::where('user_id', $user_id)->select('photo')->first();
 
         if ($mate->photo) {
-            // Delete the existing photo file
-            $existingPhoto = str_replace('/storage/mates/', 'public/mates/', $mate->photo);
-            Storage::delete($existingPhoto);
+            app(ImageStorage::class)->deleteMatePhoto($mate->photo);
         }
 
-        $photo = $request->file('photo');
-
-        // Generate a unique filename for the uploaded file
-        $filename = uniqid() . '.' . $photo->getClientOriginalExtension();
-
-        // Resize and store the uploaded file in the 'public/uploads' directory
-        $manager = new Intervention\Image\ImageManager();
-        $resizedPhoto = $manager->make($photo)
-            ->resize(800, 800, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
-
-        $resizedPhoto->save(storage_path('app/public/mates/' . $filename));
-
-        // Save the file URL in the database
+        $filename = app(ImageStorage::class)->storeMatePhoto($request->file('photo'));
         $mateData['photo'] = '/storage/mates/' . $filename;
     }
 

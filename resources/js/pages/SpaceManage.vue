@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 
 import ModalFeedback from '../components/ModalFeedback.vue';
 import ProfilePic from '../components/ProfilePic.vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 const route = useRoute();
 const { uid } = route.params;
@@ -147,7 +148,7 @@ onMounted(() => {
       <div class="dash-header">
         <div class="dash-header-photo">
           <img
-            :src="space.first_photo ? '/storage/spaces/' + space.first_photo : '/img/coliving-app-logo-symbol.png'"
+            :src="space.first_photo ? spacePhotoUrl(space.first_photo) : '/img/coliving-app-logo-symbol.png'"
             @error="$event.target.src = '/img/coliving-app-logo-symbol.png'"
             :alt="space.name"
           >

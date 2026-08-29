@@ -18,8 +18,8 @@ class HubController extends Controller
 {
     private function accessibleSpace(Request $request, string $uid): ?Space
     {
-        $space = Space::where('uid', $uid)->first();
-        if (!$space || !ChatAuthorization::canAccessHub($request->user(), $uid)) {
+        $space = ChatAuthorization::spaceByUid($uid);
+        if (!$space || !ChatAuthorization::canAccessHub($request->user(), $space->uid)) {
             return null;
         }
 
@@ -47,7 +47,7 @@ class HubController extends Controller
             return response()->json(['message' => 'You are already an admin.'], 422);
         }
 
-        $membership = SpaceMate::where('space_uid', $uid)
+        $membership = SpaceMate::where('space_uid', $space->uid)
             ->where('user_id', $targetUserId)
             ->where('status', 'active')
             ->orderByDesc('id')
@@ -66,7 +66,7 @@ class HubController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'other_uid' => (string) $targetUserId,
             'action' => 'made hub admin',
         ]);
@@ -90,13 +90,13 @@ class HubController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($space, $userId, $remainingAdminIds, $uid) {
+        DB::transaction(function () use ($space, $userId, $remainingAdminIds) {
             if ((int) $space->user_id === $userId) {
                 $space->user_id = $remainingAdminIds[0];
                 $space->save();
             }
 
-            $membership = SpaceMate::where('space_uid', $uid)
+            $membership = SpaceMate::where('space_uid', $space->uid)
                 ->where('user_id', $userId)
                 ->where('status', 'active')
                 ->orderByDesc('id')
@@ -112,7 +112,7 @@ class HubController extends Controller
 
         Log::create([
             'user_id' => $userId,
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'action' => 'left as hub admin',
         ]);
 
@@ -246,7 +246,7 @@ class HubController extends Controller
         $this->ensureSpaceInfoThread($space);
         $this->ensureGeneralThreadFromChat($space);
 
-        $threads = HubThread::where('space_uid', $uid)
+        $threads = HubThread::where('space_uid', $space->uid)
             ->orderByDesc('is_sticky')
             ->orderByDesc('last_post_at')
             ->orderByDesc('created_at')
@@ -271,7 +271,7 @@ class HubController extends Controller
 
         $author = $this->authorFor($request);
         $thread = HubThread::create([
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'author_user_id' => $author['author_user_id'],
             'title' => trim($data['title']),
             'type' => 'discussion',
@@ -281,7 +281,7 @@ class HubController extends Controller
 
         HubPost::create([
             'hub_thread_id' => $thread->id,
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'author_user_id' => $author['author_user_id'],
             'author_uid' => $author['author_uid'],
             'content' => trim($data['content']),
@@ -293,7 +293,7 @@ class HubController extends Controller
     public function showThread(Request $request, string $uid, HubThread $thread)
     {
         $space = $this->accessibleSpace($request, $uid);
-        if (!$space || $thread->space_uid !== $uid) {
+        if (!$space || $thread->space_uid !== $space->uid) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -313,7 +313,7 @@ class HubController extends Controller
     public function destroyThread(Request $request, string $uid, HubThread $thread)
     {
         $space = $this->accessibleSpace($request, $uid);
-        if (!$space || $thread->space_uid !== $uid) {
+        if (!$space || $thread->space_uid !== $space->uid) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -329,7 +329,7 @@ class HubController extends Controller
     public function createPost(Request $request, string $uid, HubThread $thread)
     {
         $space = $this->accessibleSpace($request, $uid);
-        if (!$space || $thread->space_uid !== $uid || $thread->is_locked) {
+        if (!$space || $thread->space_uid !== $space->uid || $thread->is_locked) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -340,7 +340,7 @@ class HubController extends Controller
         $author = $this->authorFor($request);
         $post = HubPost::create([
             'hub_thread_id' => $thread->id,
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'author_user_id' => $author['author_user_id'],
             'author_uid' => $author['author_uid'],
             'content' => trim($data['content']),
@@ -388,7 +388,7 @@ class HubController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $events = HubEvent::where('space_uid', $uid)
+        $events = HubEvent::where('space_uid', $space->uid)
             ->orderByRaw('COALESCE(start_date, DATE(starts_at)) IS NULL')
             ->orderByRaw('COALESCE(start_date, DATE(starts_at))')
             ->orderBy('starts_at')
@@ -437,7 +437,7 @@ class HubController extends Controller
         $endsAt = $endDate.' '.($data['end_time'] ?? ($data['start_time'] ?? '12:00')).':00';
 
         $event = HubEvent::create([
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'author_user_id' => $request->user()->id,
             'kind' => $kind,
             'title' => $title,
@@ -455,7 +455,7 @@ class HubController extends Controller
     public function destroyEvent(Request $request, string $uid, HubEvent $event)
     {
         $space = $this->accessibleSpace($request, $uid);
-        if (!$space || $event->space_uid !== $uid) {
+        if (!$space || $event->space_uid !== $space->uid) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

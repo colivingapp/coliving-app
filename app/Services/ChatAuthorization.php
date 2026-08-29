@@ -35,14 +35,17 @@ class ChatAuthorization
 
     public static function spaceByUid(string $spaceUid): ?Space
     {
-        return Space::where('uid', $spaceUid)->first();
+        return Space::findByUidOrUsername($spaceUid);
     }
 
     public static function ownedSpace(User $user, string $spaceUid): ?Space
     {
-        return Space::where('uid', $spaceUid)
-            ->where('user_id', $user->id)
-            ->first();
+        $space = self::spaceByUid($spaceUid);
+        if (!$space || (int) $space->user_id !== (int) $user->id) {
+            return null;
+        }
+
+        return $space;
     }
 
     public static function isActiveMember(User $user, string $spaceUid): bool
@@ -53,8 +56,32 @@ class ChatAuthorization
             ->exists();
     }
 
+    public static function isSelfManaged(Space $space): bool
+    {
+        return $space->governance_type === Space::GOVERNANCE_SELF_MANAGED;
+    }
+
+    public static function activeHubMemberUserIds(Space $space): array
+    {
+        $ids = SpaceMate::where('space_uid', $space->uid)
+            ->where('status', 'active')
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($space->user_id !== null) {
+            $ids[] = (int) $space->user_id;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
     public static function isHubAdmin(User $user, Space $space): bool
     {
+        if (self::isSelfManaged($space)) {
+            return false;
+        }
+
         if ((int) $space->user_id === (int) $user->id) {
             return true;
         }
@@ -94,7 +121,21 @@ class ChatAuthorization
             return true;
         }
 
-        return self::isActiveMember($user, $spaceUid);
+        return self::isActiveMember($user, $space->uid);
+    }
+
+    public static function canVoteOnJoinRequests(User $user, Space $space): bool
+    {
+        if (!self::isSelfManaged($space)) {
+            return false;
+        }
+
+        return in_array((int) $user->id, self::activeHubMemberUserIds($space), true);
+    }
+
+    public static function canViewJoinRequests(User $user, Space $space): bool
+    {
+        return self::isHubAdmin($user, $space) || self::canVoteOnJoinRequests($user, $space);
     }
 
     public static function mateConversationExists(string $userUid, string $otherUid): bool

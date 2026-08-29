@@ -4,7 +4,9 @@
       <div class="space-card-photo">
         <img
           v-if="space.first_photo"
-          :src="'/storage/spaces/' + space.first_photo"
+          :src="spacePhotoUrl(space.first_photo)"
+          loading="lazy"
+          @error="$event.target.src = spacePhotoUrl(space.first_photo, 'full')"
           class="space-card-img"
           :alt="space.name"
         >
@@ -42,6 +44,7 @@
 <script setup>
 import { computed } from 'vue';
 import "/node_modules/flag-icons/css/flag-icons.min.css";
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 const props = defineProps({
   space: {

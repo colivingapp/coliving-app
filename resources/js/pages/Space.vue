@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch  } from 'vue';
 import { useRoute } from 'vue-router';
 
 import MapSpace from '../map/Map.vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 import ProfilePic from '../components/ProfilePic.vue';
 import Icons from '../components/Icons.vue';
@@ -119,10 +120,10 @@ const fetchSpace = async () => {
         response.data.space.photos = sortedData;
         // console.log(sortedData);
         
-        fullSize.value = '/storage/spaces/' + sortedData[0].filename;
+        fullSize.value = spacePhotoUrl(sortedData[0].filename, 'full');
       }
       else {
-        fullSize.value = '/storage/spaces/' + Object.values(response.data.space.photos)[0].filename;
+        fullSize.value = spacePhotoUrl(Object.values(response.data.space.photos)[0].filename, 'full');
       }
     }
 
@@ -284,6 +285,7 @@ const categoryLabels = {
   'cohousing': 'Cohousing / Communal Living',
   'senior-coliving': 'Senior Coliving',
   'short-term': 'Short-Term Coliving',
+  'popup-temporary': 'Popup / Temporary Space',
 };
 
 const subcategoryLabels = {
@@ -330,6 +332,11 @@ const subcategoryLabels = {
     'retreat-based': 'Retreat-Based',
     'pop-up': 'Pop-Up',
     'project-based': 'Project-Based',
+  },
+  'popup-temporary': {
+    'popup-house': 'Popup Space',
+    'temporary-community': 'Temporary Community',
+    'fixed-dates': 'Fixed Dates',
   },
 };
 
@@ -450,7 +457,15 @@ function getSubcategoryLabel(category, subcategory) {
         <h2>Photos</h2>
 
         <img :src="fullSize" class="space-photo">
-        <img v-for="(photo, index) in space.photos" :key="index" @click="fullSize = '/storage/spaces/'+photo.filename" :src="'/storage/spaces/'+photo.filename" class="space-photo-small cursor-pointer">
+        <img
+          v-for="(photo, index) in space.photos"
+          :key="index"
+          @click="fullSize = spacePhotoUrl(photo.filename, 'full')"
+          :src="spacePhotoUrl(photo.filename)"
+          loading="lazy"
+          @error="$event.target.src = spacePhotoUrl(photo.filename, 'full')"
+          class="space-photo-small cursor-pointer"
+        >
 
       </div>
 

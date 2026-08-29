@@ -34,7 +34,7 @@ class InboxMateSpaceController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
+        $conversation = $this->mateSpaceConversation($sender_uid, $space, $uid);
         $newConversation = false;
 
         // If the conversation does not exist, create it
@@ -44,13 +44,13 @@ class InboxMateSpaceController extends Controller
             
             $conversation = InboxMateSpace::create([
                 'uid' => $conv_uid,
-                'user2' => $uid,
+                'user2' => $space->uid,
                 'user1' => $sender_uid
             ]);
  
             Log::create([
                 'user_id' => $sender_id,
-                'space_uid' => $uid,
+                'space_uid' => $space->uid,
                 'other_uid' => $conv_uid,
                 'action' => 'new convo mate-space',
             ]);
@@ -79,7 +79,7 @@ class InboxMateSpaceController extends Controller
 
                 $data = [
                     'name' => $space->name,
-                    'uid' => $uid,
+                    'uid' => $space->uid,
                     'request_message' => $content,
                     'from_name' => $from_name,
                     'from_email' => $sender->email,
@@ -92,7 +92,7 @@ class InboxMateSpaceController extends Controller
                 Log::create([
                     'user_id' => $sender_id,
                     'user_uid' => $sender_uid,
-                    'space_uid' => $uid,
+                    'space_uid' => $space->uid,
                     'other_uid' => (string)$message->id,
                     'action' => 'space message email sent',
                 ]);
@@ -106,10 +106,9 @@ class InboxMateSpaceController extends Controller
             ->limit(10)
             ->get();
     
+        $participants = $this->spaceParticipants($space, $uid);
         $participants[$sender_uid] = Mate::where('uid', $sender_uid)->select('name', 'username', 'avatar')->first();
         $participants[$sender_uid]['type'] = 'mate';
-        $participants[$uid] = Space::where('uid', $uid)->select('name', 'photo')->first();
-        $participants[$uid]['type'] = 'space';
         
         return response()->json([
             'conversation' => $conversation,
@@ -126,20 +125,20 @@ class InboxMateSpaceController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $sender_uid = $uid;
+        $sender_uid = $space->uid;
         $mate = Mate::where('uid', $mate_uid)->first();
         if (!$mate) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $mate_uid)->first();
+        $conversation = $this->mateSpaceConversation($mate_uid, $space, $uid);
     
         if (!$conversation) {
             $conv_uid = uniqid();
 
             $conversation = InboxMateSpace::create([
                 'uid' => $conv_uid,
-                'user2' => $uid,
+                'user2' => $space->uid,
                 'user1' => $mate_uid
             ]);
         }
@@ -173,17 +172,15 @@ class InboxMateSpaceController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if (!ChatAuthorization::ownedSpace($request->user(), $space_uid)) {
+        if (!ChatAuthorization::ownedSpace($request->user(), $space->uid)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $participants = [];
+        $participants = $this->spaceParticipants($space, $space_uid);
         $participants[$mate_uid] = Mate::where('uid', $mate_uid)->select('name', 'username', 'avatar')->first();
         $participants[$mate_uid]['type'] = 'mate';
-        $participants[$space_uid] = Space::where('uid', $space_uid)->select('name', 'photo')->first();
-        $participants[$space_uid]['type'] = 'space';
 
-        $convo = InboxMateSpace::where('user2', $space_uid)->where('user1', $mate_uid)->first();
+        $convo = $this->mateSpaceConversation($mate_uid, $space, $space_uid);
 
         if (!$convo) {
             return response()->json([
@@ -215,9 +212,12 @@ class InboxMateSpaceController extends Controller
         $sender_uid =  Mate::where('user_id', $sender_id)->value('uid');
         $conversation_uid = '';
 
-        $participants = [];
+        $space = ChatAuthorization::spaceByUid($uid);
+        if (!$space) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
 
-        $convo = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
+        $convo = $this->mateSpaceConversation($sender_uid, $space, $uid);
 
         $conversation = null;
 
@@ -238,16 +238,59 @@ class InboxMateSpaceController extends Controller
             ->get();
         }
 
+        $participants = $this->spaceParticipants($space, $uid, [
+            'claimed' => $space->claimed,
+        ]);
         $participants[$sender_uid] = Mate::where('uid', $sender_uid)->select('name', 'username', 'profile_pic', 'photo', 'avatar')->first();
         $participants[$sender_uid]['type'] = 'mate';
-        $participants[$uid] = Space::where('uid', $uid)->select('name', 'photo', 'claimed')->first();
-        $participants[$uid]['type'] = 'space';
 
     
         return response()->json([
             'conversation' => $conversation ?: [],
             'participants' => $participants
         ], 200);
+    }
+
+    private function mateSpaceConversation(?string $mateUid, Space $space, string $requestedUid): ?InboxMateSpace
+    {
+        if (!$mateUid) {
+            return null;
+        }
+
+        $ids = array_values(array_unique(array_filter([$space->uid, $requestedUid])));
+
+        $conversation = InboxMateSpace::where('user1', $mateUid)
+            ->whereIn('user2', $ids)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($conversation && $conversation->user2 !== $space->uid) {
+            $conversation->user2 = $space->uid;
+            $conversation->save();
+        }
+
+        return $conversation;
+    }
+
+    private function spaceParticipants(Space $space, string $requestedUid, array $extra = []): array
+    {
+        $payload = array_merge([
+            'uid' => $space->uid,
+            'username' => $space->username,
+            'name' => $space->name,
+            'photo' => $space->photo,
+            'type' => 'space',
+        ], $extra);
+
+        $participants = [
+            $space->uid => $payload,
+        ];
+
+        if ($requestedUid !== '' && $requestedUid !== $space->uid) {
+            $participants[$requestedUid] = $payload;
+        }
+
+        return $participants;
     }
     
     public function showConversations(Request $request) {

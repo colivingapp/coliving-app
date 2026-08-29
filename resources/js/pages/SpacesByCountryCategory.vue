@@ -59,6 +59,7 @@ const CATEGORY_SLUGS = new Set([
   'cohousing',
   'senior-coliving',
   'short-term',
+  'popup-temporary',
 ]);
 
 const fetchSpaces = async () => {

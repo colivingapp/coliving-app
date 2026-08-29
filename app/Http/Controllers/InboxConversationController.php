@@ -49,7 +49,10 @@ class InboxConversationController extends Controller
     
                 $conversations[$key]['participants']->creator = Mate::where('uid', $conversation['user1'])->select('avatar', 'username', 'name', 'uid')->first();
     
-                $receiver = Space::where('uid', $conversation['user2'])->select('name', 'photo')->first();
+                $receiver = Space::findByUidOrUsername($conversation['user2']);
+                if ($receiver) {
+                    $receiver = $receiver->only(['name', 'photo']);
+                }
 
                 if ($receiver) {
                     $conversations[$key]['participants']->receiver = $receiver;
@@ -92,7 +95,10 @@ class InboxConversationController extends Controller
 
             // $conversations_mate_space[$key]['participants']->receiver = Space::where('uid', $conversation['user2'])->select('name', 'photo')->first();
 
-            $receiver = Space::where('uid', $conversation['user2'])->select('name', 'photo')->first();
+            $receiver = Space::findByUidOrUsername($conversation['user2']);
+            if ($receiver) {
+                $receiver = $receiver->only(['name', 'photo']);
+            }
 
             if ($receiver) {
                 $conversations_mate_space[$key]['participants']->receiver = $receiver;

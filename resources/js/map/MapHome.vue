@@ -49,6 +49,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { MarkerClusterGroup } from 'leaflet.markercluster';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 export default {
   name: 'MapComponent',
@@ -320,7 +321,7 @@ export default {
             let selectedPhoto = response.data.space.first_photo;
 
             if (selectedPhoto) {
-              photo_url = '/storage/spaces/' + selectedPhoto;
+              photo_url = spacePhotoUrl(selectedPhoto);
             }
           }
 

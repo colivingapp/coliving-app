@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import ProfilePic from '../components/ProfilePic.vue';
 import HubCalendar from './HubCalendar.vue';
 import HubMemberCard from './HubMemberCard.vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -76,6 +77,8 @@ const stickyThreads = computed(() => threads.value.filter(thread => thread.is_st
 const topicThreads = computed(() => threads.value.filter(thread => !thread.is_sticky));
 const spaceInfoThread = computed(() => threads.value.find(thread => thread.type === 'space_info') || null);
 const currentAdmins = computed(() => currentMembers.value.filter(mate => mate.role === 'admin'));
+const isSelfManaged = computed(() => space.value?.governance_type === 'self-managed');
+const canManageJoinRequests = computed(() => isAdmin.value || isSelfManaged.value);
 const makeAdminCandidates = computed(() => currentMembers.value.filter(mate => (
   mate.role !== 'admin' && !mate.account_deleted
 )));
@@ -296,7 +299,7 @@ async function createReply() {
 }
 
 async function fetchJoinRequests() {
-  if (!isAdmin.value) return;
+  if (!canManageJoinRequests.value) return;
 
   isLoadingJr.value = true;
   try {
@@ -320,6 +323,12 @@ async function acceptRequest(request) {
       request.status = 'accepted';
       await fetchMembers();
       await fetchHub();
+    } else if (response.data.message === 'vote_recorded') {
+      request.user_vote = 'accept';
+      request.accept_votes_count = response.data.accept_votes_count;
+      request.votes_count = response.data.accept_votes_count;
+      request.votes_required = response.data.votes_required;
+      await fetchHub();
     } else {
       jrActionError.value[request.id] = response.data.message || 'Something went wrong.';
     }
@@ -332,7 +341,8 @@ async function acceptRequest(request) {
 }
 
 async function declineRequest(request) {
-  if (jrActionLoading.value[request.id] || !confirm('Decline this join request?')) return;
+  const message = request.self_managed ? 'Vote to decline this join request?' : 'Decline this join request?';
+  if (jrActionLoading.value[request.id] || !confirm(message)) return;
 
   jrActionLoading.value[request.id] = true;
   jrActionError.value[request.id] = '';
@@ -340,6 +350,11 @@ async function declineRequest(request) {
     const response = await axios.post(`/api/join_requests/${request.id}/${request.mate_uid}/decline`);
     if (response.data.message === 'success' || response.data === 'success') {
       request.status = 'declined';
+      await fetchHub();
+    } else if (response.data.message === 'vote_recorded') {
+      request.user_vote = 'decline';
+      request.decline_votes_count = response.data.decline_votes_count;
+      request.votes_required = response.data.votes_required;
       await fetchHub();
     } else {
       jrActionError.value[request.id] = response.data.message || 'Something went wrong.';
@@ -497,7 +512,7 @@ onMounted(loadHub);
     <div v-if="space" class="hub-header">
       <router-link :to="'/space/' + uid" class="hub-header-photo">
         <img
-          :src="space.first_photo ? '/storage/spaces/' + space.first_photo : '/img/coliving-app-logo-symbol.png'"
+          :src="space.first_photo ? spacePhotoUrl(space.first_photo) : '/img/coliving-app-logo-symbol.png'"
           @error="$event.target.src = '/img/coliving-app-logo-symbol.png'"
           :alt="space.name"
         >
@@ -529,7 +544,7 @@ onMounted(loadHub);
           <div class="page-menu-underline" :class="{ active: activeSection === 'members' }"></div>
         </div>
 
-        <div v-if="isAdmin" class="page-menu-button-outer">
+        <div v-if="canManageJoinRequests" class="page-menu-button-outer">
           <router-link :to="hubLink('requests')">
             <div class="page-menu-button">
               <span class="inbox-type-link" :class="{ active: activeSection === 'requests' }">
@@ -714,7 +729,7 @@ onMounted(loadHub);
         </section>
 
         <section v-if="activeSection === 'requests'" class="hub-panel">
-          <template v-if="isAdmin">
+          <template v-if="canManageJoinRequests">
             <div class="hub-chips">
               <button type="button" class="hub-chip" :class="{ active: requestsFilter === 'pending' }" @click="requestsFilter = 'pending'">Pending ({{ requestCounts.pending }})</button>
               <button type="button" class="hub-chip" :class="{ active: requestsFilter === 'accepted' }" @click="requestsFilter = 'accepted'">Accepted ({{ requestCounts.accepted }})</button>
@@ -732,14 +747,35 @@ onMounted(loadHub);
                     <router-link :to="'/mate/' + request.mate_uid">{{ request.mate_name || request.mate_username || request.mate_uid }}</router-link>
                   </div>
                   <div class="hub-member-meta">Requested {{ formatDate(request.created_at) }}</div>
+                  <div v-if="request.self_managed" class="hub-member-meta">
+                    Accept: {{ request.accept_votes_count || 0 }} / {{ request.votes_required || 1 }}
+                    &middot;
+                    Decline: {{ request.decline_votes_count || 0 }} / {{ request.votes_required || 1 }}
+                  </div>
                   <div v-if="jrActionError[request.id]" class="hub-error">{{ jrActionError[request.id] }}</div>
                 </div>
                 <div class="hub-request-aside">
                   <span class="hub-status" :class="'status-' + request.status">{{ request.status }}</span>
                   <div class="hub-row-actions">
                     <template v-if="request.status === 'pending'">
-                      <button type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
-                      <button type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
+                      <button
+                        v-if="request.self_managed"
+                        type="button"
+                        class="button-function"
+                        :disabled="jrActionLoading[request.id] || request.user_vote || !request.can_vote"
+                        @click="acceptRequest(request)"
+                      >{{ request.user_vote === 'accept' ? 'Voted accept' : 'Vote to accept' }}</button>
+                      <button
+                        v-if="request.self_managed"
+                        type="button"
+                        class="button-function"
+                        :disabled="jrActionLoading[request.id] || request.user_vote || !request.can_vote"
+                        @click="declineRequest(request)"
+                      >{{ request.user_vote === 'decline' ? 'Voted decline' : 'Vote to decline' }}</button>
+                      <template v-else>
+                        <button type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
+                        <button v-if="isAdmin" type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
+                      </template>
                     </template>
                     <router-link :to="'/inbox/space/' + request.space_uid + '/mate/' + request.mate_uid">
                       <button type="button" class="button-function">View chat</button>
@@ -749,7 +785,7 @@ onMounted(loadHub);
               </div>
             </div>
           </template>
-          <div v-else class="hub-empty">Only Admins can view join requests.</div>
+          <div v-else class="hub-empty">Only members can view join requests in self-managed spaces.</div>
         </section>
 
         <section v-if="activeSection === 'calendar'" class="hub-panel">
@@ -791,7 +827,12 @@ onMounted(loadHub);
             </template>
           </div>
 
-          <div class="hub-settings-block">
+          <div v-if="isSelfManaged" class="hub-settings-block">
+            <h3 class="hub-block-title">Self-Managed Space</h3>
+            <p>This group has no hub admin. Active members vote on join requests, and a request is accepted after a majority vote.</p>
+          </div>
+
+          <div v-if="!isSelfManaged" class="hub-settings-block">
             <h3 class="hub-block-title">Admins</h3>
             <div v-if="currentAdmins.length" class="hub-admin-list">
               <component
@@ -860,7 +901,7 @@ onMounted(loadHub);
             </template>
           </div>
 
-          <div v-if="isAdmin && isListingOwner" class="hub-settings-block">
+          <div v-if="isListingOwner" class="hub-settings-block">
             <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="button-function">Edit public space profile</button></router-link>
           </div>
 
@@ -1633,8 +1674,21 @@ a.hub-post-author-identity:hover span {
   }
 
   .hub-request-aside {
-    grid-column: 2;
+    grid-column: 1 / -1;
+    align-items: flex-start;
     justify-content: flex-start;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .hub-request-aside .hub-row-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .hub-request-aside .button-function,
+  .hub-request-aside a {
+    flex: 0 0 auto;
   }
 }
 

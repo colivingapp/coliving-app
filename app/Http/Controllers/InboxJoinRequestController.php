@@ -11,6 +11,7 @@ use App\Models\SpaceMate;
 use App\Models\InboxMateSpace;
 use App\Models\InboxJoinRequest;
 use App\Models\InboxMessage;
+use App\Models\JoinRequestVote;
 
 use App\Services\ChatAuthorization;
 use App\Services\EmailService;
@@ -35,14 +36,17 @@ class InboxJoinRequestController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $conversation = InboxMateSpace::where('user2', $uid)->where('user1', $sender_uid)->first();
+        $conversation = InboxMateSpace::where('user1', $sender_uid)
+            ->whereIn('user2', array_values(array_unique([$space->uid, $uid])))
+            ->orderByDesc('id')
+            ->first();
         
         if (!$conversation) {
             $conv_uid = uniqid();
 
             $conversation = InboxMateSpace::create([
                 'uid' => $conv_uid,
-                'user2' => $uid,
+                'user2' => $space->uid,
                 'user1' => $sender_uid
             ]);
         }
@@ -58,8 +62,13 @@ class InboxJoinRequestController extends Controller
             'content' => $content,
         ]);
 
+        if ($conversation->user2 !== $space->uid) {
+            $conversation->user2 = $space->uid;
+            $conversation->save();
+        }
+
         InboxJoinRequest::where('mate_id', $sender_id)
-            ->where('space_uid', $uid)
+            ->where('space_uid', $space->uid)
             ->where('status', 'pending')
             ->update(['status' => 'expired']);
 
@@ -67,7 +76,7 @@ class InboxJoinRequestController extends Controller
         $joinRequest = new InboxJoinRequest;
         $joinRequest->mate_id = $sender_id;
         $joinRequest->mate_uid = $sender_uid;
-        $joinRequest->space_uid = $uid;
+        $joinRequest->space_uid = $space->uid;
         $joinRequest->message_id = $message->id;
         $joinRequest->status = 'pending';
         $joinRequest->save();
@@ -80,11 +89,17 @@ class InboxJoinRequestController extends Controller
 
         $participants[$sender_uid] = Mate::where('uid', $sender_uid)->select('name', 'username', 'avatar')->first();
         $participants[$sender_uid]['type'] = 'mate';
-        $participants[$uid] = Space::where('uid', $uid)->select('name', 'photo')->first();
-        $participants[$uid]['type'] = 'space';
+        $participants[$space->uid] = [
+            'uid' => $space->uid,
+            'username' => $space->username,
+            'name' => $space->name,
+            'photo' => $space->photo,
+            'type' => 'space',
+        ];
+        if ($uid !== $space->uid) {
+            $participants[$uid] = $participants[$space->uid];
+        }
      
-        // $space_name = Space::where('uid', $uid)->value('name');
-        $space = Space::where('uid', $uid)->select('name', 'user_id', 'claimed', 'email')->first();
         $space_name = $space->name;
         $space_user_id = $space->user_id;
 
@@ -118,7 +133,7 @@ class InboxJoinRequestController extends Controller
 
         $data = [
             'name' => $space_name,
-            'uid' => $uid,
+            'uid' => $space->uid,
             'request_message' => $content,
             'from_name' => $from_name,
             'from_email' => $sender->email,
@@ -129,7 +144,7 @@ class InboxJoinRequestController extends Controller
 
         $emailService->sendEmail($sender->email, 'Your join request was sent', 'join_request_confirmation', [
             'name' => $space_name,
-            'uid' => $uid,
+            'uid' => $space->uid,
             'claimed' => (bool)$space->claimed,
             'request_message' => $content,
         ]);
@@ -143,7 +158,7 @@ class InboxJoinRequestController extends Controller
             Log::create([
                 'user_id' => $sender_id,
                 'user_uid' => $sender_uid,
-                'space_uid' => $uid,
+                'space_uid' => $space->uid,
                 'other_uid' => (string)$joinRequest->id,
                 'action' => 'join request email sent',
             ]);
@@ -156,7 +171,7 @@ class InboxJoinRequestController extends Controller
         Log::create([
             'user_id' => $sender_id,
             'user_uid' => $sender_uid,
-            'space_uid' => $uid,
+            'space_uid' => $space->uid,
             'action' => 'new join request',
         ]);
  
@@ -175,7 +190,13 @@ class InboxJoinRequestController extends Controller
         }
 
         $space = Space::where('uid', $jr->space_uid)->first();
-        if (!$space || !ChatAuthorization::isHubAdmin($request->user(), $space)) {
+        if (!$space) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $canDeclineDirectly = ChatAuthorization::isHubAdmin($request->user(), $space);
+        $canVote = ChatAuthorization::canVoteOnJoinRequests($request->user(), $space);
+        if (!$canDeclineDirectly && !$canVote) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -185,6 +206,34 @@ class InboxJoinRequestController extends Controller
 
         if ($jr->status !== 'pending') {
             return response()->json(['message' => 'Join request is not pending'], 409);
+        }
+
+        if ($canVote) {
+            if ((int) $jr->mate_id === (int) $request->user()->id) {
+                return response()->json(['message' => 'You cannot vote on your own join request'], 403);
+            }
+
+            JoinRequestVote::updateOrCreate(
+                [
+                    'join_request_id' => $jr->id,
+                    'user_id' => $request->user()->id,
+                ],
+                ['vote' => 'decline']
+            );
+
+            $votesCount = JoinRequestVote::where('join_request_id', $jr->id)
+                ->where('vote', 'decline')
+                ->count();
+            $votesRequired = intdiv(count(ChatAuthorization::activeHubMemberUserIds($space)), 2) + 1;
+
+            if ($votesCount < $votesRequired) {
+                return response()->json([
+                    'message' => 'vote_recorded',
+                    'vote' => 'decline',
+                    'decline_votes_count' => $votesCount,
+                    'votes_required' => $votesRequired,
+                ], 200);
+            }
         }
 
         $jr->status = 'declined';
@@ -214,17 +263,45 @@ class InboxJoinRequestController extends Controller
             return response()->json(['message' => 'Join request does not exist'], 404);
         }
 
-        $space = Space::where('uid', $jr->space_uid)->select('user_id', 'name', 'uid')->first();
+        $space = Space::where('uid', $jr->space_uid)->select('user_id', 'governance_type', 'name', 'uid')->first();
         if (!$space) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if (!ChatAuthorization::isHubAdmin($request->user(), $space)) {
+        if (!ChatAuthorization::isHubAdmin($request->user(), $space) && !ChatAuthorization::canVoteOnJoinRequests($request->user(), $space)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         if ($jr->status !== 'pending') {
             return response()->json(['message' => 'Join request is not pending'], 409);
+        }
+
+        if (ChatAuthorization::canVoteOnJoinRequests($request->user(), $space)) {
+            if ((int) $jr->mate_id === (int) $request->user()->id) {
+                return response()->json(['message' => 'You cannot vote on your own join request'], 403);
+            }
+
+            JoinRequestVote::updateOrCreate(
+                [
+                    'join_request_id' => $jr->id,
+                    'user_id' => $request->user()->id,
+                ],
+                ['vote' => 'accept']
+            );
+
+            $votesCount = JoinRequestVote::where('join_request_id', $jr->id)
+                ->where('vote', 'accept')
+                ->count();
+            $votesRequired = intdiv(count(ChatAuthorization::activeHubMemberUserIds($space)), 2) + 1;
+
+            if ($votesCount < $votesRequired) {
+                return response()->json([
+                    'message' => 'vote_recorded',
+                    'vote' => 'accept',
+                    'accept_votes_count' => $votesCount,
+                    'votes_required' => $votesRequired,
+                ], 200);
+            }
         }
 
         $isJoined = SpaceMate::where('space_uid', $jr->space_uid)->where('user_id', $jr->mate_id)->where('status', 'active')->first();

@@ -60,7 +60,7 @@
         </div>
         <div v-if="profilePic == 'photo'" class="avatar-widget">
           <div class="form-avatar">
-            <img :src="photo" alt="">
+            <img :src="matePhotoUrl(photo)" alt="">
           </div>
           <label class="form-label" for="photos">Upload photo</label>
           <input type="file" id="photos" accept="image/*" v-on:change="onFileSelected">
@@ -233,6 +233,7 @@
 // import multiavatar from '@multiavatar/multiavatar/esm'
 import "/node_modules/flag-icons/css/flag-icons.min.css";
 import SocialFieldIcon from '../components/SocialFieldIcon.vue';
+import { matePhotoUrl } from '../mediaUrls.js';
 import VisitedCountries from './VisitedCountries.vue';
 
 export default {
@@ -610,6 +611,7 @@ export default {
   },
 
   methods: {
+    matePhotoUrl,
     showSavedMessage() {
       this.profileUpdated = true;
       this.profileSavedFading = false;

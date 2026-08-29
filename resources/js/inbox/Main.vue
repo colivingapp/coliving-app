@@ -163,7 +163,7 @@ function getDisplayName(uid) {
   }
 
   if (participants.value[uid].type == 'space') {
-    return participants.value[uid].name;
+    return participants.value[uid].name || participants.value[uid].username || '';
   }
   else {
     if (!participants.value[uid].name) {

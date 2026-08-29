@@ -39,13 +39,29 @@
       
       <div v-if="hubType == 'coliving'">
         <div v-if="isLoading">Loading...</div>
-        <div v-else-if="myColivingSpaces.length > 0" class="space-grid">
-          <SpaceCard
-            v-for="space in myColivingSpaces"
-            :key="space.uid || space.space_uid"
-            :space="space"
-            :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
-          />
+        <div v-else-if="myColivingSpaces.length > 0">
+          <div v-if="hostedColivingSpaces.length > 0">
+            <h2>Hosted Coliving Spaces</h2>
+            <div class="space-grid">
+              <SpaceCard
+                v-for="space in hostedColivingSpaces"
+                :key="space.uid || space.space_uid"
+                :space="space"
+                :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
+              />
+            </div>
+          </div>
+          <div v-if="selfManagedColivingSpaces.length > 0" :style="{ marginTop: hostedColivingSpaces.length > 0 ? '32px' : '0' }">
+            <h2>Self-Managed Coliving Groups</h2>
+            <div class="space-grid">
+              <SpaceCard
+                v-for="space in selfManagedColivingSpaces"
+                :key="space.uid || space.space_uid"
+                :space="space"
+                :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
+              />
+            </div>
+          </div>
         </div>
         <div v-else>
           <div style="height:10px;"></div>
@@ -105,7 +121,7 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import SpaceCard from '../components/SpaceCard.vue';
 
   let userLoggedIn = ref(window.userLoggedIn);
@@ -114,6 +130,9 @@
   let pastColivingSpaces = ref([]);
   let hubType = ref('coliving');
   let isLoading = ref(true);
+
+  const hostedColivingSpaces = computed(() => myColivingSpaces.value.filter(space => space.governance_type !== 'self-managed'));
+  const selfManagedColivingSpaces = computed(() => myColivingSpaces.value.filter(space => space.governance_type === 'self-managed'));
 
   const activityTime = (space) => {
     if (!space.last_activity_at) {

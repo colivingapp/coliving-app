@@ -13,7 +13,15 @@ class Space extends Model
     protected $table = 'spaces';
 
     protected $fillable = [
-        'category', 'subcategory'
+        'governance_type', 'category', 'subcategory'
+    ];
+
+    public const GOVERNANCE_HOSTED = 'hosted';
+    public const GOVERNANCE_SELF_MANAGED = 'self-managed';
+
+    public const GOVERNANCE_TYPES = [
+        self::GOVERNANCE_HOSTED => 'Hosted Coliving Space',
+        self::GOVERNANCE_SELF_MANAGED => 'Self-Managed Coliving Group',
     ];
 
     // Main categories (MANDATORY - exactly one per space)
@@ -25,6 +33,7 @@ class Space extends Model
         'cohousing' => 'Cohousing / Communal Living',
         'senior-coliving' => 'Senior Coliving',
         'short-term' => 'Short-Term Coliving',
+        'popup-temporary' => 'Popup / Temporary Space',
     ];
 
     // Subcategories by main category (OPTIONAL)
@@ -73,7 +82,26 @@ class Space extends Model
             'pop-up' => 'Pop-Up',
             'project-based' => 'Project-Based',
         ],
+        'popup-temporary' => [
+            'popup-house' => 'Popup Space',
+            'temporary-community' => 'Temporary Community',
+            'fixed-dates' => 'Fixed Dates',
+        ],
     ];
+
+    public static function findByUidOrUsername(?string $identifier): ?self
+    {
+        if ($identifier === null || $identifier === '') {
+            return null;
+        }
+
+        $space = static::where('uid', $identifier)->first();
+        if ($space) {
+            return $space;
+        }
+
+        return static::where('username', $identifier)->first();
+    }
 
     public function photos()
     {

@@ -39,6 +39,36 @@
           </div>
         </div>
 
+        <div class="categories-popup-mob">
+          <h2 style="margin-top:0px;">Browse by Type</h2>
+          Find spaces by category.
+
+          <div style="height:10px;"></div>
+
+          <div class="category-grid">
+            <router-link v-for="cat in categories" :key="cat.slug" :to="`/spaces/${cat.slug}`" class="category-chip">
+              {{ cat.label }}
+            </router-link>
+          </div>
+
+          <div style="height:10px;"></div>
+        </div>
+
+        <div class="categories-popup">
+          <h2 style="margin-top:0px;">Browse by Type</h2>
+          Find spaces by category.
+
+          <div style="height:10px;"></div>
+
+          <div class="category-grid">
+            <router-link v-for="cat in categories" :key="cat.slug" :to="`/spaces/${cat.slug}`" class="category-chip">
+              {{ cat.label }}
+            </router-link>
+          </div>
+
+          <div style="height:10px;"></div>
+        </div>
+
         <div class="my-spaces-popup">
           <h2 style="margin-top:0px;">My Spaces</h2>
           Create a new coliving space or manage your existing ones in My Spaces
@@ -56,7 +86,7 @@
           <h2 style="margin-top:0px;">Newest Space</h2>
           <div style="padding-left:30px;padding-right:30px;padding-bottom:5px;">
             <router-link :to="'/space/'+latestSpace['uid']">
-              <img :src="'/storage/spaces/'+latestSpace['space_photo']" style="max-width:100%;border-radius:5px;">
+              <img :src="spacePhotoUrl(latestSpace['space_photo'])" style="max-width:100%;border-radius:5px;" loading="lazy">
             </router-link>
           </div>
           <router-link :to="'/space/'+latestSpace['uid']"><b>{{ latestSpace['name'] }}</b></router-link>
@@ -75,8 +105,20 @@
 import "/node_modules/flag-icons/css/flag-icons.min.css";
 
 import { ref, computed } from 'vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 const countries = ref([]);
+
+const categories = [
+  { slug: 'managed-coliving', label: 'Managed Coliving' },
+  { slug: 'shared-housing', label: 'Shared Housing' },
+  { slug: 'student-housing', label: 'Student Housing' },
+  { slug: 'digital-nomad', label: 'Digital Nomad Coliving' },
+  { slug: 'cohousing', label: 'Cohousing / Communal Living' },
+  { slug: 'senior-coliving', label: 'Senior Coliving' },
+  { slug: 'short-term', label: 'Short-Term Coliving' },
+  { slug: 'popup-temporary', label: 'Popup / Temporary Space' },
+];
 
 let spacesCount = ref(0);
 let countriesCount = ref(0);
@@ -128,6 +170,46 @@ if (userLoggedIn.value) {
 </script>
 
 <style>
+.categories-popup {
+  padding:25px 10px 10px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:right;
+  margin-bottom:30px;
+}
+
+.categories-popup-mob {
+  padding:25px 10px 10px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:left;display:none;
+  margin-top:50px;
+  margin-bottom:20px;
+  min-width: 320px;
+}
+
+.category-grid {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+}
+
+.category-chip {
+  display:inline-block;
+  padding:8px 10px;
+  border:1px solid #cfcfcf;
+  border-radius:999px;
+  background:#fff;
+  color:#0b5ed7;
+  font-size:14px;
+  line-height:1;
+  text-decoration:none;
+}
+
+.category-chip:visited {
+  color:#0b5ed7;
+}
+
+.category-chip:hover {
+  border-color:#999;
+  text-decoration:none;
+}
+
 .my-spaces-popup {
   padding:25px 10px 5px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:right;
 }
@@ -144,15 +226,21 @@ if (userLoggedIn.value) {
 }
 
 @media screen and (max-width: 980px) {
+  .categories-popup {
+    display:none;
+  }
   .my-spaces-popup {
     display:none;
+  }
+  .categories-popup-mob {
+    display:block;
   }
   .my-spaces-popup-mob {
     display:block;
   }
   .newest-space-popup {
     float:left;
-    margin-top:40px;
+    margin-top:20px;
   }
 }
 
