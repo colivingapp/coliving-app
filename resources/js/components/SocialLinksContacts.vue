@@ -72,16 +72,6 @@
     </div>
 
     <div style="display:inline-block;width:30px;margin-right:12px;" class="buttons-hover">
-      <a href="https://t.me/colivingapp" title="Telegram" target="_blank">
-        <svg class="svg-button" version="1.1" viewBox="0 0 43.821 43.449" xmlns="http://www.w3.org/2000/svg">
-          <g transform="translate(20.355 -168.78)">
-            <path d="m1.5551 168.78c-12.101 0-21.91 9.7838-21.91 21.854s9.8091 21.854 21.91 21.854c12.101 0 21.91-9.7838 21.91-21.854s-9.8091-21.854-21.91-21.854zm11.791 12.03-4.4141 22.213s-0.62058 1.5375-2.3121 0.79868l-6.2758-4.9219-3.9937 3.634s-0.3203 0.2396-0.66061 0.0899l0.77072-6.7788v-0.03l0.02002 0.01c0.52048-0.46922 11.29-10.123 11.741-10.543 0.46043-0.42929 0.31029-0.52913 0.31029-0.52913 0.030028-0.51914-0.83077 0-0.83077 0l-14.984 9.4943-6.2358-2.0965s-0.96089-0.33944-1.051-1.0782c-0.09008-0.73878 1.081-1.1381 1.081-1.1381l24.803-9.704s2.0319-0.89852 2.0319 0.57904z" />
-          </g>
-        </svg>
-      </a>
-    </div>
-
-    <div style="display:inline-block;width:30px;margin-right:12px;" class="buttons-hover">
       <a href="https://www.linkedin.com/company/colivingapp" title="LinkedIn" target="_blank">
         <svg class="svg-button" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
         viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">

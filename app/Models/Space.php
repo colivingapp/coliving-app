@@ -13,7 +13,11 @@ class Space extends Model
     protected $table = 'spaces';
 
     protected $fillable = [
-        'governance_type', 'category', 'subcategory'
+        'governance_type', 'category', 'subcategory', 'featured'
+    ];
+
+    protected $casts = [
+        'featured' => 'boolean',
     ];
 
     public const GOVERNANCE_HOSTED = 'hosted';

@@ -1,12 +1,18 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+import ProfilePic from '../components/ProfilePic.vue';
 
 const props = defineProps({
   uid: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
   events: { type: Array, default: () => [] },
+  members: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
 });
+
+const router = useRouter();
 
 const emit = defineEmits(['refresh']);
 
@@ -51,6 +57,24 @@ const upcoming = computed(() => {
     .filter(event => (event.end_date || event.start_date || '') >= todayKey)
     .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
     .slice(0, 8);
+});
+
+const joinedMembers = computed(() => {
+  const seen = new Set();
+  return props.members.filter((mate) => {
+    if (!joinDateKey(mate.joined_at)) return false;
+    const id = mate.user_id || mate.id || mate.uid;
+    if (id && seen.has(id)) return false;
+    if (id) seen.add(id);
+    return true;
+  });
+});
+
+const monthJoins = computed(() => {
+  const prefix = `${viewDate.value.getFullYear()}-${String(viewDate.value.getMonth() + 1).padStart(2, '0')}-`;
+  return joinedMembers.value
+    .filter(mate => joinDateKey(mate.joined_at).startsWith(prefix))
+    .sort((a, b) => joinDateKey(a.joined_at).localeCompare(joinDateKey(b.joined_at)));
 });
 
 function blankForm(kind) {
@@ -151,6 +175,58 @@ function visibleItems(dayKey) {
 
 function extraCount(dayKey) {
   return Math.max(0, itemsForDay(dayKey).length - 3);
+}
+
+function joinDateKey(value) {
+  if (!value) return '';
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return toDateKey(date);
+}
+
+function joinsForDay(dayKey) {
+  return joinedMembers.value.filter(mate => joinDateKey(mate.joined_at) === dayKey);
+}
+
+function visibleJoins(dayKey) {
+  return joinsForDay(dayKey).slice(0, 3);
+}
+
+function joinExtraCount(dayKey) {
+  return Math.max(0, joinsForDay(dayKey).length - 3);
+}
+
+function memberDisplayName(mate) {
+  if (!mate) return 'Member';
+  if (mate.account_deleted) return 'Deleted account';
+  return mate.displayName || mate.name || mate.username || mate.uid || 'Member';
+}
+
+function mateProfileTo(mate) {
+  if (!mate || mate.account_deleted) return '';
+  if (!mate.username && !mate.uid) return '';
+  return '/mate/' + (mate.username || mate.uid);
+}
+
+function joinTitle(mate) {
+  return `${memberDisplayName(mate)} joined`;
+}
+
+function formatJoinDay(value) {
+  const key = joinDateKey(value);
+  if (!key) return '';
+  return formatRangeLabel(key, key);
+}
+
+function openMember(mate, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const to = mateProfileTo(mate);
+  if (to) router.push(to);
 }
 
 function shiftMonth(delta) {
@@ -288,6 +364,7 @@ onBeforeUnmount(() => {
     <div class="cal-legend">
       <span><i class="cal-swatch cal-swatch-off"></i> Day off</span>
       <span><i class="cal-swatch cal-swatch-event"></i> Event</span>
+      <span><i class="cal-swatch cal-swatch-join"></i> Joined</span>
       <span><i class="cal-swatch cal-swatch-selected"></i> Selected</span>
     </div>
 
@@ -327,6 +404,31 @@ onBeforeUnmount(() => {
               @click.stop="openEvent(item)"
             >{{ item.title }}</span>
             <span v-if="extraCount(cell.key)" class="cal-more">+{{ extraCount(cell.key) }}</span>
+          </div>
+          <div v-if="joinsForDay(cell.key).length" class="cal-joins">
+            <span
+              v-for="mate in visibleJoins(cell.key)"
+              :key="mate.id || mate.user_id || mate.uid"
+              class="cal-join-avatar"
+              :class="{ clickable: !!mateProfileTo(mate) }"
+              :title="joinTitle(mate)"
+              @pointerdown.stop="openMember(mate, $event)"
+              @click.stop="openMember(mate, $event)"
+            >
+              <img
+                v-if="mate.account_deleted"
+                src="/img/coliving-app-logo-symbol.png"
+                alt=""
+                class="cal-join-placeholder"
+              >
+              <profile-pic
+                v-else
+                :profile_pic="mate.profile_pic"
+                :avatar="mate.avatar"
+                :photo="mate.photo"
+              />
+            </span>
+            <span v-if="joinExtraCount(cell.key)" class="cal-more">+{{ joinExtraCount(cell.key) }}</span>
           </div>
         </button>
       </div>
@@ -397,15 +499,47 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="loading" class="hub-empty" style="margin-top:18px;">Loading calendar...</div>
-    <div v-else-if="upcoming.length" class="cal-upcoming">
-      <h3>Upcoming</h3>
-      <article v-for="event in upcoming" :key="event.id" class="hub-event-card" @click="openEvent(event)">
-        <div class="hub-event-date">{{ formatEventRange(event) }} · {{ event.kind === 'day_off' ? 'Day off' : 'Event' }}</div>
-        <div class="hub-event-title">{{ event.title }}</div>
-        <div v-if="event.location" class="hub-member-meta">{{ event.location }}</div>
-      </article>
-    </div>
-    <div v-else class="hub-empty" style="margin-top:18px;">No upcoming events or days off yet. Select dates on the grid to add one.</div>
+    <template v-else>
+      <div v-if="upcoming.length" class="cal-upcoming">
+        <h3>Upcoming</h3>
+        <article v-for="event in upcoming" :key="event.id" class="hub-event-card" @click="openEvent(event)">
+          <div class="hub-event-date">{{ formatEventRange(event) }} · {{ event.kind === 'day_off' ? 'Day off' : 'Event' }}</div>
+          <div class="hub-event-title">{{ event.title }}</div>
+          <div v-if="event.location" class="hub-member-meta">{{ event.location }}</div>
+        </article>
+      </div>
+      <div v-else class="hub-empty" style="margin-top:18px;">No upcoming events or days off yet. Select dates on the grid to add one.</div>
+
+      <div v-if="monthJoins.length" class="cal-upcoming cal-joins-list">
+        <h3>Joined {{ monthLabel }}</h3>
+        <article
+          v-for="mate in monthJoins"
+          :key="'join-' + (mate.id || mate.user_id || mate.uid)"
+          class="hub-event-card cal-join-row"
+          :class="{ clickable: !!mateProfileTo(mate) }"
+          @click="openMember(mate, $event)"
+        >
+          <span class="cal-join-avatar cal-join-avatar-lg">
+            <img
+              v-if="mate.account_deleted"
+              src="/img/coliving-app-logo-symbol.png"
+              alt=""
+              class="cal-join-placeholder"
+            >
+            <profile-pic
+              v-else
+              :profile_pic="mate.profile_pic"
+              :avatar="mate.avatar"
+              :photo="mate.photo"
+            />
+          </span>
+          <div>
+            <div class="hub-event-title">{{ memberDisplayName(mate) }}</div>
+            <div class="hub-event-date">Joined {{ formatJoinDay(mate.joined_at) }}</div>
+          </div>
+        </article>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -566,9 +700,83 @@ onBeforeUnmount(() => {
   border-color: #9ad6f5;
 }
 
+.cal-swatch-join {
+  background: #fff;
+  border-color: #c8c8c8;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px #f3f3f3;
+}
+
 .cal-swatch-selected {
   background: #e8f6ff;
   border-color: #00abff;
+}
+
+.cal-joins {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.cal-join-avatar {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f3f3f3;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.cal-join-avatar.clickable {
+  cursor: pointer;
+}
+
+.cal-join-avatar :deep(div),
+.cal-join-avatar :deep(img),
+.cal-join-avatar :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.cal-join-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+  box-sizing: border-box;
+  background: #f7f7f7;
+  opacity: .75;
+}
+
+.cal-join-avatar-lg {
+  width: 40px;
+  height: 40px;
+}
+
+.cal-join-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cal-join-row.clickable {
+  cursor: pointer;
+}
+
+.cal-join-row .hub-event-title {
+  margin-top: 0;
+  font-size: 15px;
+}
+
+.cal-joins-list .hub-event-card + .hub-event-card {
+  margin-top: 10px;
 }
 
 .cal-board {
@@ -827,6 +1035,16 @@ onBeforeUnmount(() => {
 
   .cal-more {
     display: none;
+  }
+
+  .cal-joins {
+    padding-top: 2px;
+    gap: 1px;
+  }
+
+  .cal-join-avatar {
+    width: 14px;
+    height: 14px;
   }
 }
 

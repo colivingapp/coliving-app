@@ -31,7 +31,10 @@ const posts = ref([]);
 const events = ref([]);
 const joinRequests = ref([]);
 
+const MEMBERS_PER_PAGE = 40;
 const membersFilter = ref('current');
+const membersSort = ref('active');
+const membersPage = ref(1);
 const requestsFilter = ref('pending');
 const showNewThread = ref(false);
 const newThread = ref({ title: '', content: '' });
@@ -56,9 +59,35 @@ const activeSection = computed(() => {
 
 const currentMembers = computed(() => mates.value.filter(mate => mate.status !== 'left'));
 const pastMembers = computed(() => mates.value.filter(mate => mate.status === 'left'));
-const visibleMembers = computed(() => {
+const filteredMembers = computed(() => {
   if (membersFilter.value === 'past') return pastMembers.value;
   return currentMembers.value;
+});
+const sortedMembers = computed(() => {
+  const list = filteredMembers.value;
+  if (membersSort.value === 'newest') {
+    return [...list].sort((a, b) => {
+      const timeA = memberTime(a.joined_at) || Number(a.id) || 0;
+      const timeB = memberTime(b.joined_at) || Number(b.id) || 0;
+      return timeB - timeA;
+    });
+  }
+  if (membersSort.value === 'alpha') {
+    return [...list].sort((a, b) => memberNameKey(a).localeCompare(memberNameKey(b)));
+  }
+  return list;
+});
+const membersPageCount = computed(() => Math.max(1, Math.ceil(sortedMembers.value.length / MEMBERS_PER_PAGE)));
+const visibleMembers = computed(() => {
+  const start = (membersPage.value - 1) * MEMBERS_PER_PAGE;
+  return sortedMembers.value.slice(start, start + MEMBERS_PER_PAGE);
+});
+const membersRangeLabel = computed(() => {
+  const total = sortedMembers.value.length;
+  if (!total) return '';
+  const start = (membersPage.value - 1) * MEMBERS_PER_PAGE + 1;
+  const end = Math.min(total, membersPage.value * MEMBERS_PER_PAGE);
+  return `${start}–${end} of ${total}`;
 });
 
 const filteredRequests = computed(() => {
@@ -159,6 +188,31 @@ function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function memberTime(value) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function memberNameKey(mate) {
+  return String(mate?.name || mate?.username || mate?.uid || '').trim().toLowerCase();
+}
+
+function setMembersFilter(filter) {
+  membersFilter.value = filter;
+  membersPage.value = 1;
+}
+
+function setMembersSort(sort) {
+  membersSort.value = sort;
+  membersPage.value = 1;
+}
+
+function goToMembersPage(page) {
+  const next = Math.min(membersPageCount.value, Math.max(1, Number(page) || 1));
+  membersPage.value = next;
 }
 
 async function fetchHub() {
@@ -711,21 +765,37 @@ onMounted(loadHub);
         </section>
 
         <section v-if="activeSection === 'members'" class="hub-panel">
-          <div class="hub-chips">
-            <button type="button" class="hub-chip" :class="{ active: membersFilter === 'current' }" @click="membersFilter = 'current'">Current ({{ currentMembers.length }})</button>
-            <button type="button" class="hub-chip" :class="{ active: membersFilter === 'past' }" @click="membersFilter = 'past'">Past ({{ pastMembers.length }})</button>
+          <div class="hub-members-toolbar">
+            <div class="hub-chips">
+              <button type="button" class="hub-chip" :class="{ active: membersFilter === 'current' }" @click="setMembersFilter('current')">Current ({{ currentMembers.length }})</button>
+              <button type="button" class="hub-chip" :class="{ active: membersFilter === 'past' }" @click="setMembersFilter('past')">Past ({{ pastMembers.length }})</button>
+            </div>
+            <label class="hub-sort">
+              <select class="hub-sort-select" aria-label="Sort" :value="membersSort" @change="setMembersSort($event.target.value)">
+                <option value="active">Most active</option>
+                <option value="newest">Newest</option>
+                <option value="alpha">Alphabetical</option>
+              </select>
+            </label>
           </div>
 
           <div v-if="isLoadingMates" class="hub-empty">Loading members...</div>
           <div v-else-if="membersFilter === 'current' && currentMembers.length === 0" class="hub-empty">No current members yet.</div>
           <div v-else-if="membersFilter === 'past' && pastMembers.length === 0" class="hub-empty">No past members yet.</div>
-          <div v-else class="hub-member-grid">
-            <HubMemberCard
-              v-for="mate in visibleMembers"
-              :key="mate.id"
-              :mate="mate"
-            />
-          </div>
+          <template v-else>
+            <div class="hub-member-grid">
+              <HubMemberCard
+                v-for="mate in visibleMembers"
+                :key="mate.id"
+                :mate="mate"
+              />
+            </div>
+            <div v-if="sortedMembers.length > MEMBERS_PER_PAGE" class="hub-pagination">
+              <button type="button" class="hub-page-btn" :disabled="membersPage <= 1" @click="goToMembersPage(membersPage - 1)">Previous</button>
+              <span class="hub-page-label">Page {{ membersPage }} of {{ membersPageCount }} · {{ membersRangeLabel }}</span>
+              <button type="button" class="hub-page-btn" :disabled="membersPage >= membersPageCount" @click="goToMembersPage(membersPage + 1)">Next</button>
+            </div>
+          </template>
         </section>
 
         <section v-if="activeSection === 'requests'" class="hub-panel">
@@ -793,6 +863,7 @@ onMounted(loadHub);
             :uid="uid"
             :is-admin="isAdmin"
             :events="events"
+            :members="mates"
             :loading="isLoadingEvents"
             @refresh="fetchEvents"
           />
@@ -1392,11 +1463,81 @@ a.hub-post-author-identity:hover span {
   margin-top: 18px;
 }
 
+.hub-members-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 18px;
+}
+
+.hub-members-toolbar .hub-chips {
+  align-items: center;
+  margin: 0;
+}
+
+.hub-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.hub-sort-select {
+  border: 1px solid #d8d8d8;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 28px 6px 14px;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1.2 1.2 6 6l4.8-4.8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
 .hub-chips {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin: 0 0 18px;
+}
+
+.hub-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  margin-top: 22px;
+}
+
+.hub-page-btn {
+  border: 1px solid #d8d8d8;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+}
+
+.hub-page-btn:hover:not(:disabled) {
+  background: #00abff;
+  border-color: #00abff;
+  color: #fff;
+}
+
+.hub-page-btn:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.hub-page-label {
+  font-size: 13px;
+  color: #666;
 }
 
 .hub-chip {

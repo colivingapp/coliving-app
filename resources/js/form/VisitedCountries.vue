@@ -1,5 +1,5 @@
 <template>
-    <div class="visited-countries-desktop-mobile" >
+    <div class="visited-countries-desktop-mobile" :class="{ 'is-profile-view': type === 'profile' }">
         <div v-if="type == 'form'" class="visited-countries-form">
             <input
                 type="text"
@@ -8,8 +8,16 @@
                 placeholder="Filter countries"
                 aria-label="Filter countries"
             >
-            <div id="checkboxes">
-                <div v-for="country in filteredCountries" :key="country.code" class="appify-checkbox visited-country-checkbox">
+            <div id="checkboxes" ref="checkboxes">
+                <div
+                    v-for="country in filteredCountries"
+                    :key="country.code"
+                    class="appify-checkbox visited-country-checkbox"
+                    :class="{ 'is-hovered': isListRowHovered(country.code) }"
+                    :data-country="country.code"
+                    @mouseenter="hoverCountryFromList(country)"
+                    @mouseleave="onListCountryLeave"
+                >
                     <input
                         type="checkbox"
                         :id="'_'+country.code"
@@ -29,17 +37,110 @@
                 <p v-if="filteredCountries.length === 0" class="visited-countries-empty">No matching countries</p>
             </div>
         </div>
-        <div v-else-if="type == 'profile'" id="list">
-            <div v-for="code in sortedCountries" :key="code" class="visited-country-row">
-                <span :class="'fi fi-' + code"></span>
-                {{ getCountryName(code) }}
-            </div>
-        </div>
-		<div class="visited-countries-map">
+		<div
+			class="visited-countries-map"
+			:class="{ 'is-form': type === 'form', 'is-profile': type === 'profile' }"
+			ref="mapWrap"
+		>
+			<aside
+				v-if="type === 'profile'"
+				class="visited-countries-float"
+				:class="{ 'is-collapsed': listCollapsed }"
+				@pointerdown.stop
+				@wheel.stop
+			>
+				<div class="visited-countries-float-toolbar">
+					<span class="visited-countries-float-title">{{ Array.isArray(visitedCountries) ? visitedCountries.length : 0 }} countries</span>
+					<button
+						type="button"
+						class="visited-countries-float-collapse"
+						:aria-expanded="!listCollapsed"
+						:aria-label="listCollapsed ? 'Expand country list' : 'Collapse country list'"
+						@pointerdown.stop
+						@click="listCollapsed = !listCollapsed"
+					>{{ listCollapsed ? '+' : '−' }}</button>
+				</div>
+				<div v-show="!listCollapsed" id="list" ref="profileList">
+					<div
+						v-for="code in sortedCountries"
+						:key="code"
+						class="visited-country-row"
+						:class="{ 'is-hovered': isListRowHovered(code) }"
+						:data-country="code"
+						@mouseenter="hoverCountryFromList({ code, name: getCountryName(code) })"
+						@mouseleave="onListCountryLeave"
+					>
+						<span :class="'fi fi-' + code"></span>
+						{{ getCountryName(code) }}
+					</div>
+				</div>
+			</aside>
+			<div
+				v-if="hoveredCountry"
+				class="visited-country-tooltip"
+				:style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
+			>
+				<span :class="'fi fi-' + hoveredCountry.code"></span>
+				{{ hoveredCountry.name }}
+			</div>
+			<div v-if="mapLoading" class="visited-countries-map-loader" aria-hidden="true">
+				<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 96.7 96.7">
+					<g>
+						<polygon class="ca-st0" points="48.3,48.3 72.1,48.3 72.1,48.6 48.3,72.1 48.3,48.3"/>
+						<polygon class="ca-st1" points="48.3,72.1 48.6,72.2 74.9,78.3 48.3,89.6 48.3,72.1"/>
+						<polygon class="ca-st1" points="72.1,48.3 74.9,78.3 48.3,72.1 72.1,48.3"/>
+						<polygon class="ca-st1" points="72.1,48.3 89.8,48.3 74.9,78.3 72.1,48.3"/>
+						<polygon class="ca-st2" points="89.8,48.3 95.9,48.3 89.8,72 89.8,48.3"/>
+						<polygon class="ca-st2" points="74.9,78.3 89.8,72 89.8,48.3 74.9,78.3"/>
+						<polygon class="ca-st1" points="48.3,89.6 72.4,89.6 74.9,78.3 48.3,89.6"/>
+						<polygon class="ca-st2" points="74.9,78.3 89.8,72 72.4,89.6 74.9,78.3"/>
+						<polygon class="ca-st1" points="48.3,89.6 72.4,89.6 48.3,95.9 48.3,89.6"/>
+						<polygon class="ca-st1" points="48.3,89.6 36.8,89.6 28.3,89.6 24.5,89.6 48.3,95.9 48.3,89.6"/>
+						<polygon class="ca-st1" points="48.3,72.1 27.6,72.1 36.8,89.6 48.3,89.6 48.3,72.1"/>
+						<polygon class="ca-st1" points="27.6,72.1 12.7,72.1 28.3,89.6 36.8,89.6 27.6,72.1"/>
+						<polygon class="ca-st0" points="12.7,72.1 7,72.1 24.5,89.6 28.3,89.6 12.7,72.1"/>
+						<polygon class="ca-st1" points="48.3,48.3 24.5,48.3 27.6,72.1 48.3,72.1 48.3,48.3"/>
+						<polygon class="ca-st0" points="24.5,48.3 7,48.3 12.7,72.1 27.6,72.1 24.5,48.3"/>
+						<polygon class="ca-st2" points="7,48.3 0.8,48.3 7,72.1 12.7,72.1 7,48.3"/>
+						<polygon class="ca-st0" points="48.3,48.3 24.5,48.3 24.5,48.1 48.3,24.5 48.3,48.3"/>
+						<polygon class="ca-st0" points="48.3,24.5 48,24.5 21.8,18.3 48.3,7 48.3,24.5"/>
+						<polygon class="ca-st1" points="24.5,48.3 21.8,18.3 48.3,24.5 24.5,48.3"/>
+						<polygon class="ca-st1" points="24.5,48.3 6.8,48.3 21.8,18.3 24.5,48.3"/>
+						<polygon class="ca-st0" points="6.8,48.3 0.8,48.3 6.8,24.7 6.8,48.3"/>
+						<polygon class="ca-st2" points="21.8,18.3 6.8,24.7 6.8,48.3 21.8,18.3"/>
+						<polygon class="ca-st3" points="48.3,7 24.3,7 21.8,18.3 48.3,7"/>
+						<polygon class="ca-st2" points="21.8,18.3 6.8,24.7 24.3,7 21.8,18.3"/>
+						<polygon class="ca-st2" points="48.3,7 24.3,7 48.3,0.8 48.3,7"/>
+						<polygon class="ca-st1" points="48.3,7 59.8,7 68.4,7 72.2,7 48.3,0.8 48.3,7"/>
+						<polygon class="ca-st4" points="48.3,24.5 69.1,24.5 59.8,7 48.3,7 48.3,24.5"/>
+						<polygon class="ca-st4" points="69.1,24.5 84,24.5 68.4,7 59.8,7 69.1,24.5"/>
+						<polygon class="ca-st1" points="84,24.5 89.6,24.5 72.2,7 68.4,7 84,24.5"/>
+						<polygon class="ca-st4" points="48.3,48.3 72.1,48.3 69.1,24.5 48.3,24.5 48.3,48.3"/>
+						<polygon class="ca-st4" points="72.1,48.3 89.6,48.3 84,24.5 69.1,24.5 72.1,48.3"/>
+						<polygon class="ca-st1" points="89.6,48.3 95.9,48.3 89.6,24.5 84,24.5 89.6,48.3"/>
+					</g>
+				</svg>
+			</div>
+			<div class="visited-countries-map-zoom" @pointerdown.stop>
+				<button type="button" class="visited-countries-map-zoom-btn" aria-label="Zoom in" @click="zoomMapBy(1.3)">+</button>
+				<button type="button" class="visited-countries-map-zoom-btn" aria-label="Zoom out" @click="zoomMapBy(1 / 1.3)">−</button>
+				<button type="button" class="visited-countries-map-zoom-btn" aria-label="Reset map" :disabled="mapZoom <= 1" @click="resetMapZoom">
+					<svg viewBox="0 0 16 16" aria-hidden="true">
+						<path fill="currentColor" d="M8 2.2a5.8 5.8 0 1 0 5.4 3.6h-1.6A4.2 4.2 0 1 1 8 3.8V6l3-2.4L8 .8V2.2z"/>
+					</svg>
+				</button>
+			</div>
 			<svg version="1.1"
           id="Layer_1" class="visited-countries-map-svg" mapsvg:geoViewBox="-169.110266 83.600842 190.486279 -58.508473" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:mapsvg="http://mapsvg.com" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
-          xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1009.7 666"
+          xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" :viewBox="mapViewBoxAttr"
           width="100%" height="100%" preserveAspectRatio="xMidYMid meet"
+          ref="mapSvg"
+          @wheel.prevent="onMapWheel"
+          @pointermove="onMapPointerMove"
+          @pointerleave="onMapPointerLeave"
+          @pointerdown="onMapPointerDown"
+          @pointerup="onMapPointerUp"
+          @pointercancel="onMapPointerUp"
           >
         <path id="AD" d="M479.7,331.6L479.7,331.6l-0.3,0.2l-0.1,0.1l-0.1,0l-0.1,0l-0.1-0.1l0-0.1l0-0.1l0-0.1l0-0.2l0.1-0.1l0.1-0.1l0.2,0
           l0.4,0.1l0.1,0.1l0,0.1L479.7,331.6L479.7,331.6z"/>
@@ -6456,14 +6557,13 @@
           l0,0.9l0,0.3l0,0.2l0.1,0.1l0,0.1l-0.1,0.4l-0.1,0.4l0,0.2l0,0.1l-0.1,0.1l-0.4,0.2l-0.1,0.1l0,0.2l0,0.2l0.1,0.1l0.2,0.1l0.1,0.1
           l0,0.1l-0.1,0.3l-0.2,0.4l0.2,0.5l0.2,0.3l0.2,0.4l0.1,0.2l0,0.2l0,0.2l-0.3,0.7l-0.2,0.4l-0.3,0.5l-0.4,0.3l-0.1,0.1l0,0.2l0,0.3
           l0,0.4l-0.3,0.6l0.2,0.5l0,0l-0.1,0.1l-0.5,0.5l-0.5,0.5l-0.4,0.4l-0.4,0.5l-0.5,0.5l-0.4,0.4L562.7,527z"/>
-      </svg>
+            </svg>
 		</div>
 	</div>
 </template>
 
 <script>
-import "/node_modules/flag-icons/css/flag-icons.min.css";
-// import Map from './Map.vue'; 
+import "/node_modules/flag-icons/css/flag-icons.min.css"; 
 
 export default {
     props: ['visitedCountries', 'type'],
@@ -6727,9 +6827,32 @@ export default {
 
         ],
         selectedCountries: new Set(),
+        hoveredCountry: null,
+        tooltipX: 0,
+        tooltipY: 0,
+        hoveredPath: null,
+        listCollapsed: true,
+        mapLoading: true,
+        baseViewBox: { x: 0, y: 0, w: 1009.7, h: 666 },
+        mapViewBox: { x: 0, y: 0, w: 1009.7, h: 666 },
+        mapZoom: 1,
+        minMapZoom: 1,
+        maxMapZoom: 8,
+        pointerDown: null,
+        didPan: false,
+        panViewStart: null,
+        pinchStartDist: 0,
+        pinchStartZoom: 1,
         }
     },
+    created() {
+      this.activePointers = new Map();
+    },
     computed: {
+    mapViewBoxAttr() {
+      const view = this.mapViewBox;
+      return `${view.x} ${view.y} ${view.w} ${view.h}`;
+    },
     sortedCountries() {
       return [...this.visitedCountries].sort((a, b) => {
         const nameA = this.getCountryName(a).toLowerCase();
@@ -6754,9 +6877,18 @@ export default {
         }
 	},
   mounted() {
-      setTimeout(() => {
-          this.loadCountriesFromProp(this.visitedCountries)
+      document.addEventListener('pointerdown', this.onDocumentPointerDown);
+      this.mapLoadTimer = setTimeout(() => {
+          this.loadCountriesFromProp(this.visitedCountries);
+          this.mapLoading = false;
       }, 1000)
+  },
+  beforeUnmount() {
+      document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+      if (this.mapLoadTimer) {
+          clearTimeout(this.mapLoadTimer);
+      }
+      this.hideCountryTip();
   },
   methods: {
       getCountryName(code) {
@@ -6779,17 +6911,267 @@ export default {
         // Emit the updated list of selected countries
         this.$emit('selected-countries-changed', Array.from(this.selectedCountries));
       },
+      isVisitedCountry(code) {
+        return this.selectedCountries.has(code)
+          || (Array.isArray(this.visitedCountries) && this.visitedCountries.includes(code));
+      },
+      isHoverableCountry(code) {
+        return this.type === 'form' || this.isVisitedCountry(code);
+      },
+      countryFromEvent(event) {
+        const path = event.target.closest && event.target.closest('path');
+        if (!path || !path.id) {
+          return null;
+        }
+        const code = path.id.toLowerCase();
+        return { code, name: this.getCountryName(code), path };
+      },
+      positionTooltip(event) {
+        const wrap = this.$refs.mapWrap;
+        if (!wrap) {
+          return;
+        }
+        const rect = wrap.getBoundingClientRect();
+        const pad = 12;
+        this.tooltipX = Math.min(Math.max(event.clientX - rect.left + 12, pad), rect.width - pad);
+        this.tooltipY = Math.min(Math.max(event.clientY - rect.top + 12, pad), rect.height - pad);
+      },
+      isListRowHovered(code) {
+        return this.hoveredCountry && this.hoveredCountry.code === code;
+      },
+      pathForCode(code) {
+        return document.getElementById(String(code).toUpperCase());
+      },
+      restorePathOrder(path) {
+        if (!path || !path._origNextSibling) {
+          return;
+        }
+        const parent = path.parentNode;
+        if (parent && path._origNextSibling.parentNode === parent) {
+          parent.insertBefore(path, path._origNextSibling);
+        }
+        path._origNextSibling = null;
+      },
+      bringPathToFront(path) {
+        if (!path || !path.parentNode) {
+          return;
+        }
+        path._origNextSibling = path.nextSibling;
+        path.parentNode.appendChild(path);
+      },
+      highlightPath(path) {
+        if (this.hoveredPath && this.hoveredPath !== path) {
+          this.hoveredPath.classList.remove('is-hovered');
+          this.restorePathOrder(this.hoveredPath);
+        }
+        this.hoveredPath = path || null;
+        if (this.hoveredPath) {
+          this.bringPathToFront(this.hoveredPath);
+          this.hoveredPath.classList.add('is-hovered');
+        }
+      },
+      scrollHoveredRowIntoView(code) {
+        const list = this.$refs.checkboxes || this.$refs.profileList;
+        if (!list) {
+          return;
+        }
+        const row = list.querySelector(`[data-country="${code}"]`);
+        if (row) {
+          row.scrollIntoView({ block: 'nearest' });
+        }
+      },
+      positionTooltipOnPath(path) {
+        const wrap = this.$refs.mapWrap;
+        if (!wrap || !path) {
+          return;
+        }
+        const wrapRect = wrap.getBoundingClientRect();
+        const pathRect = path.getBoundingClientRect();
+        const pad = 12;
+        this.tooltipX = Math.min(Math.max(pathRect.left + pathRect.width / 2 - wrapRect.left, pad), wrapRect.width - pad);
+        this.tooltipY = Math.min(Math.max(pathRect.top - wrapRect.top, pad), wrapRect.height - pad);
+      },
+      hoverCountryFromList(country) {
+        const path = this.pathForCode(country.code);
+        this.hoveredCountry = { code: country.code, name: country.name };
+        this.highlightPath(path);
+        this.positionTooltipOnPath(path);
+      },
+      onListCountryLeave() {
+        this.hideCountryTip();
+      },
+      showCountryTip(event) {
+        const country = this.countryFromEvent(event);
+        if (!country || !this.isHoverableCountry(country.code)) {
+          this.hideCountryTip();
+          return;
+        }
+        this.hoveredCountry = { code: country.code, name: country.name };
+        this.highlightPath(country.path);
+        this.positionTooltip(event);
+        this.scrollHoveredRowIntoView(country.code);
+      },
+      hideCountryTip() {
+        this.hoveredCountry = null;
+        this.highlightPath(null);
+      },
+      clientToSvg(clientX, clientY) {
+        const svg = this.$refs.mapSvg;
+        if (!svg || !svg.createSVGPoint || !svg.getScreenCTM()) {
+          return { x: 0, y: 0 };
+        }
+        const point = svg.createSVGPoint();
+        point.x = clientX;
+        point.y = clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+      },
+      clampViewBox(view) {
+        const base = this.baseViewBox;
+        const width = Math.min(Math.max(view.w, base.w / this.maxMapZoom), base.w);
+        const height = Math.min(Math.max(view.h, base.h / this.maxMapZoom), base.h);
+        const x = Math.min(Math.max(view.x, base.x), base.x + base.w - width);
+        const y = Math.min(Math.max(view.y, base.y), base.y + base.h - height);
+        return { x, y, w: width, h: height };
+      },
+      zoomAtClient(clientX, clientY, nextZoom) {
+        const zoom = Math.min(this.maxMapZoom, Math.max(this.minMapZoom, nextZoom));
+        const svgPoint = this.clientToSvg(clientX, clientY);
+        const current = this.mapViewBox;
+        const width = this.baseViewBox.w / zoom;
+        const height = this.baseViewBox.h / zoom;
+        const ratioX = current.w ? (svgPoint.x - current.x) / current.w : 0.5;
+        const ratioY = current.h ? (svgPoint.y - current.y) / current.h : 0.5;
+        this.mapViewBox = this.clampViewBox({
+          x: svgPoint.x - ratioX * width,
+          y: svgPoint.y - ratioY * height,
+          w: width,
+          h: height,
+        });
+        this.mapZoom = zoom;
+      },
+      zoomMapBy(factor) {
+        const wrap = this.$refs.mapWrap;
+        if (!wrap) {
+          return;
+        }
+        const rect = wrap.getBoundingClientRect();
+        this.zoomAtClient(rect.left + rect.width / 2, rect.top + rect.height / 2, this.mapZoom * factor);
+      },
+      resetMapZoom() {
+        this.mapZoom = 1;
+        this.mapViewBox = { ...this.baseViewBox };
+      },
+      onMapWheel(event) {
+        const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+        this.zoomAtClient(event.clientX, event.clientY, this.mapZoom * factor);
+      },
+      startPinch() {
+        const points = [...this.activePointers.values()];
+        if (points.length < 2) {
+          return;
+        }
+        this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        this.pinchStartZoom = this.mapZoom;
+      },
+      updatePinch() {
+        const points = [...this.activePointers.values()];
+        if (points.length < 2 || this.pinchStartDist < 1) {
+          return;
+        }
+        const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        const centerX = (points[0].x + points[1].x) / 2;
+        const centerY = (points[0].y + points[1].y) / 2;
+        this.zoomAtClient(centerX, centerY, this.pinchStartZoom * (distance / this.pinchStartDist));
+        this.didPan = true;
+      },
+      onMapPointerMove(event) {
+        if (this.activePointers.has(event.pointerId)) {
+          this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        }
+        if (this.activePointers.size === 2) {
+          this.updatePinch();
+          this.hideCountryTip();
+          return;
+        }
+        if (this.pointerDown && (event.buttons === 1 || event.pointerType === 'touch')) {
+          const deltaX = event.clientX - this.pointerDown.x;
+          const deltaY = event.clientY - this.pointerDown.y;
+          if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+            this.didPan = true;
+            this.hideCountryTip();
+            const wrap = this.$refs.mapWrap;
+            if (wrap) {
+              const rect = wrap.getBoundingClientRect();
+              this.mapViewBox = this.clampViewBox({
+                x: this.panViewStart.x - deltaX * (this.panViewStart.w / rect.width),
+                y: this.panViewStart.y - deltaY * (this.panViewStart.h / rect.height),
+                w: this.panViewStart.w,
+                h: this.panViewStart.h,
+              });
+            }
+          }
+          if (this.didPan) {
+            return;
+          }
+        }
+        if (event.pointerType === 'touch') {
+          return;
+        }
+        this.showCountryTip(event);
+      },
+      onMapPointerLeave(event) {
+        if (this.pointerDown || event.pointerType === 'touch') {
+          return;
+        }
+        this.hideCountryTip();
+      },
+      onMapPointerDown(event) {
+        this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (this.activePointers.size === 2) {
+          this.startPinch();
+          this.didPan = true;
+          this.hideCountryTip();
+          return;
+        }
+        this.pointerDown = {
+          x: event.clientX,
+          y: event.clientY,
+          country: this.countryFromEvent(event),
+        };
+        this.didPan = false;
+        this.panViewStart = { ...this.mapViewBox };
+        if (event.currentTarget.setPointerCapture) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
+      },
+      onMapPointerUp(event) {
+        this.activePointers.delete(event.pointerId);
+        if (event.currentTarget.releasePointerCapture && event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        if (this.pointerDown && !this.didPan) {
+          const country = this.pointerDown.country;
+          if (this.type === 'form' && country) {
+            this.toggleCountry(country.code);
+          }
+          if (event.pointerType === 'touch' || this.type === 'form') {
+            this.showCountryTip(event);
+          }
+        }
+        this.pointerDown = null;
+      },
+      onDocumentPointerDown(event) {
+        const wrap = this.$refs.mapWrap;
+        if (wrap && !wrap.contains(event.target)) {
+          this.hideCountryTip();
+        }
+      },
       updateMapColors(countryId) {
-        // console.log(countryId)
-        // console.log(countryId.toUpperCase())
         const path = document.getElementById(countryId.toUpperCase());
         if (path) {
-            if (path.style.fill == '#00a0ff' || path.style.fill == 'rgb(0, 160, 255)') {
-                path.style.fill = '';
-            }
-            else {
-                path.style.fill = '#00a0ff';
-            }
+            path.style.fill = '';
+            path.style.stroke = '';
+            path.classList.toggle('is-visited', this.selectedCountries.has(countryId));
         }
       }
 	},
@@ -6805,8 +7187,33 @@ export default {
     }
 
     #Layer_1 path {
-        fill: rgb(216, 216, 216);
-        border: 1px solid grey;
+        fill: #d8d8d8;
+        stroke: #d8d8d8;
+        stroke-width: 0.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        cursor: default;
+    }
+
+    #Layer_1 path.is-visited {
+        fill: #00a0ff;
+        stroke: #00a0ff;
+    }
+
+    .visited-countries-map.is-form #Layer_1 path {
+        cursor: pointer;
+    }
+
+    #Layer_1 path.is-hovered {
+        fill: #bdbdbd;
+        stroke: #4a4a4a;
+        stroke-width: 1.25px;
+        vector-effect: non-scaling-stroke;
+    }
+
+    #Layer_1 path.is-visited.is-hovered {
+        fill: #0086d9;
+        stroke: #0b4f80;
     }
 
     .visited-countries-form {
@@ -6833,6 +7240,12 @@ export default {
     .visited-country-checkbox {
         padding: 2px 0;
         border-bottom: 1px solid #f0f0f0;
+        border-radius: 4px;
+        transition: background-color 0.12s ease;
+    }
+
+    .visited-country-checkbox.is-hovered {
+        background: #e8f5ff;
     }
 
     .visited-country-checkbox:last-child {
@@ -6876,8 +7289,22 @@ export default {
 		max-height: 450px;
     }
 
+    .visited-countries-float #list {
+        max-width: none;
+        max-height: 260px;
+        flex: none;
+        min-height: 0;
+        padding: 4px 6px 8px;
+    }
+
     #list .visited-country-row {
-        padding: 3px 0;
+        padding: 3px 6px;
+        border-radius: 4px;
+        transition: background-color 0.12s ease;
+    }
+
+    #list .visited-country-row.is-hovered {
+        background: #e8f5ff;
     }
 
 	.visited-countries-desktop-mobile {
@@ -6885,6 +7312,67 @@ export default {
 		grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
 		gap: 20px;
 		align-items: start;
+	}
+
+	.visited-countries-desktop-mobile.is-profile-view {
+		display: block;
+	}
+
+	.visited-countries-float {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		z-index: 4;
+		width: min(230px, calc(100% - 56px));
+		display: flex;
+		flex-direction: column;
+		background: rgba(255, 255, 255, 0.88);
+		backdrop-filter: blur(8px);
+		border: 1px solid rgba(180, 180, 180, 0.55);
+		border-radius: 10px;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+		overflow: hidden;
+	}
+
+	.visited-countries-float.is-collapsed {
+		width: auto;
+	}
+
+	.visited-countries-float-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 7px 7px 10px;
+		background: rgba(255, 255, 255, 0.96);
+		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	}
+
+	.visited-countries-float-title {
+		flex: 1;
+		font-size: 13px;
+		font-weight: 700;
+		color: #222;
+		line-height: 1.2;
+	}
+
+	.visited-countries-float-collapse {
+		width: 26px;
+		height: 26px;
+		padding: 0;
+		border: 1px solid #c8c8c8;
+		border-radius: 6px;
+		background: #fff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		font-size: 16px;
+		line-height: 1;
+		cursor: pointer;
+		color: #222;
+		flex-shrink: 0;
+	}
+
+	.visited-countries-float-collapse:hover {
+		border-color: #00a0ff;
+		color: #00a0ff;
 	}
 
 	.visited-countries-form,
@@ -6895,20 +7383,185 @@ export default {
 	}
 
 	.visited-countries-map {
+		position: relative;
 		min-width: 0;
 		width: 100%;
 		aspect-ratio: 1009.7 / 666;
 		overflow: hidden;
 	}
 
+	.visited-countries-map-loader {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 150px;
+		height: 150px;
+		transform: translate(-50%, -50%);
+		z-index: 5;
+		pointer-events: none;
+	}
+
+	.visited-countries-map-loader .ca-st0 {
+		fill-rule: evenodd;
+		clip-rule: evenodd;
+		fill: #66B4B4;
+		stroke: #FFFFFF;
+		stroke-width: 1.5001;
+		stroke-linejoin: round;
+		stroke-miterlimit: 22.9256;
+		animation: visitedLoaderColor1 1s steps(1, end) infinite;
+	}
+
+	.visited-countries-map-loader .ca-st1 {
+		fill-rule: evenodd;
+		clip-rule: evenodd;
+		fill: #A1D1D1;
+		stroke: #FFFFFF;
+		stroke-width: 1.5001;
+		stroke-linejoin: round;
+		stroke-miterlimit: 22.9256;
+		animation: visitedLoaderColor2 1s steps(1, end) infinite;
+		animation-delay: 0.2s;
+	}
+
+	.visited-countries-map-loader .ca-st2 {
+		fill-rule: evenodd;
+		clip-rule: evenodd;
+		fill: #CCE6E6;
+		stroke: #FFFFFF;
+		stroke-width: 1.5001;
+		stroke-linejoin: round;
+		stroke-miterlimit: 22.9256;
+		animation: visitedLoaderColor3 1s steps(1, end) infinite;
+		animation-delay: 0.4s;
+	}
+
+	.visited-countries-map-loader .ca-st3 {
+		fill-rule: evenodd;
+		clip-rule: evenodd;
+		fill: #99CDCD;
+		stroke: #FFFFFF;
+		stroke-width: 1.5001;
+		stroke-linejoin: round;
+		stroke-miterlimit: 22.9256;
+		animation: visitedLoaderColor4 1s steps(1, end) infinite;
+		animation-delay: 0.6s;
+	}
+
+	.visited-countries-map-loader .ca-st4 {
+		fill-rule: evenodd;
+		clip-rule: evenodd;
+		fill: #78BDBD;
+		stroke: #FFFFFF;
+		stroke-width: 1.5001;
+		stroke-linejoin: round;
+		stroke-miterlimit: 22.9256;
+		animation: visitedLoaderColor5 1s steps(1, end) infinite;
+		animation-delay: 0.8s;
+	}
+
+	@keyframes visitedLoaderColor1 {
+		0%, 20% { fill: #66B4B4; }
+		40%, 60% { fill: #005959; }
+		80%, 100% { fill: #66B4B4; }
+	}
+
+	@keyframes visitedLoaderColor2 {
+		0%, 20% { fill: #A1D1D1; }
+		40%, 60% { fill: #006666; }
+		80%, 100% { fill: #A1D1D1; }
+	}
+
+	@keyframes visitedLoaderColor3 {
+		0%, 20% { fill: #CCE6E6; }
+		40%, 60% { fill: #008080; }
+		80%, 100% { fill: #CCE6E6; }
+	}
+
+	@keyframes visitedLoaderColor4 {
+		0%, 20% { fill: #99CDCD; }
+		40%, 60% { fill: #007575; }
+		80%, 100% { fill: #99CDCD; }
+	}
+
+	@keyframes visitedLoaderColor5 {
+		0%, 20% { fill: #78BDBD; }
+		40%, 60% { fill: #005050; }
+		80%, 100% { fill: #78BDBD; }
+	}
+
+	.visited-country-tooltip {
+		position: absolute;
+		z-index: 2;
+		transform: translate(-8px, -100%);
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		border-radius: 6px;
+		background: #fff;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+		font-size: 13px;
+		line-height: 1.2;
+		white-space: nowrap;
+		pointer-events: none;
+	}
+
+	.visited-country-tooltip .fi {
+		width: 1.15em;
+		line-height: 1em;
+		border-radius: 2px;
+		flex-shrink: 0;
+	}
+
 	.visited-countries-map-svg {
 		width: 100%;
 		height: 100%;
 		display: block;
+		touch-action: none;
+		user-select: none;
+	}
+
+	.visited-countries-map-zoom {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.visited-countries-map-zoom-btn {
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: 1px solid #e4e4e4;
+		border-radius: 6px;
+		background: #fff;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+		font-size: 16px;
+		line-height: 1;
+		cursor: pointer;
+		color: #222;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.visited-countries-map-zoom-btn svg {
+		width: 13px;
+		height: 13px;
+		display: block;
+	}
+
+	.visited-countries-map-zoom-btn:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 
 	@media screen and (max-width: 800px) {
-		.visited-countries-desktop-mobile {
+		.visited-countries-desktop-mobile:not(.is-profile-view) {
 			grid-template-columns: 1fr;
 			grid-template-rows: auto auto;
 			margin-bottom: 20px;

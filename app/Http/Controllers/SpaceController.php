@@ -560,6 +560,7 @@ class SpaceController extends Controller
             ->where('photo', 1)
             ->where('claimed', 1)
             ->where('private', 0)
+            ->where('featured', 1)
             ->select('uid', 'name', 'address', 'country_code', 'country', 'country_slug')
             ->latest('created_at')
             ->limit(9)

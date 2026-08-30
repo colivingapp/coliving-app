@@ -56,15 +56,23 @@
         <div style="height: 20px;"></div>
         <router-link :to="'/inbox/mate/'+mate.uid" v-if="currentMateUID != mate.uid && userLoggedIn"><button class="action-button button-1">Send message</button></router-link>
         <router-link to="/login" v-else-if="!userLoggedIn"><button class="action-button button-1">Send message</button></router-link>
-        
+      </div>
 
-        <template v-if="showDetails">
+
+      <div v-if="showDetails && mate.visited_countries && mate.visited_countries.length > 0">
+        <div style="height: 60px;"></div>
+
+        <h2 style="margin-top:0px;">Visited Countries</h2>
+        <div style="height: 12px;"></div>
+
+        <VisitedCountries :visitedCountries="mate.visited_countries" :type="'profile'"></VisitedCountries>
+      </div>
+
+      <div v-if="showDetails">
         <div style="height: 60px;"></div>
 
         <h2 style="margin-top:0px;">Lifestyle Match</h2>
         <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
-          
-
           <span v-if="coliveFitScore && userLoggedIn" style="font-size:24px;font-weight:bold;">{{ coliveFitScore.toFixed(2) }}%</span>
           <span v-else-if="!userLoggedIn">To see the Lifestyle Match, please <router-link to="/register">sign up</router-link> or <router-link to="/login">log in</router-link>.</span>
 
@@ -74,10 +82,11 @@
 
           <div style="height:20px;"></div>
         </div>
-        <div style="height: 40px;"></div>
+      </div>
 
-
-        <h3>References</h3>
+      <div v-if="showDetails">
+        <div style="height: 60px;"></div>
+        <h3 style="margin-top:0px;">References</h3>
         <span v-if="ratingsAll.length === 0 || !ratingsAll.some(rating => rating['rated_by_user'])">
           No references yet.
         </span>
@@ -130,19 +139,6 @@
           <span v-else>Sending...</span>
           <div style="height: 20px;"></div>
         </div>
-        </template>
-      </div>
-
-
-      <div v-if="showDetails && mate.visited_countries && mate.visited_countries.length > 0">
-        <div style="height: 60px;"></div>
-
-        <h2 style="margin-top:0px;">Visited Countries</h2>
-
-        Total: {{ mate.visited_countries.length }}
-        <div style="height: 20px;"></div>
-
-        <VisitedCountries :visitedCountries="mate.visited_countries" :type="'profile'"></VisitedCountries>
       </div>
 
     </div>
