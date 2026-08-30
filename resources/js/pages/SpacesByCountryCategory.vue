@@ -43,7 +43,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import MapByCountry from '../map/MapByCountry.vue';
 import SpaceCard from '../components/SpaceCard.vue';
-import { getCategoryDescription } from '../spaceTaxonomy.js';
+import { CATEGORY_META, getCategoryDescription } from '../spaceTaxonomy.js';
 
 const country = ref('');
 const category = ref('');
@@ -51,16 +51,7 @@ const categorySlug = ref('');
 const spaces = ref([]);
 let isLoading = ref(true);
 
-const CATEGORY_SLUGS = new Set([
-  'managed-coliving',
-  'shared-housing',
-  'student-housing',
-  'digital-nomad',
-  'cohousing',
-  'senior-coliving',
-  'short-term',
-  'popup-temporary',
-]);
+const CATEGORY_SLUGS = new Set(Object.keys(CATEGORY_META));
 
 const fetchSpaces = async () => {
   const route = useRoute();

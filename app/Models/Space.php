@@ -31,13 +31,13 @@ class Space extends Model
     // Main categories (MANDATORY - exactly one per space)
     public const CATEGORIES = [
         'managed-coliving' => 'Managed Coliving',
+        'self-managed' => 'Self-managed Space',
         'shared-housing' => 'Shared Housing',
         'student-housing' => 'Student Housing',
         'digital-nomad' => 'Digital Nomad Coliving',
         'cohousing' => 'Cohousing / Communal Living',
         'senior-coliving' => 'Senior Coliving',
         'short-term' => 'Short-Term Coliving',
-        'popup-temporary' => 'Popup / Temporary Space',
     ];
 
     // Subcategories by main category (OPTIONAL)
@@ -86,9 +86,10 @@ class Space extends Model
             'pop-up' => 'Pop-Up',
             'project-based' => 'Project-Based',
         ],
-        'popup-temporary' => [
-            'popup-house' => 'Popup Space',
+        'self-managed' => [
+            'popup-space' => 'Popup Space',
             'temporary-community' => 'Temporary Community',
+            'resident-led-house' => 'Resident-led House',
             'fixed-dates' => 'Fixed Dates',
         ],
     ];

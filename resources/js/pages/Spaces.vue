@@ -106,19 +106,13 @@ import "/node_modules/flag-icons/css/flag-icons.min.css";
 
 import { ref, computed } from 'vue';
 import { spacePhotoUrl } from '../mediaUrls.js';
+import { CATEGORY_ORDER, CATEGORY_META } from '../spaceTaxonomy.js';
 
 const countries = ref([]);
 
-const categories = [
-  { slug: 'managed-coliving', label: 'Managed Coliving' },
-  { slug: 'shared-housing', label: 'Shared Housing' },
-  { slug: 'student-housing', label: 'Student Housing' },
-  { slug: 'digital-nomad', label: 'Digital Nomad Coliving' },
-  { slug: 'cohousing', label: 'Cohousing / Communal Living' },
-  { slug: 'senior-coliving', label: 'Senior Coliving' },
-  { slug: 'short-term', label: 'Short-Term Coliving' },
-  { slug: 'popup-temporary', label: 'Popup / Temporary Space' },
-];
+const categories = CATEGORY_ORDER
+  .filter(slug => CATEGORY_META[slug])
+  .map(slug => ({ slug, label: CATEGORY_META[slug].label }));
 
 let spacesCount = ref(0);
 let countriesCount = ref(0);

@@ -27,21 +27,21 @@ export const CATEGORY_META = {
     label: 'Short-Term Coliving',
     description: 'Temporary community living such as retreats, pop-ups, seasonal stays, or project-based houses.',
   },
-  'popup-temporary': {
-    label: 'Popup / Temporary Space',
-    description: 'A temporary coliving group or house that runs for fixed dates, usually days, weeks, or a few months.',
+  'self-managed': {
+    label: 'Self-managed Space',
+    description: 'A member-led coliving group where residents collectively decide who joins, who leaves, and how the space is run.',
   },
 };
 
 export const CATEGORY_ORDER = [
   'managed-coliving',
+  'self-managed',
   'shared-housing',
   'student-housing',
   'digital-nomad',
   'cohousing',
   'senior-coliving',
   'short-term',
-  'popup-temporary',
 ];
 
 export const SUBCATEGORY_META = {
@@ -179,18 +179,22 @@ export const SUBCATEGORY_META = {
       description: 'Temporary living built around a project, residency, or focused collaboration.',
     },
   },
-  'popup-temporary': {
-    'popup-house': {
+  'self-managed': {
+    'popup-space': {
       label: 'Popup Space',
-      description: 'A temporary apartment, house, villa, hostel, or similar space opened for a limited period.',
+      description: 'A temporary self-managed house, apartment, villa, hostel, or similar space opened for a limited period.',
     },
     'temporary-community': {
       label: 'Temporary Community',
-      description: 'A time-bound group formed around living together and sharing community life.',
+      description: 'A time-bound member-led group formed around living together and sharing community life.',
+    },
+    'resident-led-house': {
+      label: 'Resident-led House',
+      description: 'A shared home where current residents collectively manage membership and house decisions.',
     },
     'fixed-dates': {
       label: 'Fixed Dates',
-      description: 'A space with clearly defined start and end dates.',
+      description: 'A self-managed space with clearly defined start and end dates.',
     },
   },
 };
