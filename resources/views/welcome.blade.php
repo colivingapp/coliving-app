@@ -45,7 +45,7 @@
 		<link rel="manifest" href="/manifest.json?v=018">
 
         <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
         <!-- <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&family=Roboto:wght@400;70&family=PT+Sans:wght@400;700&family=Muli:wght@400;700&family=Cabin:wght@400;700&family=Open+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Noto+Sans:wght@400;700&family=Lato:wght@400;700&family=Work+Sans:wght@400;700&Montserrat:wght@400;700&display=swap" rel="stylesheet"> -->
 
         @vite('resources/css/app.css')

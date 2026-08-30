@@ -41,7 +41,7 @@
 
 
               <div style="float:right;">
-                <button v-if="!buttonClicked" class="message-send-button" type="submit" style="width:80px;" @click="submitFeedback">Send</button>
+                <button v-if="!buttonClicked" class="btn btn-md btn-primary" type="submit" @click="submitFeedback">Send</button>
                 <div v-else style="text-align:center;width:80px;">Sending...</div>
               </div>
 

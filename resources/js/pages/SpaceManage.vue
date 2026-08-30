@@ -159,8 +159,8 @@ onMounted(() => {
           <div v-if="space.address || space.country" class="dash-subtitle">{{ space.address || space.country }}</div>
         </div>
         <div class="dash-header-actions">
-          <router-link :to="'/space/' + uid"><button type="button" class="button-function">View public page</button></router-link>
-          <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="button-function">Edit space</button></router-link>
+          <router-link :to="'/space/' + uid"><button type="button" class="btn btn-sm btn-quiet">View public page</button></router-link>
+          <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="btn btn-sm btn-quiet">Edit space</button></router-link>
         </div>
       </div>
 
@@ -295,11 +295,11 @@ onMounted(() => {
             <span class="dash-status" :class="'dash-status-' + request.status">{{ request.status }}</span>
             <div class="dash-row-actions">
               <template v-if="request.status === 'pending'">
-                <button type="button" class="button-function dash-btn-accept" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
-                <button type="button" class="button-function dash-btn-decline" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
+                <button type="button" class="btn btn-sm btn-join" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
+                <button type="button" class="btn btn-sm btn-danger" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
               </template>
               <router-link :to="'/inbox/space/' + request.space_uid + '/mate/' + request.mate_uid">
-                <button type="button" class="button-function">View chat</button>
+                <button type="button" class="btn btn-sm btn-quiet">View chat</button>
               </router-link>
             </div>
           </div>

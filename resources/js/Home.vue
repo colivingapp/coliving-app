@@ -27,7 +27,7 @@
     </div>
     <div>
       <div style="height:30px;"></div>
-      <router-link to="/space/new"><button class="action-button button-1">Add a Space</button></router-link>
+      <router-link to="/space/new"><button type="button" class="btn btn-lg btn-primary">Add a Space</button></router-link>
       
       <div style="height:30px;"></div>
 
@@ -131,7 +131,7 @@
       Running a space - or just getting one started? Add it to the map, welcome join requests, and grow a real community around your home. It can be as simple as a room in an apartment or as big as a coliving house, cooperative, or commune.
     </div>
     <div style="height:18px;"></div>
-    <router-link to="/space/new"><button class="action-button button-1">Add New Space</button></router-link>
+    <router-link to="/space/new"><button type="button" class="btn btn-lg btn-primary">Add a Space</button></router-link>
 
     <div style="height:70px;"></div>
 
@@ -140,7 +140,7 @@
       Your coliving Hub brings together the spaces you live in, manage, or have been part of. It is a simple way for each community to stay organized, connected, and involved in how the space runs.
     </div>
     <div style="height:18px;"></div>
-    <router-link to="/hub"><button class="action-button button-2">Explore the Hub</button></router-link>
+    <router-link to="/hub"><button type="button" class="btn btn-lg btn-secondary">Explore the Hub</button></router-link>
   </div>
   <div style="height:130px;"></div>
 </template>

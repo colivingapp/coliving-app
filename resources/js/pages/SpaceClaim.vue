@@ -75,7 +75,7 @@ function claimSpace() {
         <br><br>
         <textarea placeholder="Comments" v-model="comments" style="height:120px;padding:5px;"></textarea>
         <div style="height:30px;"></div>
-        <button class="action-button button-1" @click="claimSpace" style="width:140px;">Claim</button>
+        <button type="button" class="btn btn-md btn-primary" @click="claimSpace">Claim</button>
 
         <div style="clear:both;height:40px;"></div>
       </span>

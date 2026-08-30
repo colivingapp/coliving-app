@@ -26,7 +26,7 @@
           <input id="email" type="email" class="auth-input" v-model="form.email" required autofocus />
         </div>
         
-        <button :class="{ 'auth-button-disabled': form.processing }" :disabled="form.processing" class="auth-button" >
+        <button type="submit" class="btn btn-md btn-primary" style="min-width:166px" :disabled="form.processing">
           Submit
         </button>
       </form>

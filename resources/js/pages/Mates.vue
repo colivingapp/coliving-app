@@ -11,8 +11,8 @@
 
                     <div style="height:10px;"></div>
 
-                    <router-link v-if="userLoggedIn" to="/mate/update"><button class="button">Edit My Profile</button></router-link>
-                    <router-link v-else to="/register"><button class="button">Edit My Profile</button></router-link>
+                    <router-link v-if="userLoggedIn" to="/mate/update"><button type="button" class="btn btn-md btn-join">Edit My Profile</button></router-link>
+                    <router-link v-else to="/register"><button type="button" class="btn btn-md btn-join">Edit My Profile</button></router-link>
 
                     <div style="height:10px;"></div>
                 </div>

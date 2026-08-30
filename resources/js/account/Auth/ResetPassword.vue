@@ -25,7 +25,7 @@
           <div style="height:20px;"></div>
         </div>
         
-        <button :class="{ 'auth-button-disabled': form.processing }" :disabled="form.processing" class="auth-button">
+        <button type="submit" class="btn btn-md btn-primary" style="min-width:166px" :disabled="form.processing">
           Reset Password
         </button>
         

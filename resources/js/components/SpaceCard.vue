@@ -32,10 +32,10 @@
     >✖</button>
     <div v-if="manageable" class="space-card-actions">
       <router-link :to="'/space/' + spaceUid + '/edit'">
-        <button type="button" class="button">Edit</button>
+        <button type="button" class="btn btn-sm btn-quiet">Edit</button>
       </router-link>
       <router-link :to="'/space/' + spaceUid + '/hub'">
-        <button type="button" class="button">Hub</button>
+        <button type="button" class="btn btn-sm btn-quiet">Hub</button>
       </router-link>
     </div>
   </div>
@@ -113,11 +113,9 @@ const linkTo = computed(() => props.to || '/space/' + spaceUid.value);
   padding: 0 14px 14px;
 }
 
-.space-card-actions .button {
+.space-card-actions .btn {
   width: 100%;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 13px;
+  min-width: 0;
 }
 
 .space-card-actions a {

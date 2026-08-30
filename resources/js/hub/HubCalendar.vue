@@ -355,9 +355,9 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div class="cal-nav">
-        <button type="button" class="cal-nav-btn" @click="shiftMonth(-1)" aria-label="Previous month">‹</button>
+        <button type="button" class="btn btn-icon" @click="shiftMonth(-1)" aria-label="Previous month">‹</button>
         <div class="cal-month">{{ monthLabel }}</div>
-        <button type="button" class="cal-nav-btn" @click="shiftMonth(1)" aria-label="Next month">›</button>
+        <button type="button" class="btn btn-icon" @click="shiftMonth(1)" aria-label="Next month">›</button>
       </div>
     </div>
 
@@ -470,8 +470,8 @@ onBeforeUnmount(() => {
 
       <div class="hub-form-actions">
         <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-        <button type="button" class="button-function" @click="cancelComposer">Cancel</button>
-        <button type="button" class="button" :disabled="actionLoading" @click="saveEntry">
+        <button type="button" class="btn btn-sm btn-ghost" @click="cancelComposer">Cancel</button>
+        <button type="button" class="btn btn-md btn-join" :disabled="actionLoading" @click="saveEntry">
           {{ actionLoading ? 'Saving...' : (form.kind === 'day_off' ? 'Mark days off' : 'Add event') }}
         </button>
       </div>
@@ -487,11 +487,11 @@ onBeforeUnmount(() => {
       <div v-if="selectedEvent.description" class="hub-event-description">{{ selectedEvent.description }}</div>
       <div class="hub-form-actions">
         <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-        <button type="button" class="button-function" @click="cancelComposer">Close</button>
+        <button type="button" class="btn btn-sm btn-ghost" @click="cancelComposer">Close</button>
         <button
           v-if="isAdmin || selectedEvent.is_mine"
           type="button"
-          class="button-function"
+          class="btn btn-sm btn-danger"
           :disabled="actionLoading"
           @click="deleteEvent(selectedEvent)"
         >Remove</button>
@@ -970,8 +970,7 @@ onBeforeUnmount(() => {
     justify-content: flex-start;
   }
 
-  .hub-form-actions .button,
-  .hub-form-actions .button-function {
+  .hub-form-actions .btn {
     min-height: 40px;
   }
 

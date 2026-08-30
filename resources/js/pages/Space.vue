@@ -525,7 +525,7 @@ function getSubcategoryLabel(category, subcategory) {
                   </select>
                   <textarea class="textarea" placeholder="" v-model="referenceTextEdit"></textarea>
                   <div class="character-count">{{ characterCountEdit }}/{{ maxCharacterCount }}</div>
-                  <button @click="submitRatingEdit">Submit</button>
+                  <button type="button" class="btn btn-md btn-primary" @click="submitRatingEdit">Submit</button>
                   <div style="height: 20px;"></div>
                 </div>
             </div>
@@ -541,7 +541,7 @@ function getSubcategoryLabel(category, subcategory) {
         </select>
         <textarea class="textarea" placeholder="" v-model="referenceText"></textarea>
         <div class="character-count">{{ characterCount }}/{{ maxCharacterCount }}</div>
-        <button @click="submitRating" v-if="!ratingSubmitted">Submit</button>
+        <button type="button" class="btn btn-md btn-primary" @click="submitRating" v-if="!ratingSubmitted">Submit</button>
         <span v-else>Sending...</span>
         <div style="height: 20px;"></div>
       </div>
@@ -571,7 +571,7 @@ function getSubcategoryLabel(category, subcategory) {
 
             <div style="height:20px;"></div>
             
-            <router-link v-if="userLoggedIn" :to="`/inbox/space/${$route.params.uid}`"><button class="action-button button-1" style="width:160px;">Message</button></router-link>
+            <router-link v-if="userLoggedIn" :to="`/inbox/space/${$route.params.uid}`"><button type="button" class="btn btn-md btn-primary btn-block">Message</button></router-link>
             <span v-else><router-link to="/login"><b>Log in</b></router-link> to join this space</span>
 
             <div style="height:20px;"></div>
@@ -583,7 +583,7 @@ function getSubcategoryLabel(category, subcategory) {
 
             <div style="height:20px;"></div>
             
-            <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/hub`"><button class="action-button button-1" style="width:160px;">Hub</button></router-link>
+            <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/hub`"><button type="button" class="btn btn-md btn-primary btn-block">Hub</button></router-link>
 
             <div style="height:20px;"></div>
           </div>
@@ -620,7 +620,7 @@ function getSubcategoryLabel(category, subcategory) {
 
             <div style="height:20px;"></div>
             
-            <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/claim`"><button class="action-button button-1" style="width:160px;">Claim</button></router-link>
+            <router-link v-if="userLoggedIn" :to="`/space/${$route.params.uid}/claim`"><button type="button" class="btn btn-md btn-primary btn-block">Claim</button></router-link>
             <span v-else><router-link to="/login"><b>Log in</b></router-link> to claim this space</span>
 
             <div style="height:20px;"></div>
@@ -637,7 +637,7 @@ function getSubcategoryLabel(category, subcategory) {
 
         <div style="height:20px;"></div>
 
-        <router-link to="/space/new"><button class="action-button button-1">Add Space</button></router-link>
+        <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary btn-block">Add a Space</button></router-link>
 
         <div style="height:20px;"></div>
       </div>
@@ -679,6 +679,11 @@ function getSubcategoryLabel(category, subcategory) {
 
 .space-sidebar {
   max-width:300px;float:right;text-align: center;position:relative;
+}
+
+.space-sidebar .btn {
+  max-width: 200px;
+  margin: 0 auto;
 }
 
 @media screen and (max-width: 980px) {

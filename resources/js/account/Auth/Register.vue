@@ -43,7 +43,7 @@
         
         <div style="height:15px;"></div>
         
-        <button class="auth-button" :class="{ 'auth-button-disabled': form.processing }" :disabled="form.processing">
+        <button type="submit" class="btn btn-md btn-primary" style="min-width:166px" :disabled="form.processing">
           Sign up
         </button>
       </form>

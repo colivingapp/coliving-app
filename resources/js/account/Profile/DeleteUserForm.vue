@@ -10,7 +10,7 @@
   
   <div v-if="feedback" style="margin-top:5px;margin-bottom:15px;color:red;font-weight:bold;" v-html="feedback"></div>
   
-  <button @click="deleteUser()" :class="{ 'opacity-25': processing }" :disabled="processing" style="width:137px;height:27px;" class="button-account">
+  <button type="button" @click="deleteUser()" class="btn btn-sm btn-danger" :disabled="processing">
     Delete Account
   </button>
   

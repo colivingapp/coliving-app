@@ -93,13 +93,13 @@
 
       Log in to continue
       <div style="height:10px;"></div>
-      <router-link to="/login"><button class="auth-button">Login</button></router-link>
+      <router-link to="/login"><button type="button" class="btn btn-md btn-primary">Login</button></router-link>
 
       <div style="height:30px;"></div>
 
       Create a free account
       <div style="height:10px;"></div>
-      <router-link to="/register"><button class="auth-button">Sign Up</button></router-link> 
+      <router-link to="/register"><button type="button" class="btn btn-md btn-primary">Sign Up</button></router-link> 
     </div>
   </div>
 </template>

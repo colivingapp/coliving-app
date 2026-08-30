@@ -54,8 +54,8 @@
 
         <!-- Display other mate details here -->
         <div style="height: 20px;"></div>
-        <router-link :to="'/inbox/mate/'+mate.uid" v-if="currentMateUID != mate.uid && userLoggedIn"><button class="action-button button-1">Send message</button></router-link>
-        <router-link to="/login" v-else-if="!userLoggedIn"><button class="action-button button-1">Send message</button></router-link>
+        <router-link :to="'/inbox/mate/'+mate.uid" v-if="currentMateUID != mate.uid && userLoggedIn"><button type="button" class="btn btn-lg btn-primary">Send message</button></router-link>
+        <router-link to="/login" v-else-if="!userLoggedIn"><button type="button" class="btn btn-lg btn-primary">Send message</button></router-link>
       </div>
 
 
@@ -118,7 +118,7 @@
                     </select>
                     <textarea class="textarea" placeholder="" v-model="referenceTextEdit"></textarea>
                     <div class="character-count">{{ characterCountEdit }}/{{ maxCharacterCount }}</div>
-                    <button @click="submitRatingEdit">Submit</button>
+                    <button type="button" class="btn btn-md btn-join" @click="submitRatingEdit">Submit</button>
                     <div style="height: 20px;"></div>
                   </div>
               </div>
@@ -135,7 +135,7 @@
           </select>
           <textarea class="textarea" placeholder="" v-model="referenceText"></textarea>
           <div class="character-count">{{ characterCount }}/{{ maxCharacterCount }}</div>
-          <button @click="submitRating" v-if="!ratingSubmitted">Submit</button>
+          <button type="button" class="btn btn-md btn-join" @click="submitRating" v-if="!ratingSubmitted">Submit</button>
           <span v-else>Sending...</span>
           <div style="height: 20px;"></div>
         </div>

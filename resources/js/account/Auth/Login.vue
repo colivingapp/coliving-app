@@ -27,7 +27,7 @@
         <validation-errors :errors="errors" v-if="errors" />
         <div style="height:20px;" v-if="errors"></div>
         
-        <button class="auth-button" :class="{ 'auth-button-disabled': form.processing }" :disabled="form.processing">
+        <button type="submit" class="btn btn-md btn-primary" style="min-width:166px" :disabled="form.processing">
           Log in
         </button>
         

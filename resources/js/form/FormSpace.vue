@@ -15,13 +15,13 @@
 
       Log in to continue
       <div style="height:10px;"></div>
-      <router-link to="/login"><button class="auth-button">Login</button></router-link>
+      <router-link to="/login"><button type="button" class="btn btn-md btn-primary">Login</button></router-link>
       
       <div style="height:30px;"></div>
 
       Create a free account
       <div style="height:10px;"></div>
-      <router-link to="/register"><button class="auth-button">Sign Up</button></router-link> 
+      <router-link to="/register"><button type="button" class="btn btn-md btn-primary">Sign Up</button></router-link> 
     </div>
     <div v-else class="content">
       <h1 v-if="pageType == 'create'">New Coliving Space</h1>
@@ -163,7 +163,7 @@
           </div>
 
           <div v-if="pageType == 'create'" class="space-create-expand">
-            <button type="button" class="button-function" @click="showCreateSocials = !showCreateSocials">
+            <button type="button" class="btn btn-sm btn-quiet" @click="showCreateSocials = !showCreateSocials">
               {{ showCreateSocials ? 'Hide social networks' : 'Add social networks' }}
             </button>
           </div>
@@ -434,14 +434,14 @@
         <div style="height:20px"></div>
 
         <div v-if="pageType == 'create'" class="space-create-actions">
-          <button v-if="activeCreateStepIndex > 0" type="button" class="button space-create-back" :disabled="isUpdating" @click="previousCreateStep">Back</button>
-          <button v-if="!isLastCreateStep" type="button" class="action-button button-post" @click="nextCreateStep">Continue</button>
-          <button v-else type="submit" :disabled="isUpdating" class="action-button button-post">Submit space</button>
+          <button v-if="activeCreateStepIndex > 0" type="button" class="btn btn-md btn-ghost space-create-back" :disabled="isUpdating" @click="previousCreateStep">Back</button>
+          <button v-if="!isLastCreateStep" type="button" class="btn btn-md btn-join" @click="nextCreateStep">Continue</button>
+          <button v-else type="submit" :disabled="isUpdating" class="btn btn-md btn-join">Submit space</button>
         </div>
         <div v-else>
-          <button :disabled="isUpdating" type="submit" class="action-button button-post">Update</button>
+          <button :disabled="isUpdating" type="submit" class="btn btn-md btn-join">Update</button>
           &nbsp;&nbsp;
-          <button type="button" @click="deleteSpace" class="button">Delete</button>
+          <button type="button" @click="deleteSpace" class="btn btn-sm btn-danger">Delete</button>
         </div>
         
       </form>
@@ -1210,13 +1210,8 @@ export default {
   justify-content: flex-start;
 }
 
-.space-create-actions .action-button,
-.space-create-actions .button {
+.space-create-actions .btn {
   margin: 0;
-}
-
-.space-create-back {
-  background: transparent;
 }
 
 @media screen and (max-width: 700px) {
@@ -1242,7 +1237,7 @@ export default {
     justify-content: flex-start;
   }
 
-  .space-create-actions .button-post {
+  .space-create-actions .btn-join {
     flex: 1;
   }
 

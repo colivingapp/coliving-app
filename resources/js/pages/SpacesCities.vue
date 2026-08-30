@@ -12,9 +12,9 @@
 
           <div style="height:10px;"></div>
 
-          <router-link to="/space/new"><button class="button">Add New Space</button></router-link>
+          <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add New Space</button></router-link>
           <br>
-          <router-link to="/my-spaces"><button class="button">My Spaces</button></router-link>
+          <router-link to="/my-spaces"><button type="button" class="btn btn-md btn-secondary">My Spaces</button></router-link>
 
           <div style="height:10px;"></div>
         </div>
@@ -103,6 +103,10 @@ if (userLoggedIn.value) {
 <style>
 .my-spaces-popup {
   padding:25px 10px 5px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:right;
+}
+
+.my-spaces-popup .btn {
+  margin: 6px 0;
 }
 
 @media screen and (max-width: 980px) {

@@ -154,7 +154,7 @@ function deleteUser() {
       <h2>Delete Account</h2>
       <p class="form-hint">This permanently removes your account. This cannot be undone.</p>
       
-      <button type="button" class="form-danger-btn" @click="showDeleteAcc = true" v-if="!showDeleteAcc">Delete Account</button>
+      <button type="button" class="btn btn-sm btn-danger" @click="showDeleteAcc = true" v-if="!showDeleteAcc">Delete Account</button>
       
       <div v-if="showDeleteAcc">
         <div class="form-group">
@@ -163,9 +163,9 @@ function deleteUser() {
           <p v-if="wrongPassword" class="form-error">Wrong password</p>
         </div>
         <div class="form-actions">
-          <button type="button" class="form-danger-btn" v-if="!loading" @click="deleteUser()">Delete Account</button>
+          <button type="button" class="btn btn-sm btn-danger" v-if="!loading" @click="deleteUser()">Delete Account</button>
           <span v-else>Please wait...</span>
-          <button type="button" class="form-cancel-btn" @click="showDeleteAcc = false">Cancel</button>
+          <button type="button" class="btn btn-sm btn-ghost" @click="showDeleteAcc = false">Cancel</button>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@
         </p>
       </div>
       <router-link v-if="userLoggedIn" to="/space/new" class="my-spaces-add">
-        <button class="action-button button-1">Add New Space</button>
+        <button type="button" class="btn btn-lg btn-primary">Add New Space</button>
       </router-link>
     </div>
 
@@ -31,13 +31,13 @@
 
       Log in to continue
       <div style="height:10px;"></div>
-      <router-link to="/login"><button class="auth-button">Login</button></router-link>
+      <router-link to="/login"><button type="button" class="btn btn-md btn-primary">Login</button></router-link>
 
       <div style="height:30px;"></div>
 
       Create a free account
       <div style="height:10px;"></div>
-      <router-link to="/register"><button class="auth-button">Sign Up</button></router-link> 
+      <router-link to="/register"><button type="button" class="btn btn-md btn-primary">Sign Up</button></router-link> 
     </div>
   </div>
 </template>
@@ -91,7 +91,7 @@
   flex-shrink: 0;
 }
 
-.my-spaces-add .action-button {
+.my-spaces-add .btn {
   margin: 0;
 }
 
@@ -104,7 +104,7 @@
     width: 100%;
   }
 
-  .my-spaces-add .action-button.button-1 {
+  .my-spaces-add .btn {
     width: 100%;
   }
 }

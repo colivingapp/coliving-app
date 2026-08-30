@@ -28,7 +28,7 @@
     
     <div style="height:10px;"></div>
     
-    <button type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" style="width:137px;height:27px;" class="button-account">
+    <button type="submit" class="btn btn-md btn-join" :disabled="form.processing">
       Save
     </button>
   </form>

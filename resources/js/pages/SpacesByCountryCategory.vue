@@ -28,7 +28,7 @@
     <div style="height:50px;"></div>
     
     <div style="text-align:center;">
-      <router-link to="/space/new"><button class="action-button button-1">Add New Space</button></router-link>
+        <router-link to="/space/new"><button type="button" class="btn btn-lg btn-primary">Add New Space</button></router-link>
     </div>
     
     <div style="height:30px;"></div>

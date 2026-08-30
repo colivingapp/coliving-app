@@ -642,7 +642,7 @@ onMounted(loadHub);
                   <span v-if="actionError" class="hub-error">{{ actionError }}</span>
                   <button
                     type="button"
-                    class="button-function"
+                    class="btn btn-sm btn-danger"
                     :disabled="actionLoading"
                     @click="deleteThread"
                   >{{ actionLoading ? 'Deleting...' : 'Delete topic' }}</button>
@@ -692,7 +692,7 @@ onMounted(loadHub);
                 <textarea id="reply" v-model="newReply" class="textarea" placeholder="Write a reply..." style="height:130px;"></textarea>
                 <div class="hub-form-actions">
                   <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-                  <button type="button" class="button" :disabled="actionLoading" @click="createReply">{{ actionLoading ? 'Posting...' : 'Post reply' }}</button>
+                  <button type="button" class="btn btn-md btn-join" :disabled="actionLoading" @click="createReply">{{ actionLoading ? 'Posting...' : 'Post reply' }}</button>
                 </div>
               </div>
             </template>
@@ -704,7 +704,8 @@ onMounted(loadHub);
             <template v-else>
               <button
                 type="button"
-                class="button hub-new-topic"
+                class="btn btn-md hub-new-topic"
+                :class="showNewThread ? 'btn-ghost' : 'btn-join'"
                 @click="showNewThread = !showNewThread"
               >{{ showNewThread ? 'Cancel' : 'New Topic' }}</button>
 
@@ -715,7 +716,7 @@ onMounted(loadHub);
                 <textarea id="thread-content" v-model="newThread.content" class="textarea" placeholder="Start the discussion..." style="min-height:140px;"></textarea>
                 <div class="hub-form-actions">
                   <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-                  <button type="button" class="button" :disabled="actionLoading" @click="createThread">{{ actionLoading ? 'Creating...' : 'Create topic' }}</button>
+                  <button type="button" class="btn btn-md btn-join" :disabled="actionLoading" @click="createThread">{{ actionLoading ? 'Creating...' : 'Create topic' }}</button>
                 </div>
               </div>
 
@@ -791,9 +792,9 @@ onMounted(loadHub);
               />
             </div>
             <div v-if="sortedMembers.length > MEMBERS_PER_PAGE" class="hub-pagination">
-              <button type="button" class="hub-page-btn" :disabled="membersPage <= 1" @click="goToMembersPage(membersPage - 1)">Previous</button>
+              <button type="button" class="btn btn-sm btn-quiet" :disabled="membersPage <= 1" @click="goToMembersPage(membersPage - 1)">Previous</button>
               <span class="hub-page-label">Page {{ membersPage }} of {{ membersPageCount }} · {{ membersRangeLabel }}</span>
-              <button type="button" class="hub-page-btn" :disabled="membersPage >= membersPageCount" @click="goToMembersPage(membersPage + 1)">Next</button>
+              <button type="button" class="btn btn-sm btn-quiet" :disabled="membersPage >= membersPageCount" @click="goToMembersPage(membersPage + 1)">Next</button>
             </div>
           </template>
         </section>
@@ -831,24 +832,24 @@ onMounted(loadHub);
                       <button
                         v-if="request.self_managed"
                         type="button"
-                        class="button-function"
+                        class="btn btn-sm btn-quiet"
                         :disabled="jrActionLoading[request.id] || request.user_vote || !request.can_vote"
                         @click="acceptRequest(request)"
                       >{{ request.user_vote === 'accept' ? 'Voted accept' : 'Vote to accept' }}</button>
                       <button
                         v-if="request.self_managed"
                         type="button"
-                        class="button-function"
+                        class="btn btn-sm btn-quiet"
                         :disabled="jrActionLoading[request.id] || request.user_vote || !request.can_vote"
                         @click="declineRequest(request)"
                       >{{ request.user_vote === 'decline' ? 'Voted decline' : 'Vote to decline' }}</button>
                       <template v-else>
-                        <button type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
-                        <button v-if="isAdmin" type="button" class="button-function" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
+                        <button type="button" class="btn btn-sm btn-join" :disabled="jrActionLoading[request.id]" @click="acceptRequest(request)">Accept</button>
+                        <button v-if="isAdmin" type="button" class="btn btn-sm btn-danger" :disabled="jrActionLoading[request.id]" @click="declineRequest(request)">Decline</button>
                       </template>
                     </template>
                     <router-link :to="'/inbox/space/' + request.space_uid + '/mate/' + request.mate_uid">
-                      <button type="button" class="button-function">View chat</button>
+                      <button type="button" class="btn btn-sm btn-quiet">View chat</button>
                     </router-link>
                   </div>
                 </div>
@@ -883,7 +884,7 @@ onMounted(loadHub);
               ></textarea>
               <div class="hub-form-actions">
                 <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-                <button type="button" class="button" :disabled="actionLoading" @click="saveSpaceInfo">{{ actionLoading ? 'Saving...' : 'Save Space Info' }}</button>
+                <button type="button" class="btn btn-md btn-join" :disabled="actionLoading" @click="saveSpaceInfo">{{ actionLoading ? 'Saving...' : 'Save Space Info' }}</button>
               </div>
             </template>
             <template v-else>
@@ -893,7 +894,7 @@ onMounted(loadHub);
               </p>
               <p>If you want, you can also contact the space directly by sending a message.</p>
               <router-link :to="'/inbox/space/' + uid">
-                <button type="button" class="button-function">Message space</button>
+                <button type="button" class="btn btn-sm btn-quiet">Message space</button>
               </router-link>
             </template>
           </div>
@@ -963,23 +964,23 @@ onMounted(loadHub);
                     <div v-if="adminPredictions.length === 0" class="hub-admin-prediction-empty">No matching members</div>
                   </div>
                 </div>
-                <button type="button" class="button-function" :disabled="actionLoading || !adminCandidateId" @click="makeAdmin">Make admin</button>
+                <button type="button" class="btn btn-sm btn-quiet" :disabled="actionLoading || !adminCandidateId" @click="makeAdmin">Make admin</button>
               </div>
               <p v-if="!canLeaveAsAdmin">Make another member an admin before you leave. Leaving as admin also leaves the space.</p>
               <p v-else>Leaving as admin also leaves this space.</p>
               <div v-if="actionError" class="hub-error hub-admin-error">{{ actionError }}</div>
-              <button type="button" class="button-function" :disabled="actionLoading || !canLeaveAsAdmin" @click="leaveAsAdmin">Leave as admin</button>
+              <button type="button" class="btn btn-sm btn-danger" :disabled="actionLoading || !canLeaveAsAdmin" @click="leaveAsAdmin">Leave as admin</button>
             </template>
           </div>
 
           <div v-if="isListingOwner" class="hub-settings-block">
-            <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="button-function">Edit public space profile</button></router-link>
+            <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="btn btn-sm btn-quiet">Edit public space profile</button></router-link>
           </div>
 
           <div v-if="!isAdmin" class="hub-settings-block">
             <h3 class="hub-block-title">Membership</h3>
             <span v-if="actionError" class="hub-error">{{ actionError }}</span>
-            <button class="button-function" :disabled="actionLoading" @click="leaveSpace">Leave this space</button>
+            <button type="button" class="btn btn-sm btn-danger" :disabled="actionLoading" @click="leaveSpace">Leave this space</button>
           </div>
         </section>
     </main>
@@ -988,7 +989,7 @@ onMounted(loadHub);
   <div v-else-if="isMember === false" class="content hub-empty">
     You are not a member of this space.
     <br><br>
-    <router-link :to="'/inbox/space/' + uid"><button type="button" class="button">Join Request</button></router-link>
+    <router-link :to="'/inbox/space/' + uid"><button type="button" class="btn btn-md btn-join">Join Request</button></router-link>
   </div>
 
   <div v-else class="content">
@@ -1768,7 +1769,7 @@ a.hub-post-author-identity:hover span {
   }
 
   .hub-thread-header .hub-row-actions,
-  .hub-thread-header .button-function {
+  .hub-thread-header .btn {
     width: 100%;
   }
 
@@ -1800,8 +1801,7 @@ a.hub-post-author-identity:hover span {
     justify-content: flex-start;
   }
 
-  .hub-form-actions .button,
-  .hub-form-actions .button-function {
+  .hub-form-actions .btn {
     min-height: 40px;
   }
 
@@ -1827,7 +1827,7 @@ a.hub-post-author-identity:hover span {
     width: 100%;
   }
 
-  .hub-request-aside .button-function,
+  .hub-request-aside .btn,
   .hub-request-aside a {
     flex: 0 0 auto;
   }

@@ -56,7 +56,7 @@
                       <div style="height:5px;"></div>
                       <span v-if="jrProcessing">Please wait...</span>
                       <span v-else>
-                        <button @click="joinRequestAccept(message.join_request.id)">Accept</button> <button @click="joinRequestDecline(message.join_request.id)">Decline</button>
+                        <button type="button" class="btn btn-sm btn-join" @click="joinRequestAccept(message.join_request.id)">Accept</button> <button type="button" class="btn btn-sm btn-danger" @click="joinRequestDecline(message.join_request.id)">Decline</button>
                       </span>
                     </span>
                   </div>
@@ -84,7 +84,7 @@
         </div>
         <div></div>
         <div>
-          <button class="button" @click="newMessageModal = true" style="width:100%;">Send new message</button>
+          <button type="button" class="btn btn-md btn-join btn-block" @click="newMessageModal = true">Send new message</button>
         </div>
       </div>
 

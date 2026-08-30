@@ -221,7 +221,7 @@
       </div>
       
       <div class="form-actions">
-        <button type="submit" class="action-button button-post" :disabled="isUpdating">{{ isUpdating ? 'Please wait...' : 'Save' }}</button>
+        <button type="submit" class="btn btn-md btn-join" :disabled="isUpdating">{{ isUpdating ? 'Please wait...' : 'Save' }}</button>
         <span v-if="profileUpdated" class="form-success" :class="{ 'is-fading': profileSavedFading }">Saved!</span>
       </div>
     </form>
@@ -795,15 +795,8 @@ export default {
   margin-top: 28px;
 }
 
-.form-actions .button-post,
-.form-actions .button-post:disabled {
-  width: 260px;
-}
-
-.form-actions .action-button.button-post:disabled {
-  background-color: #8ecf9a;
-  border-color: #8ecf9a;
-  color: #fff;
+.form-actions .btn-join {
+  min-width: 140px;
 }
 
 .form-success {
