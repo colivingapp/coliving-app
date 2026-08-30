@@ -1,7 +1,7 @@
 <template>
   <div style="margin:0 auto;text-align:center;">
     <div>
-      <div style="margin: auto; width: 340px;">
+      <div class="home-search">
         <input v-model="searchQuery" placeholder="Search..." 
                @input="showResults = searchQuery.length >= 2" 
                @blur="onBlur" 
@@ -22,14 +22,14 @@
       <router-link to="/spaces">View all spaces</router-link> -->
       <div style="height:25px;"></div>
     </div> 
-    <div style="height:calc(100vh - 300px);">
+    <div class="home-map">
       <map-home :locations="locations" />
     </div>
     <div>
-      <div style="height:30px;"></div>
+      <div class="home-cta-spacer-top"></div>
       <router-link to="/space/new"><button type="button" class="btn btn-lg btn-primary">Add a Space</button></router-link>
       
-      <div style="height:30px;"></div>
+      <div class="home-cta-spacer-bottom"></div>
 
       <div class="bottom-arrow-div" @click="scrollToContent">
         <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"  xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -346,6 +346,22 @@
 
 
 <style>
+  .home-search {
+    margin: auto;
+    position: relative;
+    max-width: calc(100vw - 32px);
+    width: 340px;
+  }
+
+  .home-map {
+    height: calc(100vh - 300px);
+  }
+
+  .home-cta-spacer-top,
+  .home-cta-spacer-bottom {
+    height: 30px;
+  }
+
   /* Search input on home page */
   .input-search {
     border: 1px solid #888!important;
@@ -361,7 +377,7 @@
     max-height: 200px;
     overflow-y: auto;
     position: absolute;
-    width: 340px;
+    width: 100%;
     background: white;
     z-index: 1000;
     margin-top: 5px;
@@ -596,4 +612,25 @@
   .word-cloud-tag:hover.wc-color-2 { color: #439a63; }
   .word-cloud-tag:hover.wc-color-3 { color: #c74d75; }
   .word-cloud-tag:hover.wc-color-4 { color: #6355c2; }
+
+  @media screen and (max-width: 700px) {
+    .word-cloud-tag {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      text-align: center;
+      white-space: normal;
+    }
+
+    .home-map {
+      height: calc(100vh - 285px);
+    }
+
+    .home-cta-spacer-top {
+      height: 25px;
+    }
+
+    .home-cta-spacer-bottom {
+      height: 20px;
+    }
+  }
 </style>
