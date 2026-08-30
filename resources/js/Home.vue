@@ -79,23 +79,29 @@
     <div style="height:34px;"></div>
     <div class="directory-steps">
       <div class="directory-step">
-        <div class="directory-step-icon">🔍</div>
+        <div class="directory-step-icon" aria-hidden="true">
+          <Icon icon="ph:magnifying-glass-duotone" width="34" height="34" />
+        </div>
         <h3>Find spaces</h3>
         <p>Explore shared living around the world: rooms, shared apartments, student housing, coliving spaces, community houses, cohousing, communes, retirement communities, and more.</p>
       </div>
       <div class="directory-step-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <Icon icon="ph:arrow-right" width="22" height="22" />
       </div>
       <div class="directory-step">
-        <div class="directory-step-icon">🤝</div>
+        <div class="directory-step-icon" aria-hidden="true">
+          <Icon icon="ph:handshake-duotone" width="34" height="34" />
+        </div>
         <h3>Join spaces</h3>
         <p>Request to join and become part of a home. Coliving App doesn't manage payments - members and spaces handle arrangements directly.</p>
       </div>
       <div class="directory-step-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <Icon icon="ph:arrow-right" width="22" height="22" />
       </div>
       <div class="directory-step">
-        <div class="directory-step-icon">💬</div>
+        <div class="directory-step-icon" aria-hidden="true">
+          <Icon icon="ph:chats-circle-duotone" width="34" height="34" />
+        </div>
         <h3>Use the Space Hub</h3>
         <p>Once your request is accepted, the private space Hub becomes the shared home base for everyday community life: updates, people, plans, and decisions that keep the space connected.</p>
       </div>
@@ -478,10 +484,22 @@
     box-shadow: 0 12px 28px rgba(135, 201, 235, .25);
   }
 
+  .directory-step:hover .directory-step-icon {
+    background: linear-gradient(165deg, #d4eef8 0%, #bfe4f3 100%);
+    color: #1f6a96;
+  }
+
   .directory-step-icon {
-    font-size: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    background: linear-gradient(165deg, #e4f4fb 0%, #d2ebf6 100%);
+    color: #2b7aa8;
     line-height: 1;
-    margin-bottom: 10px;
   }
 
   .directory-step h3 {

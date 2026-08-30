@@ -25,56 +25,45 @@ watch(route, () => {
 
 <template>
     <div>
-        <div v-if="$route.name == 'Home'" >
-            <social-links />
+        <div v-if="$route.name == 'Home'" class="footer site-footer">
+            <div class="footer-content-home">
+                <social-links />
 
-            <div style="height:10px;"></div>
-            
-            <div style="text-align:center;">
-                <router-link to="/about">About</router-link>
-                &nbsp;
-                <router-link to="/terms">Terms</router-link>
-                &nbsp;
-                <router-link to="/privacy">Privacy</router-link>
-                &nbsp;
-                <router-link to="/contacts">Contacts</router-link>
-            </div>
-
-            <div style="height:8px;"></div>
-
-            <div style="text-align:center;">
-                Coliving App © 2026
-                <br>
-                v0.3.0-beta
-
+                <div style="height:10px;"></div>
                 
-                <!-- <br>
-                <div style="max-width:800px;margin:0 auto;padding:20px;">
-                    <div style="background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);padding:0 20px 15px 20px;">
-                        <h1><i>Beta Version</i></h1>
+                <div style="text-align:center;">
+                    <router-link to="/about">About</router-link>
+                    &nbsp;
+                    <router-link to="/terms">Terms</router-link>
+                    &nbsp;
+                    <router-link to="/privacy">Privacy</router-link>
+                    &nbsp;
+                    <router-link to="/contacts">Contacts</router-link>
+                </div>
 
-                        <i>This is the first public beta release of the Coliving App. Thank you for being an early adopter! We apologize for any bugs and appreciate your <span style="font-weight:bold;color:rgb(0, 134, 218)!important;"  class="link-footer" @click="modalFeedback = true">feedback</span>.</i>
-                        <div style="height:30px;"></div>
+                <div style="height:8px;"></div>
+
+                <div style="text-align:center;">
+                    Coliving App © 2026
+                    <br>
+                    v0.3.0-beta
+                </div>
+                
+                <div style="height:35px;"></div>
+                
+                <div class="footer-back-to-top">
+                    <div class="bottom-arrow-div-2" @click="scrollToTop">
+                        <svg class="footer-back-to-top-arrow" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"  xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                            viewBox="0 0 78.6 45.6" style="enable-background:new 0 0 78.6 45.6;width:22px;" xml:space="preserve">
+                            <g>
+                                <path d="M76.8,1.8L76.8,1.8c1.2,1.2,1.8,2.9,1.8,4.5c0,1.6-0.6,3.2-1.8,4.5l-33,33l0,0c-0.6,0.6-1.3,1-2,1.4
+                                l0,0c-0.8,0.3-1.6,0.5-2.4,0.5c-0.8,0-1.6-0.2-2.4-0.5h0c-0.7-0.3-1.4-0.8-2-1.4l0,0l-33-33C0.6,9.5,0,7.9,0,6.3
+                                c0-1.6,0.6-3.2,1.9-4.4l0,0l0,0C3.1,0.6,4.7,0,6.3,0c1.6,0,3.2,0.6,4.4,1.8h0l28.5,28.5L67.9,1.8l0,0C69.1,0.6,70.7,0,72.3,0
+                                C73.9,0,75.5,0.6,76.8,1.8L76.8,1.8L76.8,1.8z"/>
+                            </g>
+                        </svg>
                     </div>
-                </div> -->
-                
-                <!-- <br>
-                <br>
-                <span style="font-weight:bold;color:#999!important;"  class="link-footer" @click="modalFeedback = true">Feedback</span> -->
-            </div>
-            
-            <div style="height:40px;"></div>
-            
-            <div class="bottom-arrow-div-2" @click="scrollToTop" style="text-align: center;">
-                <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"  xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-                    viewBox="0 0 78.6 45.6" style="enable-background:new 0 0 78.6 45.6;width:22px;fill:#7e7e7e;transform: rotate(180deg);" xml:space="preserve">
-                    <g>
-                        <path style="fill:#888888;" d="M76.8,1.8L76.8,1.8c1.2,1.2,1.8,2.9,1.8,4.5c0,1.6-0.6,3.2-1.8,4.5l-33,33l0,0c-0.6,0.6-1.3,1-2,1.4
-                        l0,0c-0.8,0.3-1.6,0.5-2.4,0.5c-0.8,0-1.6-0.2-2.4-0.5h0c-0.7-0.3-1.4-0.8-2-1.4l0,0l-33-33C0.6,9.5,0,7.9,0,6.3
-                        c0-1.6,0.6-3.2,1.9-4.4l0,0l0,0C3.1,0.6,4.7,0,6.3,0c1.6,0,3.2,0.6,4.4,1.8h0l28.5,28.5L67.9,1.8l0,0C69.1,0.6,70.7,0,72.3,0
-                        C73.9,0,75.5,0.6,76.8,1.8L76.8,1.8L76.8,1.8z"/>
-                    </g>
-                </svg>
+                </div>
             </div>
         </div>
 
@@ -108,8 +97,6 @@ watch(route, () => {
                         <br>
                         <br>
                         <router-link to="/my-spaces">My Spaces</router-link>
-                        <br>
-                        <router-link to="/space/new">New Space</router-link>
                     </div>
                     <div class="footer-column" style="grid-area: col2;">
                         <!-- <span style="font-size: 19px; color: rgb(111, 111, 111);">Menu</span> -->
@@ -183,6 +170,12 @@ watch(route, () => {
     .copyright-desktop {
         display:none;
     }
+}
+
+.footer-content-home {
+    max-width: 1000px;
+    padding: 36px 10px 0;
+    margin: 0 auto;
 }
 
 .footer-content {
