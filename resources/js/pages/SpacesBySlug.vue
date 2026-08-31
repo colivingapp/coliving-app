@@ -4,7 +4,7 @@
       <span v-if="mode === 'country'">
         <span v-if="spaces[0]" :class="'fi fi-'+spaces[0].country_code.toLowerCase()"></span>
         <span v-if="spaces[0]">&nbsp;&nbsp;</span>
-        Spaces in {{ country }}
+        Coliving Spaces in {{ country }}
       </span>
       <span v-else-if="mode === 'category'">
         {{ category }} Spaces
@@ -25,7 +25,7 @@
 
     <h2 v-if="isLoading" style="font-weight: normal;">Loading...</h2>
     <div v-else>
-      <h2 v-if="mode === 'country'">Spaces in {{ country }}</h2>
+      <h2 v-if="mode === 'country'">Coliving Spaces in {{ country }}</h2>
       <h2 v-else-if="mode === 'category'">{{ category }} Spaces</h2>
 
       <div v-if="mode === 'category' && categoryDescription" style="margin-top:-10px;margin-bottom:30px;color:#666;max-width:820px;line-height:1.5;">
@@ -112,7 +112,7 @@ async function fetchSpaces() {
       const data = await response.json();
       country.value = data.country;
       spaces.value = data.spaces;
-      document.title = `Spaces in ${country.value} - Coliving App`;
+      document.title = `Coliving Spaces in ${country.value} - Coliving App`;
     }
   } catch (e) {
     mode.value = '';
