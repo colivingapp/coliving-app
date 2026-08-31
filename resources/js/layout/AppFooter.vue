@@ -93,10 +93,6 @@ watch(route, () => {
                         <router-link to="/hub">Hub</router-link>
                         <br>
                         <router-link to="/inbox">Inbox</router-link>
-                        
-                        <br>
-                        <br>
-                        <router-link to="/my-spaces">My Spaces</router-link>
                     </div>
                     <div class="footer-column" style="grid-area: col2;">
                         <!-- <span style="font-size: 19px; color: rgb(111, 111, 111);">Menu</span> -->

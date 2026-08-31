@@ -6,15 +6,13 @@
     <div>
       <div>
 
-        <div class="my-spaces-popup-mob">
-          <h2 style="margin-top:0px;">My Spaces</h2>
-          Create a new coliving space or manage your existing ones in My Spaces
+        <div class="new-space-popup-mob">
+          <h2 style="margin-top:0px;">Add Your Space</h2>
+          List your coliving space or room and start getting requests.
 
           <div style="height:10px;"></div>
 
-          <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add New Space</button></router-link>
-          <br>
-          <router-link to="/my-spaces"><button type="button" class="btn btn-md btn-secondary">My Spaces</button></router-link>
+          <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add a Space</button></router-link>
 
           <div style="height:10px;"></div>
         </div>
@@ -69,15 +67,13 @@
           <div style="height:10px;"></div>
         </div>
 
-        <div class="my-spaces-popup">
-          <h2 style="margin-top:0px;">My Spaces</h2>
-          Create a new coliving space or manage your existing ones in My Spaces
+        <div class="new-space-popup">
+          <h2 style="margin-top:0px;">Add Your Space</h2>
+          List your coliving space or room and start getting requests.
 
           <div style="height:10px;"></div>
 
-          <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add New Space</button></router-link>
-          <br>
-          <router-link to="/my-spaces"><button type="button" class="btn btn-md btn-secondary">My Spaces</button></router-link>
+          <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add a Space</button></router-link>
 
           <div style="height:10px;"></div>
         </div>
@@ -138,29 +134,6 @@ const sortedCountries = computed(() => {
 fetchCountries();
 
 let isLoading = ref(true);
-let userLoggedIn = ref(window.userLoggedIn);
-let mySpaces = ref([]);
-let myColivingSpaces = ref([]);
-let pastColivingSpaces = ref([]);
-
-if (userLoggedIn.value) {
-  if (window.mySpaces) {
-    mySpaces.value = window.mySpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-    myColivingSpaces.value = window.myColivingSpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-    pastColivingSpaces.value = window.pastColivingSpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-  } else {
-    const fetchMySpaces = async () => {
-      const response = await fetch('/api/my-spaces');
-      const data = await response.json();
-      // console.log(data)
-      mySpaces.value = data.mySpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-      myColivingSpaces.value = data.myColivingSpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-      pastColivingSpaces.value = data.pastColivingSpaces.sort((a, b) => a.country_slug.localeCompare(b.country_slug));
-      // window.mySpaces = data;
-    };
-    fetchMySpaces();
-  }
-}
 </script>
 
 <style>
@@ -204,16 +177,16 @@ if (userLoggedIn.value) {
   text-decoration:none;
 }
 
-.my-spaces-popup {
+.new-space-popup {
   padding:25px 10px 5px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:right;
 }
 
-.my-spaces-popup .btn,
-.my-spaces-popup-mob .btn {
+.new-space-popup .btn,
+.new-space-popup-mob .btn {
   margin: 6px 0;
 }
 
-.my-spaces-popup-mob {
+.new-space-popup-mob {
   padding:25px 10px 5px 10px;text-align: center;position:relative;border-radius: 5px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);max-width:320px;float:left;display:none;
   margin-bottom:40px;
   min-width: 320px;
@@ -228,13 +201,13 @@ if (userLoggedIn.value) {
   .categories-popup {
     display:none;
   }
-  .my-spaces-popup {
+  .new-space-popup {
     display:none;
   }
   .categories-popup-mob {
     display:block;
   }
-  .my-spaces-popup-mob {
+  .new-space-popup-mob {
     display:block;
   }
   .newest-space-popup {

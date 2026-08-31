@@ -508,7 +508,6 @@
                         @if (Auth::check())
                             <a href="/mate/update">Profile</a>
                             <a href="/bookmarks">Bookmarks</a>
-                            <a href="/my-spaces">My Spaces</a>
                             <a href="/account/settings">Settings</a>
                             <br>
                             <form id="logout-form" action="/logout" method="POST">
@@ -754,9 +753,6 @@
             <a href="/hub">Hub</a>
             <br>
             <a href="/inbox">Inbox</a>
-            <br>
-            <br>
-            <a href="/my-spaces">My Spaces</a>
         </div>
         <div class="footer-column" style="grid-area: col2;">
             <a href="/about">About</a>
