@@ -616,6 +616,16 @@ Route::get('/search/{search_term}', function (SpaceController $spaceController) 
 });
 
 
+// Static guide to all space categories
+Route::get('/categories', function () {
+    $mate = null;
+    if (auth()->check()) {
+        $mate = app(MateService::class)->getMateWithBookmarks(auth()->id());
+    }
+    return view('categories', ['mate' => $mate]);
+})->name('categories');
+
+
 Route::get('/about', function (SpaceController $spaceController) {
     $meta = [];
     $meta['title'] = "Coliving App";

@@ -111,7 +111,7 @@
 
     <h1 style="margin-bottom:10px;">What is Coliving?</h1>
     <div class="section-subtitle">
-      Coliving covers many shapes of shared living. Tap any word to browse spaces in that category.
+      Coliving covers many shapes of shared living. Explore all <a href="/categories">categories</a>, or tap any word below.
     </div>
     <div style="height:30px;"></div>
     <div class="word-cloud">
@@ -435,6 +435,11 @@
     margin: 0 auto;
     color: #666;
     white-space: nowrap;
+  }
+
+  .section-subtitle a {
+    color: inherit;
+    text-decoration: underline;
   }
 
   @media screen and (max-width: 700px) {
