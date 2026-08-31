@@ -8,8 +8,8 @@ use App\Models\Mate;
 use App\Models\InboxMateMate;
 use App\Models\InboxMateSpace;
 
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InboxConversationController extends Controller
 {
@@ -51,7 +51,7 @@ class InboxConversationController extends Controller
     
                 $receiver = Space::findByUidOrUsername($conversation['user2']);
                 if ($receiver) {
-                    $receiver = $receiver->only(['name', 'photo']);
+                    $receiver = $this->spaceParticipantPayload($receiver);
                 }
 
                 if ($receiver) {
@@ -97,7 +97,7 @@ class InboxConversationController extends Controller
 
             $receiver = Space::findByUidOrUsername($conversation['user2']);
             if ($receiver) {
-                $receiver = $receiver->only(['name', 'photo']);
+                $receiver = $this->spaceParticipantPayload($receiver);
             }
 
             if ($receiver) {
@@ -120,6 +120,25 @@ class InboxConversationController extends Controller
             'conversations_mate_pov' => $conversations_mate_pov
         ], 200);
 
+    }
+
+    private function spaceParticipantPayload(Space $space): array
+    {
+        $payload = [
+            'name' => $space->name,
+            'uid' => $space->uid,
+            'first_photo' => null,
+        ];
+
+        if ($space->photo) {
+            $payload['first_photo'] = DB::table('photos')
+                ->where('space_uid', $space->uid)
+                ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+                ->orderByDesc('id')
+                ->value('filename');
+        }
+
+        return $payload;
     }
     
 }

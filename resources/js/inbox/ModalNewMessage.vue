@@ -1,76 +1,46 @@
 <template>
 
-  <div class="modal-window">
+  <div class="mnm-overlay" @mousedown.self="$emit('close')">
 
-    <div class="modal-content">
+    <div class="mnm-modal">
 
-      <div class="modal-top">
-        <div class="modal-top-inner">
-          
-          <div class="modal-title">New Message</div>
-
-          <span @click="$emit('close')" class="modal-close">
-            <div class="modal-close-btn">
-                <svg version="1.1" viewBox="0 0 20.94 20.94" xmlns="http://www.w3.org/2000/svg">
-                    <g transform="translate(85.309 -17.5)">
-                        <path d="m-66.353 19.484-16.972 16.972" class="modal-close-btn-line" />
-                        <path d="m-83.325 19.484 16.972 16.972" class="modal-close-btn-line" />
-                    </g>
-                </svg>
-            </div>
-          </span>
-        </div>
+      <div class="mnm-modal-header">
+        <div class="mnm-modal-title">New Message</div>
+        <button type="button" class="mnm-modal-close" @click="$emit('close')" aria-label="Close">
+          <svg viewBox="0 0 20.94 20.94" width="14" height="14">
+            <g transform="translate(85.309 -17.5)">
+              <path d="m-66.353 19.484-16.972 16.972" class="mnm-modal-close-line" />
+              <path d="m-83.325 19.484 16.972 16.972" class="mnm-modal-close-line" />
+            </g>
+          </svg>
+        </button>
       </div>
 
-      <div class="modal-bottom">
-
-        <div class="modal-spacer" style="clear:both;height:25px;"></div>
-
-        <div class="modal-content-bottom">
-          
-          <div class="modal-content-bottom-inner">
-
-            <div style="padding:20px;line-height:160%;">
-            <form class="message-input-form" @submit.prevent="sendMessage">
-              <div>
-                <textarea ref="messageTextarea" class="textarea" v-model="newMessage" placeholder="Type your message..." autofocus style="min-height:260px;"></textarea>
-              </div>
-
-              <div style="float:left;">
-                <div class="join-request-form" v-if="$route.name != 'ConversationMateMate' && showJR">
-                  <!-- <div style="width:140px;margin-right:10px;float:left;display:grid;grid-template-columns:20px 120px 1fr">
-                    <input type="checkbox" id="requestToJoin" v-model="requestToJoin">
-                    <label for="requestToJoin">Request to Join</label>
-                  </div> -->
-
-                  <div class="appify-checkbox" style="width:150px;margin-top:7px;">
-                    <input id="joinreq" type="checkbox" name="joinreq" class="appify-input-checkbox" v-model="requestToJoin"/>
-                    <label for="joinreq">
-                    <div class="checkbox-box" style="margin-top:2px;">  
-                        <svg><use xlink:href="#checkmark" /></svg>
-                    </div> 
-                    <span style="font-size:17px;font-weight:bold;">Request to Join</span>
-                    </label>
-                  </div>
-
-                </div>
-              </div>
-
-              <div style="float:right;">
-                <button v-if="!buttonClicked" class="btn btn-md btn-primary" type="submit">Send</button>
-                <div v-else style="text-align:center;width:80px;">Sending...</div>
-              </div>
-
-              <div style="height:40px;"></div>
-            </form>
-            </div>
-          
+      <div class="mnm-modal-body">
+        <form class="mnm-form" @submit.prevent="sendMessage">
+          <div class="mnm-field">
+            <textarea ref="messageTextarea" class="textarea mnm-textarea" v-model="newMessage" placeholder="Type your message..." autofocus></textarea>
           </div>
 
-        </div>
+          <div
+            v-if="$route.name != 'ConversationMateMate' && showJR"
+            class="mnm-join-toggle"
+            :class="{ 'is-active': requestToJoin }"
+            @click="requestToJoin = !requestToJoin"
+          >
+            <div class="mnm-join-icon">🏠</div>
+            <div class="mnm-join-text">
+              <div class="mnm-join-title">Request to Join</div>
+              <div class="mnm-join-hint">Send this message as a request to join the space</div>
+            </div>
+            <div class="mnm-join-switch"><span></span></div>
+          </div>
 
-        <div class="modal-spacer"  style="height:60px;"></div>
-
+          <div class="mnm-actions">
+            <button v-if="!buttonClicked" class="btn btn-md btn-primary" type="submit">Send</button>
+            <div v-else class="mnm-sending">Sending...</div>
+          </div>
+        </form>
       </div>
 
     </div>
@@ -168,3 +138,208 @@ const sendMessage = () => {
     });
 };
 </script>
+
+<style scoped>
+.mnm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 21, .6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  z-index: 9999;
+  animation: mnm-fade-in .15s ease;
+}
+
+.mnm-modal {
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, .35), 0 4px 14px rgba(0, 0, 0, .15);
+  overflow: hidden;
+  animation: mnm-pop-in .18s ease;
+}
+
+@keyframes mnm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mnm-pop-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.mnm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.mnm-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.mnm-modal-close {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background .15s ease;
+}
+
+.mnm-modal-close:hover {
+  background: #e7ebf0;
+}
+
+.mnm-modal-close-line {
+  fill: none;
+  stroke: #666;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.mnm-modal-body {
+  padding: 22px 22px 24px;
+  overflow-y: auto;
+}
+
+.mnm-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.mnm-textarea {
+  min-height: 190px;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.mnm-join-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.mnm-join-toggle:hover {
+  border-color: #c6c6c6;
+}
+
+.mnm-join-toggle.is-active {
+  border-color: var(--sky);
+  background: #f4faff;
+}
+
+.mnm-join-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+
+.mnm-join-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mnm-join-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+}
+
+.mnm-join-hint {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.mnm-join-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #d8d8d8;
+  transition: background .15s ease;
+}
+
+.mnm-join-switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  transition: transform .15s ease;
+}
+
+.mnm-join-toggle.is-active .mnm-join-switch {
+  background: var(--sky);
+}
+
+.mnm-join-toggle.is-active .mnm-join-switch span {
+  transform: translateX(18px);
+}
+
+.mnm-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.mnm-sending {
+  font-size: 14px;
+  color: #888;
+}
+
+@media screen and (max-width: 480px) {
+  .mnm-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .mnm-modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+}
+</style>

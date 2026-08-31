@@ -13,6 +13,7 @@ use App\Services\ChatAuthorization;
 use App\Services\EmailService;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InboxMateSpaceController extends Controller
 {
@@ -274,11 +275,21 @@ class InboxMateSpaceController extends Controller
 
     private function spaceParticipants(Space $space, string $requestedUid, array $extra = []): array
     {
+        $firstPhoto = null;
+        if ($space->photo) {
+            $firstPhoto = DB::table('photos')
+                ->where('space_uid', $space->uid)
+                ->orderByRaw('CASE WHEN pos = 1 THEN 0 ELSE 1 END')
+                ->orderByDesc('id')
+                ->value('filename');
+        }
+
         $payload = array_merge([
             'uid' => $space->uid,
             'username' => $space->username,
             'name' => $space->name,
             'photo' => $space->photo,
+            'first_photo' => $firstPhoto,
             'type' => 'space',
         ], $extra);
 

@@ -1,7 +1,16 @@
 <template>
   <div class="content">
-    <h1 style="margin-top:-10px;margin-bottom:10px;">Conversation</h1>
-    <span v-if="$route.params.uid != mate.uid">With {{ conversationType }}: <router-link :to="conversationWithUrl">{{ conversationWithName }}</router-link></span>
+    <div class="convo-page-header">
+      <router-link :to="inboxBackTo" class="convo-back" aria-label="Back to inbox">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </router-link>
+      <div class="convo-page-title">
+        <h1>Conversation</h1>
+        <span v-if="$route.params.uid != mate.uid">With {{ conversationType }}: <router-link :to="conversationWithUrl">{{ conversationWithName }}</router-link></span>
+      </div>
+    </div>
     <div style="height:40px;"></div>
 
     <div v-if="userLoggedIn">
@@ -24,58 +33,56 @@
           <div v-if="!conversation.messages.length && !isSpaceClaimed" class="info-bubble">
             ⚠️ Attention: This space hasn't been claimed yet. Your message will be forwarded, but replies are less likely. If you don't hear back, try contacting the space directly.
           </div>
-          <div v-else  style="min-height:100px;max-height:100%;overflow-y:auto;" id="conv-messages">
+          <div v-else style="min-height:100px;max-height:100%;overflow-y:auto;" id="conv-messages">
             <!-- Display conversation content -->
-            <div v-for="message in conversation.messages" :key="message.id" >
-              <div style="display:grid;grid-template-columns:25px 5px 1fr;">
-                <div>
-                  <!-- /img/coliving-app-logo-symbol.png -->
-                  <profile-pic v-if="participants[message.sender_uid].type == 'mate'" :profile_pic="participants[message.sender_uid].profile_pic" :avatar="participants[message.sender_uid].avatar" :photo="participants[message.sender_uid].photo" style="height:25px;width:25px;overflow:hidden;"/>
-                  <img v-else src="/img/coliving-app-logo-symbol.png" style="height:25px;width:25px;"/>
-                </div>
-                <div></div>
-                <div style="padding-top:5px;">
-                  <b>{{ getDisplayName(message.sender_uid) }}</b>
-                  <br>
-                  {{ convertToDate(message.created_at) }}
+            <div
+              v-for="message in conversation.messages"
+              :key="message.id"
+              class="msg-row"
+              :class="{ 'msg-own': isOwnMessage(message) }"
+            >
+              <div class="msg-avatar" :class="{ 'msg-avatar-is-space': participants[message.sender_uid] && participants[message.sender_uid].type != 'mate' }">
+                <profile-pic
+                  v-if="participants[message.sender_uid] && participants[message.sender_uid].type == 'mate'"
+                  :profile_pic="participants[message.sender_uid].profile_pic"
+                  :avatar="participants[message.sender_uid].avatar"
+                  :photo="participants[message.sender_uid].photo"
+                  style="width:100%;height:100%;overflow:hidden;border-radius:50%;"
+                />
+                <div v-else class="msg-avatar-space">
+                  <img
+                    :src="spaceAvatarSrc(participants[message.sender_uid])"
+                    @error="$event.target.src = '/img/coliving-app-logo-symbol.png'"
+                  >
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:30px 1fr;margin-bottom:20px;">
-                <div></div>
-                <div style="font-size:14px;white-space: pre-wrap;">
-                  <div style="height:10px;"></div>{{ message.content }}
+
+              <div class="msg-col">
+                <div class="msg-meta">
+                  <span class="msg-sender">{{ getDisplayName(message.sender_uid) }}</span>
+                  <span class="msg-time">{{ convertToDate(message.created_at) }}</span>
                 </div>
 
-                <!-- Display join request data if it exists -->
-                <div></div>
-                <div v-if="message.join_request" class="join-request">
-                  <div style="height:5px;"></div>
-                  <div v-if="message.join_request.status == 'pending'">
-                    <span style="color:#ff9b00;">Join request status: <b>Pending</b></span>
-                    <span v-if="route.name == 'ConversationSpacePOV'">
-                      <div style="height:5px;"></div>
-                      <span v-if="jrProcessing">Please wait...</span>
-                      <span v-else>
-                        <button type="button" class="btn btn-sm btn-join" @click="joinRequestAccept(message.join_request.id)">Accept</button> <button type="button" class="btn btn-sm btn-danger" @click="joinRequestDecline(message.join_request.id)">Decline</button>
+                <div class="msg-bubble">{{ message.content }}</div>
+
+                <!-- Join request widget -->
+                <div v-if="message.join_request" class="jr-card" :class="'jr-status-' + message.join_request.status">
+                  <div class="jr-card-head">
+                    <span class="jr-card-title">🏠 Join Request</span>
+                    <span class="jr-badge">{{ jrStatusLabel(message.join_request.status) }}</span>
+                  </div>
+                  <div class="jr-card-body">
+                    <div v-if="message.join_request.status == 'pending'">
+                      <span v-if="route.name == 'ConversationSpacePOV'">
+                        <span v-if="jrProcessing" class="jr-note">Please wait...</span>
+                        <span v-else class="jr-actions">
+                          <button type="button" class="btn btn-sm btn-join" @click="joinRequestAccept(message.join_request.id)">Accept</button>
+                          <button type="button" class="btn btn-sm btn-danger" @click="joinRequestDecline(message.join_request.id)">Decline</button>
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                  <div v-else-if="message.join_request.status == 'declined'">
-                    <span style="color:red;">
-                      Join request status: <b>Declined</b>
-                      <br>
-                      {{ convertToDate(message.join_request.updated_at) }}
-                    </span>
-                  </div>
-                  <div v-else-if="message.join_request.status == 'expired'">
-                    <span style="color:#bfbfbf;">Join request status: <b>Expired</b></span>
-                  </div>
-                  <div v-else>
-                    <span style="color:green;">
-                      Join request status: <b>Accepted</b>
-                      <br>
-                      {{ convertToDate(message.join_request.updated_at) }}
-                    </span>
+                      <span v-else class="jr-note">Awaiting a response from the space.</span>
+                    </div>
+                    <div v-else class="jr-note jr-date">{{ convertToDate(message.join_request.updated_at) }}</div>
                   </div>
                 </div>
               </div>
@@ -102,14 +109,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 import { useRoute } from 'vue-router';
 const route = useRoute();
 
+const inboxBackTo = computed(() => {
+  if (route.name === 'ConversationSpacePOV') {
+    return { name: 'inboxMySpaces' };
+  }
+  return { name: 'inbox' };
+});
+
 import ProfilePic from '../components/ProfilePic.vue';
 // import Multiavatar from '../components/Multiavatar.vue';
 import ModalNewMessage from './ModalNewMessage.vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
 
 let receiverId = ref('');
 let senderId = ref('');
@@ -134,6 +149,29 @@ const conversation = ref({
 });
 
 const participants = ref({});
+
+// When viewing a conversation as the space (admin replying on behalf of a space),
+// "self" is the space uid. Otherwise "self" is the logged-in mate.
+function isOwnMessage(message) {
+  if (route.name === 'ConversationSpacePOV') {
+    return message.sender_uid === route.params.uid;
+  }
+  return message.sender_uid === mate.value.uid;
+}
+
+function jrStatusLabel(status) {
+  if (status == 'pending') return 'Pending';
+  if (status == 'declined') return 'Declined';
+  if (status == 'expired') return 'Expired';
+  return 'Accepted';
+}
+
+function spaceAvatarSrc(participant) {
+  if (participant?.first_photo) {
+    return spacePhotoUrl(participant.first_photo);
+  }
+  return '/img/coliving-app-logo-symbol.png';
+}
 
 function convertToDate(originalDate) {
   const date = new Date(originalDate);
@@ -285,6 +323,38 @@ function joinRequestDecline(id) {
 
 
 <style scoped>
+.convo-page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: -10px;
+}
+
+.convo-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 19px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #444;
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+
+.convo-back:hover {
+  background: var(--surface);
+  color: #111;
+}
+
+.convo-page-title h1 {
+  margin: 0;
+  padding-top: 19px;
+  margin-bottom: 10px;
+}
+
 .info-bubble {
   background-color: #f1f1f1;
   color: #333;
@@ -296,40 +366,153 @@ function joinRequestDecline(id) {
   margin-bottom: 20px;
 }
 
-.conversation-area {
-  height: 400px;
-  overflow-y: auto;
-  margin-bottom: 20px;
+/* CHAT MESSAGES */
+.msg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 22px;
 }
 
-.message-row {
+.msg-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f2f2f2;
+}
+
+.msg-avatar-is-space {
+  border-radius: 5px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .14);
+}
+
+.msg-avatar-space {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: center;
 }
 
-.avatar {
-  margin-right: 10px;
+.msg-avatar-space img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.message-sender {
-  font-weight: bold;
-}
-
-.message-content {
-  margin-left: 35px;
-}
-
-/* .message-input-form {
+.msg-col {
   display: flex;
-  gap: 10px;
-} */
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 78%;
+}
 
-.message-input {
-  flex-grow: 1;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+.msg-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 11.5px;
+}
+
+.msg-sender {
+  font-weight: 700;
+  color: #444;
+}
+
+.msg-time {
+  color: #a5a5a5;
+}
+
+.msg-bubble {
+  background: #eef0f3;
+  color: #222;
+  padding: 10px 14px;
+  border-radius: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.msg-row.msg-own .msg-bubble {
+  background: var(--sky);
+  color: #fff;
+}
+
+/* JOIN REQUEST WIDGET */
+.jr-card {
+  margin-top: 8px;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+  overflow: hidden;
+}
+
+.jr-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid #ececec;
+}
+
+.jr-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+}
+
+.jr-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+
+.jr-status-pending .jr-badge {
+  background: rgba(255, 155, 0, .15);
+  color: #b06b00;
+}
+
+.jr-status-accepted .jr-badge {
+  background: rgba(116, 213, 98, .22);
+  color: #1a9d3d;
+}
+
+.jr-status-declined .jr-badge {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.jr-status-expired .jr-badge {
+  background: #eee;
+  color: #888;
+}
+
+.jr-card-body {
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.jr-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.jr-note {
+  color: #8a8a8a;
 }
 
 @media screen and (max-width: 450px) {

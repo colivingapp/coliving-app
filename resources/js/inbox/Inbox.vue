@@ -7,112 +7,121 @@
         <div v-if="userLoggedIn">
 
             <div style="height:35px;"></div>
-                
-            <div style="height:40px;border-bottom:1px solid #ccc;" class="noselect">
-                <div class="page-menu-button-outer">
-                    <div class="page-menu-button" @click="inboxTypeChange('personal')">
-                        <span class="inbox-type-link" :class="{active : inboxType == 'personal'}">
-                            Personal ({{ conversations_mate_pov.length }})
-                            <span v-if="hasNewPersonal" style="color:red;">●</span>
-                        </span>
+
+            <div class="inbox-tabs noselect">
+                <div class="inbox-tabs-track">
+                    <div class="page-menu-button-outer">
+                        <div class="page-menu-button" @click="inboxTypeChange('personal')">
+                            <span class="inbox-type-link" :class="{ active : inboxType == 'personal' }">
+                                Personal ({{ conversations_mate_pov.length }})
+                                <span v-if="hasNewPersonal" style="color:red;">●</span>
+                            </span>
+                        </div>
+                        <div class="page-menu-underline" :class="{ active: inboxType == 'personal' }"></div>
                     </div>
-                    <div class="page-menu-underline" v-if="inboxType == 'personal'"></div>
-                </div>
-                <div class="page-menu-button-outer" style="margin-left:20px;">
-                    <div class="page-menu-button" @click="inboxTypeChange('spaces')">
-                        <span class="inbox-type-link" :class="{active : inboxType == 'spaces'}">
-                            My Spaces ({{ conversations.length }})
-                            <span v-if="hasNewSpaces" style="color:red;">●</span>
-                        </span>
+                    <div class="page-menu-button-outer">
+                        <div class="page-menu-button" @click="inboxTypeChange('spaces')">
+                            <span class="inbox-type-link" :class="{ active : inboxType == 'spaces' }">
+                                My Spaces ({{ conversations.length }})
+                                <span v-if="hasNewSpaces" style="color:red;">●</span>
+                            </span>
+                        </div>
+                        <div class="page-menu-underline" :class="{ active: inboxType == 'spaces' }"></div>
                     </div>
-                    <div class="page-menu-underline" v-if="inboxType == 'spaces'"></div>
                 </div>
             </div>
 
             <div v-if="loaded">
                 <div style="height:30px;"></div>
 
-                <div v-if="inboxType == 'personal'" v-for="conv in conversations_mate_pov">
-                    <div style="line-height:200%;">
-                        <!-- <router-link v-if="conv.type == 'space_mate' && conv.participants.receiver" :to="'/inbox/space/' + conv.user2"> -->
-                        <router-link v-if="conv.type == 'space_mate' && conv.participants.receiver" :to="'/inbox/space/' + conv.user2" @click="markAsRead(conv)">
-
-                            <div class="convo convo-space" :class="{ 'conv-new' : conv.new }" style="display:grid;grid-template-columns: 1fr 80px;">
-                                <div>
-                                    <icons :iconName="'space'" :width="11"></icons>&nbsp;
-                                    <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
-                                    <span v-else-if="conv.participants.receiver.username">{{ conv.participants.receiver.username }}</span>
-                                    <span v-else>{{ conv.participants.receiver.uid }}</span>
-                                </div>
-                                <div style="color:#333;font-size:11px;text-align:right;padding-right:2px;">
-                                    {{
-                                        new Date(conv.updated_at).toLocaleString('en-US', {
-                                            month: 'short',   // "Jan", "Feb", etc.
-                                            day: '2-digit',   // "01", "02", etc.
-                                            hour: '2-digit',  // "01", "02", etc., 24-hour clock
-                                            minute: '2-digit',// "01", "02", etc.
-                                            hour12: false     // use 24-hour clock without AM/PM
-                                        })
-                                    }}
-                                </div>
-                            </div>
-                        </router-link>
-                        <!-- <router-link v-else-if="conv.participants.receiver" :to="'/inbox/mate/' + conv.participants.receiver.uid"> -->
-                        <router-link v-else-if="conv.participants.receiver" :to="'/inbox/mate/' + conv.participants.receiver.uid" @click="markAsRead(conv)">
-
-                            <div class="convo convo-mate" :class="{ 'conv-new' : conv.new }" style="display:grid;grid-template-columns: 1fr 80px;">
-                                <div>
-                                    <icons :iconName="'mate'" :width="11"></icons>&nbsp;
-                                    <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
-                                    <span v-else-if="conv.participants.receiver.username">{{ conv.participants.receiver.username }}</span>
-                                    <span v-else>{{ conv.participants.receiver.uid }}</span>
-                                </div>
-                                <div style="color:#333;font-size:11px;text-align:right;padding-right:2px;">
-                                    {{
-                                        new Date(conv.updated_at).toLocaleString('en-US', {
-                                            month: 'short',   // "Jan", "Feb", etc.
-                                            day: '2-digit',   // "01", "02", etc.
-                                            hour: '2-digit',  // "01", "02", etc., 24-hour clock
-                                            minute: '2-digit',// "01", "02", etc.
-                                            hour12: false     // use 24-hour clock without AM/PM
-                                        })
-                                    }}
-                                </div>
-                            </div>
-                        </router-link>
+                <div class="convo-list" v-if="inboxType == 'personal'">
+                    <div v-if="!personalConversations.length" class="convo-empty">
+                        <div class="convo-empty-icon">✉️</div>
+                        No personal conversations yet.
                     </div>
+                    <router-link
+                        v-for="conv in personalConversations"
+                        :key="personalConvoKey(conv)"
+                        :to="personalConvoTo(conv)"
+                        @click="markAsRead(conv)"
+                        class="convo-link"
+                    >
+                        <div class="convo-card" :class="{ 'convo-new' : conv.new }">
+                            <div class="convo-avatar-combo">
+                                <div class="convo-avatar-badge">
+                                    <profile-pic :profile_pic="myMate.profile_pic" :avatar="myMate.avatar" :photo="myMate.photo" style="width:100%;height:100%;overflow:hidden;border-radius:50%;"/>
+                                </div>
+                                <div class="convo-avatar-primary" :class="{ 'convo-avatar-space': conv.type == 'space_mate' }">
+                                    <img
+                                        v-if="conv.type == 'space_mate'"
+                                        :src="spaceAvatarSrc(conv.participants.receiver)"
+                                        class="convo-avatar-img"
+                                        @error="$event.target.src = '/img/coliving-app-logo-symbol.png'"
+                                    >
+                                    <profile-pic
+                                        v-else
+                                        :avatar="conv.participants.receiver.avatar"
+                                        style="width:100%;height:100%;overflow:hidden;border-radius:50%;"
+                                    />
+                                </div>
+                            </div>
+                            <div class="convo-main">
+                                <div class="convo-row">
+                                    <div class="convo-name">
+                                        <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
+                                        <span v-else-if="conv.participants.receiver.username">{{ conv.participants.receiver.username }}</span>
+                                        <span v-else>{{ conv.type == 'space_mate' ? conv.user2 : conv.participants.receiver.uid }}</span>
+                                    </div>
+                                    <span class="convo-time">{{ formatDate(conv.updated_at) }}</span>
+                                </div>
+                                <div class="convo-sub">{{ conv.type == 'space_mate' ? 'Space' : 'Mate' }}</div>
+                            </div>
+                            <span v-if="conv.new" class="convo-dot"></span>
+                        </div>
+                    </router-link>
                 </div>
 
-                <div v-else v-for="conv in conversations">
-                    <div style="line-height:200%;">
-                        <!-- <router-link :to="'/inbox/space/' + conv.user2 + '/mate/' + conv.user1"> -->
-                        <router-link :to="'/inbox/space/' + conv.user2 + '/mate/' + conv.user1" @click="markAsRead(conv)">
-
-                            <div v-if="conv.participants.creator && conv.participants.receiver" class="convo convo-mate-space" :class="{ 'conv-new' : conv.new }" style="display:grid;grid-template-columns: 1fr 80px;">
-                                <div>
-                                    <icons :iconName="'space'" :width="11"></icons>&nbsp;
-                                    <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
-                                    <span v-else-if="conv.participants.receiver.username">{{ conv.participants.receiver.username }}</span>
-                                    <span v-else>{{ conv.participants.receiver.uid }}</span>  
-                                    &nbsp;←&nbsp;<icons :iconName="'mate'" :width="11"></icons>&nbsp;
-                                    <span v-if="conv.participants.creator.name">{{ conv.participants.creator.name }}</span>
-                                    <span v-else-if="conv.participants.creator.username">{{ conv.participants.creator.username }}</span>
-                                    <span v-else>{{ conv.participants.creator.uid }}</span>
+                <div class="convo-list" v-else>
+                    <div v-if="!spaceConversations.length" class="convo-empty">
+                        <div class="convo-empty-icon">🏠</div>
+                        No messages or join requests from mates yet.
+                    </div>
+                    <router-link
+                        v-for="conv in spaceConversations"
+                        :key="spaceConvoKey(conv)"
+                        :to="'/inbox/space/' + conv.user2 + '/mate/' + conv.user1"
+                        @click="markAsRead(conv)"
+                        class="convo-link"
+                    >
+                        <div class="convo-card" :class="{ 'convo-new' : conv.new }">
+                            <div class="convo-avatar-combo">
+                                <div class="convo-avatar-badge convo-avatar-space">
+                                    <img
+                                        :src="spaceAvatarSrc(conv.participants.receiver)"
+                                        @error="$event.target.src = '/img/coliving-app-logo-symbol.png'"
+                                    >
                                 </div>
-                                <div style="color:#333;font-size:11px;text-align:right;padding-right:2px;">
-                                    {{
-                                        new Date(conv.updated_at).toLocaleString('en-US', {
-                                            month: 'short',   // "Jan", "Feb", etc.
-                                            day: '2-digit',   // "01", "02", etc.
-                                            hour: '2-digit',  // "01", "02", etc., 24-hour clock
-                                            minute: '2-digit',// "01", "02", etc.
-                                            hour12: false     // use 24-hour clock without AM/PM
-                                        })
-                                    }}
+                                <div class="convo-avatar-primary">
+                                    <profile-pic :avatar="conv.participants.creator.avatar" style="width:100%;height:100%;overflow:hidden;border-radius:50%;"/>
                                 </div>
                             </div>
-                        </router-link>
-                    </div>
+                            <div class="convo-main">
+                                <div class="convo-row">
+                                    <div class="convo-name">
+                                        <span v-if="conv.participants.creator.name">{{ conv.participants.creator.name }}</span>
+                                        <span v-else-if="conv.participants.creator.username">{{ conv.participants.creator.username }}</span>
+                                        <span v-else>{{ conv.participants.creator.uid }}</span>
+                                    </div>
+                                    <span class="convo-time">{{ formatDate(conv.updated_at) }}</span>
+                                </div>
+                                <div class="convo-sub">
+                                    <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
+                                    <span v-else>{{ conv.user2 }}</span>
+                                </div>
+                            </div>
+                            <span v-if="conv.new" class="convo-dot"></span>
+                        </div>
+                    </router-link>
                 </div>
             </div>
             <div v-else class="spinner-container">
@@ -164,6 +173,46 @@ function markAsRead(conv) {
   }
 }
 
+function formatDate(date) {
+    return new Date(date).toLocaleString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+}
+
+function spaceAvatarSrc(participant) {
+    if (participant?.first_photo) {
+        return spacePhotoUrl(participant.first_photo);
+    }
+    return '/img/coliving-app-logo-symbol.png';
+}
+
+function personalConvoKey(conv) {
+    return conv.uid || `${conv.type}-${conv.user1}-${conv.user2}`;
+}
+
+function spaceConvoKey(conv) {
+    return conv.uid || `${conv.user1}-${conv.user2}`;
+}
+
+function personalConvoTo(conv) {
+    if (conv.type === 'space_mate') {
+        return '/inbox/space/' + conv.user2;
+    }
+    return '/inbox/mate/' + conv.participants.receiver.uid;
+}
+
+const personalConversations = computed(() => {
+    return conversations_mate_pov.value.filter(conv => isRenderable(conv, 'personal'));
+});
+
+const spaceConversations = computed(() => {
+    return conversations.value.filter(conv => isRenderable(conv, 'spaces'));
+});
+
 const hasNewPersonal = computed(() => {
     return conversations_mate_pov.value
         .filter(conv => isRenderable(conv, 'personal'))
@@ -204,7 +253,11 @@ function inboxTypeChange(type) {
 }
 
 
-import Icons from '../components/Icons.vue';
+import ProfilePic from '../components/ProfilePic.vue';
+import { spacePhotoUrl } from '../mediaUrls.js';
+
+// "My own" avatar, used as the small badge on every conversation row
+const myMate = window.mate || {};
 
 
 if (userLoggedIn.value) {
@@ -303,43 +356,223 @@ if (userLoggedIn.value) {
 }
 </script>
 
-<style>
-.convo {
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+<style scoped>
+/* TABS — same pattern as Hub */
+.inbox-tabs {
+  height: 40px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+.inbox-tabs-track {
+  height: 40px;
+}
+
+.inbox-tabs .page-menu-button {
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.inbox-tabs .page-menu-button-outer {
+  position: relative;
+  float: left;
+  height: 40px;
+  border-radius: 5px;
+  margin-left: 20px;
+}
+
+.inbox-tabs .page-menu-button-outer:first-child {
+  margin-left: 0;
+}
+
+.inbox-tabs .page-menu-button:hover,
+.inbox-tabs .page-menu-button:active {
+  cursor: pointer;
+  background-color: rgb(232, 232, 232);
+}
+
+.inbox-tabs .page-menu-underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #393939;
+  margin-top: 0;
+  visibility: hidden;
+}
+
+.inbox-tabs .page-menu-underline.active {
+  visibility: visible;
+}
+
+.inbox-tabs .inbox-type-link {
+  cursor: pointer;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* CONVO LIST */
+.convo-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     width: 100%;
-    margin-bottom: 10px;
-    padding-left:10px;
 }
 
-.convo-mate {
-    background-color: azure;
+.convo-empty {
+    text-align: center;
+    color: #999;
+    padding: 50px 20px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    font-size: 14px;
 }
 
-.convo-space {
-    background-color: rgb(237, 237, 237);
+.convo-empty-icon {
+    font-size: 26px;
+    margin-bottom: 8px;
 }
 
-.convo:hover {
-    border: 1px solid #444;
+.convo-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
 }
 
-.convo-mate-space {
-    background: linear-gradient(to right, azure, rgb(237, 237, 237));
+.convo-link:hover,
+.convo-link:active {
+    color: inherit;
 }
 
-.active {
-    /* font-weight: bold; */
+.convo-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 14px;
+    border: 1px solid #e8ebf0;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+    transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease, background .15s ease;
 }
 
-.inbox-type-link {
-    cursor: pointer;
-    font-size:15px;
+.convo-card:hover {
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .08), 0 10px 20px rgba(0, 0, 0, .06);
+    transform: translateY(-1px);
+    border-color: #e0e0e0;
 }
 
-.conv-new {
-    /* outline: 2px solid rgb(255, 125, 125); */
-    outline: 2px solid rgb(112, 112, 112);
+.convo-card.convo-new {
+    border-left: 3px solid var(--sky);
+    background: #f8fbff;
+}
+
+/* AVATARS — small (you) on the left, big (them) on the right */
+.convo-avatar-combo {
+    display: flex;
+    align-items: flex-end;
+    flex-shrink: 0;
+    width: 54px;
+    height: 44px;
+}
+
+.convo-avatar-badge {
+    position: relative;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    margin-right: -10px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+    overflow: hidden;
+}
+
+.convo-avatar-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.convo-avatar-primary {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f2f2f2;
+}
+
+.convo-avatar-space {
+    border-radius: 5px;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .14);
+}
+
+.convo-avatar-badge.convo-avatar-space {
+    border-radius: 3px;
+}
+
+.convo-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* TEXT */
+.convo-main {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.convo-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.convo-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.convo-sub {
+    font-size: 12.5px;
+    color: #8f8f8f;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.convo-time {
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: #a0a0a0;
+    white-space: nowrap;
+}
+
+.convo-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff5a5f;
 }
 </style>
