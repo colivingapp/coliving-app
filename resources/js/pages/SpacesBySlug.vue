@@ -7,7 +7,7 @@
         Coliving Spaces in {{ country }}
       </span>
       <span v-else-if="mode === 'category'">
-        {{ category }} Spaces
+        {{ categoryHeading }}
       </span>
       <span v-else>
         Not found
@@ -26,7 +26,7 @@
     <h2 v-if="isLoading" style="font-weight: normal;">Loading...</h2>
     <div v-else>
       <h2 v-if="mode === 'country'">Coliving Spaces in {{ country }}</h2>
-      <h2 v-else-if="mode === 'category'">{{ category }} Spaces</h2>
+      <h2 v-else-if="mode === 'category'">{{ categoryHeading }}</h2>
 
       <div v-if="mode === 'category' && categoryDescription" style="margin-top:-10px;margin-bottom:30px;color:#666;max-width:820px;line-height:1.5;">
         {{ categoryDescription }}
@@ -75,6 +75,14 @@ function isCategorySlug(slug) {
   return Object.prototype.hasOwnProperty.call(CATEGORY_META, slug);
 }
 
+function categoryPageTitle(label) {
+  const name = (label || '').trim();
+  if (!name) return '';
+  if (/\bSpaces$/i.test(name)) return name;
+  if (/\bSpace$/i.test(name)) return name.replace(/\bSpace$/i, 'Spaces');
+  return `${name} Spaces`;
+}
+
 async function fetchSpaces() {
   isLoading.value = true;
   country.value = '';
@@ -99,7 +107,7 @@ async function fetchSpaces() {
       const data = await response.json();
       category.value = data.category;
       spaces.value = data.spaces;
-      document.title = `${category.value} Spaces - Coliving App`;
+      document.title = `${categoryPageTitle(category.value)} - Coliving App`;
     } else {
       mode.value = 'country';
       const response = await fetch(`/api/spaces/${slug}`);
@@ -123,6 +131,8 @@ async function fetchSpaces() {
 
 onMounted(fetchSpaces);
 watch(() => route.params.countrySlug, fetchSpaces);
+
+const categoryHeading = computed(() => categoryPageTitle(category.value));
 
 const categoryDescription = computed(() => {
   if (mode.value !== 'category' || !categorySlug.value) return '';
