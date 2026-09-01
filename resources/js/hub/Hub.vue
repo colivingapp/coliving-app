@@ -108,6 +108,12 @@ const topicThreads = computed(() => threads.value.filter(thread => !thread.is_st
 const spaceInfoThread = computed(() => threads.value.find(thread => thread.type === 'space_info') || null);
 const currentAdmins = computed(() => currentMembers.value.filter(mate => mate.role === 'admin'));
 const isSelfManaged = computed(() => space.value?.governance_type === 'self-managed');
+const administrationModeLabel = computed(() => (isSelfManaged.value ? 'Self-managed' : 'Hosted'));
+const administrationModeDescription = computed(() => (
+  isSelfManaged.value
+    ? 'This space is administered by its active members. Members vote on join requests, and there is no separate admin role.'
+    : 'This space is administered by selected admins. Admins can manage join requests, Space Info, and other hub settings.'
+));
 const canManageJoinRequests = computed(() => isAdmin.value || isSelfManaged.value);
 const makeAdminCandidates = computed(() => currentMembers.value.filter(mate => (
   mate.role !== 'admin' && !mate.account_deleted
@@ -1086,82 +1092,91 @@ onMounted(loadHub);
             </template>
           </div>
 
-          <div v-if="isSelfManaged" class="hub-settings-block">
-            <h3 class="hub-block-title">Self-Managed Space</h3>
-            <p>This group has no hub admin. Active members vote on join requests, and a request is accepted after a majority vote.</p>
-          </div>
-
-          <div v-if="!isSelfManaged" class="hub-settings-block">
-            <h3 class="hub-block-title">Admins</h3>
-            <div v-if="currentAdmins.length" class="hub-admin-list">
-              <component
-                v-for="admin in currentAdmins"
-                :key="admin.id"
-                :is="mateProfileTo(admin) ? 'router-link' : 'span'"
-                :to="mateProfileTo(admin)"
-                class="hub-admin-person"
-              >
-                <img
-                  v-if="admin.account_deleted"
-                  src="/img/coliving-app-logo-symbol.png"
-                  alt=""
-                  class="hub-post-avatar hub-post-avatar-placeholder"
-                >
-                <profile-pic
-                  v-else
-                  :profile_pic="admin.profile_pic"
-                  :avatar="admin.avatar"
-                  :photo="admin.photo"
-                  class="hub-post-avatar"
-                />
-                <span>{{ mateDisplayName(admin) }}</span>
-              </component>
+          <div class="hub-settings-block">
+            <h3 class="hub-block-title">Administration</h3>
+            <div class="hub-admin-mode">
+              <strong>{{ administrationModeLabel }} administration</strong>
+              <p>{{ administrationModeDescription }}</p>
             </div>
-            <p v-else-if="isLoadingMates" class="hub-empty">Loading admins...</p>
-            <template v-if="isAdmin">
-              <div v-if="makeAdminCandidates.length" class="hub-admin-picker">
-                <div class="hub-admin-search">
-                  <input
-                    v-model="adminSearchQuery"
-                    type="text"
-                    class="input"
-                    placeholder="Search member by name or username"
-                    autocomplete="off"
-                    @input="onAdminSearchInput"
-                    @focus="adminSearchOpen = adminSearchQuery.trim().length > 0"
-                    @blur="onAdminSearchBlur"
+
+            <template v-if="isSelfManaged">
+              <p>Active members vote on join requests, and a request is accepted after a majority vote.</p>
+            </template>
+            <template v-else>
+              <h4 class="hub-section-label">Current admins</h4>
+              <div v-if="currentAdmins.length" class="hub-admin-list">
+                <component
+                  v-for="admin in currentAdmins"
+                  :key="admin.id"
+                  :is="mateProfileTo(admin) ? 'router-link' : 'span'"
+                  :to="mateProfileTo(admin)"
+                  class="hub-admin-person"
+                >
+                  <img
+                    v-if="admin.account_deleted"
+                    src="/img/coliving-app-logo-symbol.png"
+                    alt=""
+                    class="hub-post-avatar hub-post-avatar-placeholder"
                   >
-                  <div v-if="adminSearchOpen && adminSearchQuery.trim()" class="hub-admin-predictions">
-                    <button
-                      v-for="mate in adminPredictions"
-                      :key="mate.user_id"
-                      type="button"
-                      class="hub-admin-prediction"
-                      @mousedown.prevent="pickAdminCandidate(mate)"
-                    >
-                      <profile-pic
-                        :profile_pic="mate.profile_pic"
-                        :avatar="mate.avatar"
-                        :photo="mate.photo"
-                        class="hub-post-avatar"
-                      />
-                      <span>{{ mateDisplayName(mate) }}</span>
-                      <span v-if="mate.username && mate.username !== mateDisplayName(mate)" class="hub-admin-prediction-username">@{{ mate.username }}</span>
-                    </button>
-                    <div v-if="adminPredictions.length === 0" class="hub-admin-prediction-empty">No matching members</div>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-sm btn-quiet" :disabled="actionLoading || !adminCandidateId" @click="makeAdmin">Make admin</button>
+                  <profile-pic
+                    v-else
+                    :profile_pic="admin.profile_pic"
+                    :avatar="admin.avatar"
+                    :photo="admin.photo"
+                    class="hub-post-avatar"
+                  />
+                  <span>{{ mateDisplayName(admin) }}</span>
+                </component>
               </div>
-              <p v-if="!canLeaveAsAdmin">Make another member an admin before you leave. Leaving as admin also leaves the space.</p>
-              <p v-else>Leaving as admin also leaves this space.</p>
-              <div v-if="actionError" class="hub-error hub-admin-error">{{ actionError }}</div>
-              <button type="button" class="btn btn-sm btn-danger" :disabled="actionLoading || !canLeaveAsAdmin" @click="leaveAsAdmin">Leave as admin</button>
+              <p v-else-if="isLoadingMates" class="hub-empty">Loading admins...</p>
+              <template v-if="isAdmin">
+                <h4 class="hub-section-label">Add admins</h4>
+                <div v-if="makeAdminCandidates.length" class="hub-admin-picker">
+                  <div class="hub-admin-search">
+                    <input
+                      v-model="adminSearchQuery"
+                      type="text"
+                      class="input"
+                      placeholder="Search member by name or username"
+                      autocomplete="off"
+                      @input="onAdminSearchInput"
+                      @focus="adminSearchOpen = adminSearchQuery.trim().length > 0"
+                      @blur="onAdminSearchBlur"
+                    >
+                    <div v-if="adminSearchOpen && adminSearchQuery.trim()" class="hub-admin-predictions">
+                      <button
+                        v-for="mate in adminPredictions"
+                        :key="mate.user_id"
+                        type="button"
+                        class="hub-admin-prediction"
+                        @mousedown.prevent="pickAdminCandidate(mate)"
+                      >
+                        <profile-pic
+                          :profile_pic="mate.profile_pic"
+                          :avatar="mate.avatar"
+                          :photo="mate.photo"
+                          class="hub-post-avatar"
+                        />
+                        <span>{{ mateDisplayName(mate) }}</span>
+                        <span v-if="mate.username && mate.username !== mateDisplayName(mate)" class="hub-admin-prediction-username">@{{ mate.username }}</span>
+                      </button>
+                      <div v-if="adminPredictions.length === 0" class="hub-admin-prediction-empty">No matching members</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-quiet" :disabled="actionLoading || !adminCandidateId" @click="makeAdmin">Make admin</button>
+                </div>
+                <p v-if="!canLeaveAsAdmin">Make another member an admin before you leave. Leaving as admin also leaves the space.</p>
+                <p v-else>Leaving as admin also leaves this space.</p>
+                <div v-if="actionError" class="hub-error hub-admin-error">{{ actionError }}</div>
+                <button type="button" class="btn btn-sm btn-danger" :disabled="actionLoading || !canLeaveAsAdmin" @click="leaveAsAdmin">Leave as admin</button>
+              </template>
             </template>
           </div>
 
-          <div v-if="isListingOwner" class="hub-settings-block">
-            <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="btn btn-sm btn-quiet">Edit public space profile</button></router-link>
+          <div v-if="isAdmin || isListingOwner" class="hub-settings-block">
+            <h3 class="hub-block-title">Edit Space</h3>
+            <p>Update the public profile details for this space.</p>
+            <router-link :to="'/space/' + uid + '/edit'"><button type="button" class="btn btn-sm btn-quiet">Edit space profile</button></router-link>
           </div>
 
           <div v-if="!isAdmin" class="hub-settings-block">
@@ -1780,6 +1795,27 @@ a.hub-post-author-identity:hover span {
 
 .hub-settings-block p {
   margin: 0 0 12px;
+}
+
+.hub-admin-mode {
+  margin: 8px 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fafafa;
+  border: 1px solid #ececec;
+}
+
+.hub-admin-mode p {
+  margin: 4px 0 0;
+}
+
+.hub-section-label {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: rgb(90, 90, 90);
 }
 
 .hub-admin-list {
