@@ -8,6 +8,7 @@ import { CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
 
 import ProfilePic from '../components/ProfilePic.vue';
 import Icons from '../components/Icons.vue';
+import LifestyleMatchCard from '../components/LifestyleMatchCard.vue';
 import { normalizeSocialUrl, safeExternalUrl } from '../socialUrls.js';
 
 const space = ref(null);
@@ -23,7 +24,6 @@ let currentUserRated = ref(false);
 let editRating = ref([]);
 const maxCharacterCount = 200;
 let isSocial = ref(false);
-let coliveFitScore = ref(null);
 
 let isJoined = ref(false);
 
@@ -103,31 +103,6 @@ const fetchSpace = async () => {
 
     checkIfJoined(space.value.uid);
 
-    // Colive Fit
-    // console.log(mate.value, space.value)
-    if (userLoggedIn && mate.value) {
-        let user1 = {
-          orgSpont: space.value.orgSpont,
-          quietLoud: space.value.quietLoud,
-          earlyNight: space.value.earlyNight,
-          workFun: space.value.workFun,
-          expTrad: space.value.expTrad,
-          multiLocal: space.value.multiLocal
-        }
-
-        let user2 = {
-          orgSpont: mate.value.orgSpont,
-          quietLoud: mate.value.quietLoud,
-          earlyNight: mate.value.earlyNight,
-          workFun: mate.value.workFun,
-          expTrad: mate.value.expTrad,
-          multiLocal: mate.value.multiLocal
-        }
-        // console.log(user1, user2)
-        coliveFitScore.value = calculateColiveFitScore(user1, user2)
-        // console.log(coliveFitScore)
-    }
-
     document.title = space.value.name + ' - Coliving App';
 
     ratingsAll.value = response.data.ratings;
@@ -157,24 +132,6 @@ const fetchSpace = async () => {
     // Handle error if the request fails
   }
 };
-
-function calculateCriterionScore(value1, value2) {
-  const difference = Math.abs(value1 - value2);
-  return (10 - difference) * 10; // Convert to percentage
-}
-
-function calculateColiveFitScore(user1, user2) {
-  let totalScore = 0;
-
-  totalScore += calculateCriterionScore(user1.orgSpont, user2.orgSpont);
-  totalScore += calculateCriterionScore(user1.quietLoud, user2.quietLoud);
-  totalScore += calculateCriterionScore(user1.earlyNight, user2.earlyNight);
-  totalScore += calculateCriterionScore(user1.workFun, user2.workFun);
-  totalScore += calculateCriterionScore(user1.expTrad, user2.expTrad);
-  totalScore += calculateCriterionScore(user1.multiLocal, user2.multiLocal);
-
-  return totalScore / 6; // Average score
-}
 
 let isBookmarked = ref(false);
 
@@ -511,23 +468,7 @@ function getSubcategoryLabel(category, subcategory) {
         </div>
       </div>
       
-      <div style="border-radius: 5px;width:100%;padding:25px 10px 5px 10px;background-color: rgb(246, 246, 246);border: 1px solid rgb(204, 204, 204);">
-        <h2 style="margin-top:0px;">Lifestyle Match</h2>
-
-        <div v-if="coliveFitScore && userLoggedIn" style="font-size:24px;font-weight:bold;">
-          {{ coliveFitScore.toFixed(2) }}%
-          <div style="height:10px;"></div>
-        </div>
-
-        <div>This score reflects how well your living habits match with this coliving space. Higher scores mean better compatibility.</div>
-
-        <div v-if="!userLoggedIn">
-          <div style="height:20px;"></div>
-          <router-link to="/login"><b>Log in</b></router-link> to see your score
-        </div>
-
-        <div style="height:20px;"></div>
-      </div>
+      <lifestyle-match-card v-if="space" :space="space" />
 
       
       <div v-if="space">
