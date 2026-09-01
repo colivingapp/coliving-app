@@ -50,6 +50,7 @@
           <span v-if="error3">* Country is required. Please select the country where your space is located.<br></span>
           <span v-if="error4">* Address is required. Please enter the address of your space.</span>
           <span v-if="error5">* Unknown error. Please contact site admin.</span>
+          <span v-if="errorPhoto">* {{ errorPhoto }}</span>
         </div>
 
         <div class="form-section" v-if="isSectionVisible('general')">
@@ -182,11 +183,17 @@
               <input type="text" id="linkedin" v-model="linkedin" class="input">
             </div>
             <div class="form-group">
-              <label class="form-label" for="linktree">Linktree</label>
+              <label class="form-label social-field-label" for="linktree">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="linktree" /></span>
+                Linktree
+              </label>
               <input type="text" id="linktree" v-model="linktree" class="input">
             </div>
             <div class="form-group">
-              <label class="form-label" for="telegram">Telegram</label>
+              <label class="form-label social-field-label" for="telegram">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="telegram" /></span>
+                Telegram
+              </label>
               <input type="text" id="telegram" v-model="telegram" class="input">
             </div>
             <div class="form-group">
@@ -234,26 +241,7 @@
 
         <div class="form-section" v-if="isSectionVisible('photos')">
           <h2>Photos</h2>
-
-          <div>
-            <input type="file" id="photos" v-on:change="onFileSelected" multiple>
-          </div>
-          <div style="height:20px;"></div>
-          
-          <div v-if="imageUrls.length >= 2">
-            Drag and drop to change the order of your photos.
-            <div style="height:20px;"></div>
-          </div>
-
-          <draggable v-model="imageUrls" class="thumbnails" item-key="id" @start="drag=true" @end="drag=false" @update="updatePhotoPositions">
-            <template #item="{element, index}">
-              <div style="position:relative;max-width:250px;">
-                <img :src="element.url" height="100">
-                <div class="delete-button" @click="deletePhoto(index)">X</div>
-                <div style="height:10px;"></div>
-              </div>
-            </template>
-          </draggable>
+          <SpacePhotoManager v-model="photos" />
         </div>
         
         <div class="form-section" v-if="pageType == 'edit'">
@@ -310,11 +298,17 @@
               <input type="text" id="linkedin" v-model="linkedin" class="input">
             </div>
             <div class="form-group">
-              <label class="form-label" for="linktree">Linktree</label>
+              <label class="form-label social-field-label" for="linktree">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="linktree" /></span>
+                Linktree
+              </label>
               <input type="text" id="linktree" v-model="linktree" class="input">
             </div>
             <div class="form-group">
-              <label class="form-label" for="telegram">Telegram</label>
+              <label class="form-label social-field-label" for="telegram">
+                <span class="social-field-icon" aria-hidden="true"><social-field-icon name="telegram" /></span>
+                Telegram
+              </label>
               <input type="text" id="telegram" v-model="telegram" class="input">
             </div>
             <div class="form-group">
@@ -419,7 +413,7 @@
 import MapSpacesSearchable from '../map/MapSpacesSearchable.vue';
 import FormCountriesDropDown from './FormCountriesDropDown.vue';
 import FormGoogleAutoComplete from './FormGoogleAutoComplete.vue';
-import draggable from 'vuedraggable';
+import SpacePhotoManager from './SpacePhotoManager.vue';
 import { CATEGORY_ORDER, CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
 import { spacePhotoUrl } from '../mediaUrls.js';
 import SocialFieldIcon from '../components/SocialFieldIcon.vue';
@@ -428,8 +422,8 @@ export default {
   components: {
     MapSpacesSearchable,
     FormCountriesDropDown,
-    draggable,
     FormGoogleAutoComplete,
+    SpacePhotoManager,
     SocialFieldIcon,
   },
   data() {
@@ -463,8 +457,7 @@ export default {
       cooking: '5',
       physical_activity: '5',
       amenities: '',
-      files: [],
-      imageUrls: [],
+      photos: [],
       
       google_url: '',
       longitude: '',
@@ -501,7 +494,6 @@ export default {
         multiLocal: { name: 'multiculturalLocal', value: '5', labels: { left: 'Multicultural', right: 'Local' } },
       },
       
-      drag: false,
       private: 0,
 
       errors: false,
@@ -511,6 +503,7 @@ export default {
       error4: false,
       error5: false,
       error6: false,
+      errorPhoto: '',
 
       userId: null,
       created: false,
@@ -652,14 +645,19 @@ export default {
         this.coliveFits['expTrad'].value = m.expTrad;
         this.coliveFits['multiLocal'].value = m.multiLocal;
 
-        // Set the existing photos in the imageUrls array
-        this.imageUrls = Object.values(m.photos || {})
-        .sort((a, b) => a.pos - b.pos)
-        .map((photo, index) => ({
-          id: photo.id,
-          pos: photo.pos,
-          url: spacePhotoUrl(photo.filename),
-        }));
+        this.photos = Object.values(m.photos || {})
+          .sort((a, b) => {
+            const aPos = a.pos > 0 ? a.pos : 999999;
+            const bPos = b.pos > 0 ? b.pos : 999999;
+            if (aPos !== bPos) return aPos - bPos;
+            return (a.id || 0) - (b.id || 0);
+          })
+          .map((photo) => ({
+            key: 'p_' + photo.id,
+            id: photo.id,
+            url: spacePhotoUrl(photo.filename),
+            file: null,
+          }));
 
       } catch (error) {
         console.error(error);
@@ -672,20 +670,6 @@ export default {
   },  
 
   watch: {
-    files: {
-      handler: function(newFiles) {
-        for (let i = 0; i < newFiles.length; i++) {
-          let file = newFiles[i]
-          let reader = new FileReader()
-          reader.onload = (event) => {
-            file.preview = event.target.result
-          }
-          reader.readAsDataURL(file)
-        }
-      },
-      deep: true
-    },
-    
     json(newValue) {
       try {
         const data = JSON.parse(newValue);
@@ -731,6 +715,7 @@ export default {
       this.error4 = false;
       this.error5 = false;
       this.error6 = false;
+      this.errorPhoto = '';
     },
 
     validateCreateStep(step) {
@@ -783,13 +768,6 @@ export default {
       }
     },
 
-    updatePhotoPositions(event) {
-      // Update 'pos' property based on the new order
-      this.imageUrls.forEach((photo, index) => {
-        photo.pos = index + 1;
-      });
-    },
-    
     updateCountry(c) {
       // console.log(c)
       this.country_code = c.code;
@@ -909,18 +887,22 @@ export default {
       formData.append('address', this.address);
       formData.append('formatted_address', this.formatted_address);
 
-      formData.append('imageUrls', JSON.stringify(this.imageUrls));
+      formData.append('photos_meta', JSON.stringify(this.photos.map((photo) => ({
+        key: photo.key,
+        id: photo.id || null,
+      }))));
+
+      this.photos.forEach((photo) => {
+        if (photo.file) {
+          formData.append(`photo_files[${photo.key}]`, photo.file);
+        }
+      });
 
       formData.append('private', this.private);
 
       for (let key in this.coliveFits) {
         formData.append(key, this.coliveFits[key].value);
       }
-
-      // append all the selected files to the form data as an array
-      this.files.forEach(file => {
-        formData.append('photos[]', file);
-      }); 
 
       axios.post('/api/space', formData, {
         headers: {
@@ -956,86 +938,13 @@ export default {
         console.log(error.response);
         this.isUpdating = false;
         this.errors = true;
-        this.error5 = true;
-        // show an error message
-      });
-    },
-
-    onFileSelected(event) {
-      const selectedFiles = Array.from(event.target.files);
-
-      // Check file format and size before updating files
-      const invalidFiles = this.validateFiles(selectedFiles);
-
-      if (invalidFiles.length > 0) {
-        // Display alerts for invalid files
-        invalidFiles.forEach(invalidFile => {
-          if (invalidFile.format) {
-            alert(`Invalid file format: ${invalidFile.name}`);
-          } else if (invalidFile.size) {
-            alert(`File size exceeds 5MB: ${invalidFile.name}`);
-          } else if (invalidFile.count) {
-            alert(`Maximum 20 files allowed. You selected ${invalidFile.count} files.`);
-          }
-        });
-        return;
-      }
-
-      // Proceed with updating files
-      this.files = selectedFiles;
-
-      // Check if there are existing photos with pos not equal to 0
-      const hasExistingPhotos = this.imageUrls.some(photo => photo.pos !== 0);
-
-      if (hasExistingPhotos) {
-        // Update imageUrls
-        const startPos = Math.max(...this.imageUrls.map(photo => photo.pos)) + 1;
-
-        this.files.forEach((file, index) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            let res = {
-              url: reader.result,
-              pos: startPos + index,
-            };
-            this.imageUrls.push(res);
-          };
-          reader.readAsDataURL(file);
-        });
-      } else {
-        // No existing photos with pos not equal to 0, set pos to 0 for new files
-        this.files.forEach((file, index) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            let res = {
-              url: reader.result,
-              pos: 0,
-            };
-            this.imageUrls.push(res);
-          };
-          reader.readAsDataURL(file);
-        });
-      }
-    },
-
-    validateFiles(files) {
-      const invalidFiles = [];
-
-      // Check file format and size
-      files.forEach(file => {
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-          invalidFiles.push({ name: file.name, format: true });
-        } else if (file.size > 5 * 1024 * 1024) {
-          invalidFiles.push({ name: file.name, size: true });
+        const photoError = error.response?.data?.error;
+        if (photoError) {
+          this.errorPhoto = photoError;
+        } else {
+          this.error5 = true;
         }
       });
-
-      // Check maximum number of files
-      if (this.imageUrls.length + files.length > 20) {
-        invalidFiles.push({ count: this.imageUrls.length + files.length });
-      }
-
-      return invalidFiles;
     },
 
     deleteSpace() {
@@ -1048,10 +957,6 @@ export default {
         })
         .catch(error => console.log(error))
       }
-    },
-
-    deletePhoto(index) {
-      this.imageUrls.splice(index, 1);
     },
 
   }

@@ -110,7 +110,16 @@ class Space extends Model
 
     public function photos()
     {
-        return $this->hasMany(Photo::class);
+        return $this->hasMany(Photo::class, 'space_uid', 'uid');
+    }
+
+    public function orderedPhotos()
+    {
+        return Photo::query()
+            ->where('space_uid', $this->uid)
+            ->orderByRaw('CASE WHEN pos > 0 THEN pos ELSE 999999 END')
+            ->orderBy('id')
+            ->get(['id', 'filename', 'pos']);
     }
 
     public function ratings()

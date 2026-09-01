@@ -45,38 +45,11 @@ class SpaceController extends Controller
             }
         }
 
-        if ($space->photo) {
-            $photos = DB::table('photos')
-                ->where('space_uid', $space->uid)
-                ->select('filename', 'id', 'pos')
-                ->get()
-                ->keyBy('id')
-                ->toArray();
-        
-            $space->photos = $photos;
-            
-            $space->first_photo = null;
-
-            if ($photos) {
-                $firstPhoto = null;
-
-                foreach ($photos as $photo) {
-                    if ($photo->pos == 1) {
-                        $firstPhoto = $photo->filename;
-                        break;
-                    }
-                }
-
-                if (!$firstPhoto) {
-                    // Find the photo with the highest 'id' value
-                    $maxId = max(array_keys($photos));
-                    if ($maxId) {
-                        $firstPhoto = $photos[$maxId]->filename;
-                    }
-                }
-
-                $space->first_photo = $firstPhoto;
-            }
+        $photos = $space->orderedPhotos();
+        $space->photos = $photos;
+        $space->first_photo = $photos->first()?->filename;
+        if ($photos->isNotEmpty()) {
+            $space->photo = 1;
         }
 
         $ratings = SpacesRating::where('space_uid', $space->uid)

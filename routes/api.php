@@ -25,6 +25,7 @@ use App\Models\SettingsNotification;
 use App\Services\ChatAuthorization;
 use App\Services\EmailService;
 use App\Services\ImageStorage;
+use App\Services\SpacePhotoSync;
 use App\Services\MateService;
 use App\Services\SpaceClaimAuthorization;
 
@@ -271,102 +272,24 @@ Route::post('/space', function (Request $request) {
     }
 
 
-    // DELETE PHOTOS (if any)
-
-    // Convert $request->imageUrls to an array of IDs, excluding empty objects
-    $imageUrls = json_decode($request->imageUrls, true);
-    $imageIds = [];
-    
-    if (is_array($imageUrls)) {
-        foreach ($imageUrls as $imageUrl) {
-            if (isset($imageUrl['id'])) {
-                $imageIds[] = $imageUrl['id'];
-            }
-        }
-    }
-
-    // Get the IDs of photos to be deleted
-    $idsToDelete = [];
-    $fileNamesToDelete = [];
-
-    foreach ($space->photos as $photo) {
-        if (!in_array($photo->id, $imageIds)) {
-            $idsToDelete[] = $photo->id;
-            $fileNamesToDelete[] = $photo->filename;
-        }
-    }
-
-    // Delete the photos from the database
-    if (!empty($idsToDelete)) {
-        Photo::whereIn('id', $idsToDelete)->delete();
-    }
-
-    // var_dump($fileNamesToDelete);
-
-    // Delete photo files
-    if (!empty($fileNamesToDelete)) {
-        $imageStorage = app(ImageStorage::class);
-        foreach ($fileNamesToDelete as $fileName) {
-            $imageStorage->deleteSpacePhoto($fileName);
-        }
-    }
-
-
-    // SAVE NEW PHOTOS
-
-    $photosSaved = false;
-    
-    if ($request->hasFile('photos')) {
-        $files = $request->file('photos');
-    
-        foreach ($files as $file) {
-            $allowedFormats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
-            if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedFormats)) {
-                return response()->json(['error' => 'Invalid file format.'], 400);
-            }
-            if ($file->getSize() > 5 * 1024 * 1024) {
-                return response()->json(['error' => 'File size exceeds 5MB.'], 400);
-            }
-        }
-        if (count($files) > 20) {
-            return response()->json(['error' => 'Maximum 20 files allowed.'], 400);
+    if ($request->exists('photos_meta')) {
+        $photosMeta = json_decode((string) $request->input('photos_meta'), true);
+        if (!is_array($photosMeta)) {
+            return response()->json(['error' => 'Invalid photo data.'], 400);
         }
 
-        $imageStorage = app(ImageStorage::class);
-    
-        foreach ($files as $photo) {
-            try {
-                $filename = $imageStorage->storeSpacePhoto($photo);
-                
-                $photoModel = new Photo(['filename' => $filename, 'space_uid' => $space->uid]);
-                $space->photos()->save($photoModel);
-                $photosSaved = true;
-
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Image Upload Failed: ' . $e->getMessage());
-                return response()->json(['error' => 'A server error occurred while processing an image.'], 500);
-            }
+        $photoFiles = $request->file('photo_files');
+        if (!is_array($photoFiles)) {
+            $photoFiles = [];
         }
-    }
 
-    if ($photosSaved && !$space->photo) {
-        $space->photo = 1;
-        $space->save();
-    }
-
-    // Update the positions of existing photos if 'pos' is not equal to 0
-    if (!empty($imageUrls)) {
-        foreach ($imageUrls as $imageUrl) {
-            if (isset($imageUrl['id']) && isset($imageUrl['pos']) && $imageUrl['pos'] !== 0) {
-                $photo = Photo::where('id', $imageUrl['id'])
-                    ->where('space_uid', $space->uid)
-                    ->first();
-
-                if ($photo) {
-                    $photo->pos = $imageUrl['pos'];
-                    $photo->save();
-                }
-            }
+        try {
+            app(SpacePhotoSync::class)->sync($space, $photosMeta, $photoFiles);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Image Upload Failed: ' . $e->getMessage());
+            return response()->json(['error' => 'A server error occurred while processing an image.'], 500);
         }
     }
 

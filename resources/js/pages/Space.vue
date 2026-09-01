@@ -109,23 +109,15 @@ const fetchSpace = async () => {
     // console.log(response.data.space.photos)
 
     // Extract values from the object
-    if (response.data.space.photos) {
-      const dataArray = Object.values(response.data.space.photos);
-
-      // Check if there are values with 'pos' equal to 0
-      const hasZeroPos = dataArray.some(item => item.pos === 0);
-
-      // Sort only if there are no values with 'pos' equal to 0
-      if (!hasZeroPos) {
-        const sortedData = dataArray.sort((a, b) => a.pos - b.pos);
-        response.data.space.photos = sortedData;
-        // console.log(sortedData);
-        
-        fullSize.value = spacePhotoUrl(sortedData[0].filename, 'full');
-      }
-      else {
-        fullSize.value = spacePhotoUrl(Object.values(response.data.space.photos)[0].filename, 'full');
-      }
+    const photos = Object.values(response.data.space.photos || {}).sort((a, b) => {
+      const aPos = a.pos > 0 ? a.pos : 999999;
+      const bPos = b.pos > 0 ? b.pos : 999999;
+      if (aPos !== bPos) return aPos - bPos;
+      return (a.id || 0) - (b.id || 0);
+    });
+    response.data.space.photos = photos;
+    if (photos[0]) {
+      fullSize.value = spacePhotoUrl(photos[0].filename, 'full');
     }
 
     space.value = response.data.space;
@@ -389,21 +381,31 @@ function getSubcategoryLabel(category, subcategory) {
       </span>
 
 
-      <div v-if="space.photo != 0">
+      <div v-if="space.photos && space.photos.length">
         <br>
 
         <h2>Photos</h2>
 
-        <img :src="fullSize" class="space-photo">
-        <img
-          v-for="(photo, index) in space.photos"
-          :key="index"
-          @click="fullSize = spacePhotoUrl(photo.filename, 'full')"
-          :src="spacePhotoUrl(photo.filename)"
-          loading="lazy"
-          @error="$event.target.src = spacePhotoUrl(photo.filename, 'full')"
-          class="space-photo-small cursor-pointer"
-        >
+        <div class="space-photo-frame">
+          <img :src="fullSize" class="space-photo" alt="">
+        </div>
+        <div class="space-photo-thumbs">
+          <button
+            v-for="photo in space.photos"
+            :key="photo.id"
+            type="button"
+            class="space-photo-thumb"
+            :class="{ 'is-active': fullSize === spacePhotoUrl(photo.filename, 'full') }"
+            @click="fullSize = spacePhotoUrl(photo.filename, 'full')"
+          >
+            <img
+              :src="spacePhotoUrl(photo.filename)"
+              loading="lazy"
+              alt=""
+              @error="$event.target.src = spacePhotoUrl(photo.filename, 'full')"
+            >
+          </button>
+        </div>
 
       </div>
 
@@ -594,17 +596,50 @@ function getSubcategoryLabel(category, subcategory) {
   font-weight: bold;
 }
 
-.space-photo {
+.space-photo-frame {
   width: 100%;
-  border-radius: 5px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f2f2f2;
 }
 
-.space-photo-small {
-  width: 100px;
-  float: left;
-  display: inline;
-  margin-right:2px;
-  border-radius: 5px;
+.space-photo {
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  display: block;
+  background: #f2f2f2;
+}
+
+.space-photo-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+
+.space-photo-thumb {
+  appearance: none;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e8e8e8;
+  cursor: pointer;
+}
+
+.space-photo-thumb.is-active {
+  border-color: #00abff;
+}
+
+.space-photo-thumb img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .button-bookmarks {
