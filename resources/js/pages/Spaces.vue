@@ -13,6 +13,8 @@
           <div style="height:10px;"></div>
 
           <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add a Space</button></router-link>
+          <br>
+          <router-link to="/my-spaces"><button type="button" class="btn btn-md btn-secondary">My Spaces</button></router-link>
 
           <div style="height:10px;"></div>
         </div>
@@ -39,7 +41,7 @@
 
         <div class="categories-popup-mob">
           <h2 style="margin-top:0px;">Browse by Type</h2>
-          Find spaces by category.
+          Find spaces by category
 
           <div style="height:10px;"></div>
 
@@ -54,7 +56,7 @@
 
         <div class="categories-popup">
           <h2 style="margin-top:0px;">Browse by Type</h2>
-          Find spaces by category.
+          Find spaces by category
 
           <div style="height:10px;"></div>
 
@@ -74,6 +76,8 @@
           <div style="height:10px;"></div>
 
           <router-link to="/space/new"><button type="button" class="btn btn-md btn-primary">Add a Space</button></router-link>
+          <br>
+          <router-link to="/my-spaces"><button type="button" class="btn btn-md btn-secondary">My Spaces</button></router-link>
 
           <div style="height:10px;"></div>
         </div>
@@ -184,6 +188,21 @@ let isLoading = ref(true);
 .new-space-popup .btn,
 .new-space-popup-mob .btn {
   margin: 6px 0;
+  min-width: 168px;
+}
+
+.new-space-popup .btn-secondary,
+.new-space-popup-mob .btn-secondary {
+  background: #e8e8e8;
+  border-color: #cfcfcf;
+  color: #333;
+}
+
+.new-space-popup .btn-secondary:hover:not(:disabled),
+.new-space-popup-mob .btn-secondary:hover:not(:disabled) {
+  background: #ddd;
+  border-color: #bbb;
+  color: #111;
 }
 
 .new-space-popup-mob {
