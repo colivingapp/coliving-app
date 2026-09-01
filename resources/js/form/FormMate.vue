@@ -286,8 +286,8 @@ export default {
         quietLoud: { name: 'quietLoud', value: '5', labels: { left: 'Quiet', right: 'Loud' } },
         earlyNight: { name: 'earlyBirdNightOwl', value: '5', labels: { left: 'Early Bird', right: 'Night Owl' } },
         workFun: { name: 'workFun', value: '5', labels: { left: 'Work', right: 'Fun' } },
-        expTrad: { name: 'experimentalTraditional', value: '5', labels: { left: 'Experimental', right: 'Traditional' } },
-        multiLocal: { name: 'globalLocal', value: '5', labels: { left: 'Global', right: 'Local' } },
+        expTrad: { name: 'traditionalExperimental', value: '5', labels: { left: 'Traditional', right: 'Experimental' } },
+        multiLocal: { name: 'localGlobal', value: '5', labels: { left: 'Local', right: 'Global' } },
       },
 
       country: '',

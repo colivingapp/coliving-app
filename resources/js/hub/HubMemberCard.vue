@@ -68,8 +68,8 @@ const LIFESTYLE = [
   { key: 'quietLoud', low: 'Quiet', high: 'Outgoing' },
   { key: 'earlyNight', low: 'Early bird', high: 'Night owl' },
   { key: 'workFun', low: 'Work-focused', high: 'Fun-focused' },
-  { key: 'expTrad', low: 'Experimental', high: 'Traditional' },
-  { key: 'multiLocal', low: 'Global', high: 'Local' },
+  { key: 'expTrad', low: 'Traditional', high: 'Experimental' },
+  { key: 'multiLocal', low: 'Local', high: 'Global' },
 ];
 
 const props = defineProps({

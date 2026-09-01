@@ -375,17 +375,21 @@
         
         <div class="form-section" v-if="pageType == 'edit'">
           <h2>Profile visibility</h2>
-          <div class="form-group" style="text-align:left;">
-            <input type="radio" id="public" v-model="private" value="0" style="width:13px;">
-            <label for="public">Public</label>
-            <br>
-            <input type="radio" id="private" v-model="private" value="1" style="width:13px;">
-            <label for="private">Private</label>
+          <div class="form-choices">
+            <label class="form-choice" :class="{ 'is-active': private == 0 }" for="space-public">
+              <input type="radio" id="space-public" v-model="private" value="0">
+              Public
+            </label>
+            <label class="form-choice" :class="{ 'is-active': private == 1 }" for="space-private">
+              <input type="radio" id="space-private" v-model="private" value="1">
+              Private
+            </label>
           </div>
-          
-          <div style="height:10px;"></div>
-          <a v-if="!username && pageType != 'create'" :href="'/space/'+uid" target="_blank">View profile</a>
-          <a v-else-if="pageType != 'create'" :href="'/space/'+username" target="_blank">View profile</a>
+
+          <p class="form-hint" style="margin-top:16px;margin-bottom:0;">
+            <a v-if="!username && pageType != 'create'" :href="'/space/'+uid" target="_blank">View profile</a>
+            <a v-else-if="pageType != 'create'" :href="'/space/'+username" target="_blank">View profile</a>
+          </p>
         </div>
 
         <div style="height:20px"></div>
@@ -491,7 +495,7 @@ export default {
         earlyNight: { name: 'earlyBirdNightOwl', value: '5', labels: { left: 'Early Bird', right: 'Night Owl' } },
         workFun: { name: 'workFun', value: '5', labels: { left: 'Work', right: 'Fun' } },
         expTrad: { name: 'traditionalExperimental', value: '5', labels: { left: 'Traditional', right: 'Experimental' } },
-        multiLocal: { name: 'localMulticultural', value: '5', labels: { left: 'Local', right: 'Multicultural' } },
+        multiLocal: { name: 'localGlobal', value: '5', labels: { left: 'Local', right: 'Global' } },
       },
       
       private: 0,

@@ -247,8 +247,8 @@ const lifestyleAxes = [
   { key: 'quietLoud', left: 'Quiet', right: 'Loud' },
   { key: 'earlyNight', left: 'Early bird', right: 'Night owl' },
   { key: 'workFun', left: 'Work', right: 'Fun' },
-  { key: 'expTrad', left: 'Experimental', right: 'Traditional' },
-  { key: 'multiLocal', left: 'Global', right: 'Local' },
+  { key: 'expTrad', left: 'Traditional', right: 'Experimental' },
+  { key: 'multiLocal', left: 'Local', right: 'Global' },
 ];
 
 const mate = ref(null);
