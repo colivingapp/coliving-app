@@ -98,7 +98,7 @@
             <div v-else class="mp-lifestyle-score-spacer"></div>
             <div class="mp-radar-legend">
               <span class="mp-legend-item is-them">
-                <i></i>{{ firstName }}
+                <i></i>{{ displayName }}
               </span>
               <span v-if="canCompare" class="mp-legend-item is-you">
                 <i></i>You
@@ -285,13 +285,7 @@ const displayName = computed(() => {
   return mate.value.name || mate.value.username || 'Coliving mate';
 });
 
-const firstName = computed(() => {
-  const name = String(displayName.value || '').trim();
-  if (!name) return 'this mate';
-  return name.split(/\s+/)[0];
-});
-
-const aboutHeading = computed(() => `About ${firstName.value}`);
+const aboutHeading = computed(() => `About ${displayName.value}`);
 
 const countryCode = computed(() => {
   const code = String(mate.value?.location_country || '').toLowerCase();
@@ -420,7 +414,7 @@ const lifestyleInsight = computed(() => {
   if (youPole === themPole) {
     return `Closest overall, with the largest gap on ${maxAxis.left.toLowerCase()} vs ${maxAxis.right.toLowerCase()}.`;
   }
-  return `Biggest difference: you lean ${youPole.toLowerCase()}, ${firstName.value} leans ${themPole.toLowerCase()}.`;
+  return `Biggest difference: you lean ${youPole.toLowerCase()}, ${displayName.value} leans ${themPole.toLowerCase()}.`;
 });
 
 onMounted(() => {
