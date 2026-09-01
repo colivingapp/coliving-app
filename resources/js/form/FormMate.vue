@@ -585,7 +585,7 @@ export default {
       this.substack = m.substack;
       this.medium = m.medium;
 
-      this.visitedCountries = JSON.parse(m.visited_countries);
+      this.visitedCountries = this.parseVisitedCountries(m.visited_countries);
 
       this.coliveFits['orgSpont'].value = m.orgSpont;
       this.coliveFits['quietLoud'].value = m.quietLoud;
@@ -661,9 +661,22 @@ export default {
 
       runIt();
     },
+    parseVisitedCountries(raw) {
+      if (Array.isArray(raw)) {
+        return raw.filter((code) => typeof code === 'string' && code);
+      }
+      if (typeof raw !== 'string' || raw === '') {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((code) => typeof code === 'string' && code) : [];
+      } catch (e) {
+        return [];
+      }
+    },
     handleSelectedCountriesChanged(countries) {
-      // console.log(countries);
-      this.visitedCountries = countries;
+      this.visitedCountries = Array.isArray(countries) ? countries : [];
     },
     generateAvatar() {
       if (this.avatarGender == 'male') {

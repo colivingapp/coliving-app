@@ -24,7 +24,7 @@
                         :value="country.code"
                         class="appify-input-checkbox"
                         @change="toggleCountry(country.code)"
-                        :checked="visitedCountries.includes(country.code)"
+                        :checked="selectedCountries.has(country.code)"
                     />
                     <label :for="'_'+country.code">
                         <div class="checkbox-box">
@@ -6833,6 +6833,7 @@ export default {
         hoveredPath: null,
         listCollapsed: true,
         mapLoading: true,
+        syncingFromProp: false,
         baseViewBox: { x: 0, y: 0, w: 1009.7, h: 666 },
         mapViewBox: { x: 0, y: 0, w: 1009.7, h: 666 },
         mapZoom: 1,
@@ -6869,8 +6870,16 @@ export default {
     }
   },
 	watch: {
+        visitedCountries: {
+            handler(countries) {
+                this.syncCountriesFromProp(countries);
+            },
+        },
         selectedCountries: {
             handler(newSet) {
+                if (this.syncingFromProp) {
+                    return;
+                }
                 this.$emit('selected-countries-changed', Array.from(newSet));
             },
             deep: true
@@ -6878,8 +6887,9 @@ export default {
 	},
   mounted() {
       document.addEventListener('pointerdown', this.onDocumentPointerDown);
+      this.syncCountriesFromProp(this.visitedCountries);
       this.mapLoadTimer = setTimeout(() => {
-          this.loadCountriesFromProp(this.visitedCountries);
+          this.syncCountriesFromProp(this.visitedCountries);
           this.mapLoading = false;
       }, 1000)
   },
@@ -6895,25 +6905,49 @@ export default {
           const country = this.countries.find(c => c.code === code);
           return country ? country.name : code; // Fallback to code if name not found
       },
-      loadCountriesFromProp(visitedCountries) {
-        visitedCountries.forEach(countryId => {
-          this.toggleCountry(countryId); // Toggle each country
+      normalizeCountryCode(code) {
+        return String(code || '').trim().toLowerCase();
+      },
+      countryCodesFromProp(visitedCountries) {
+        return (Array.isArray(visitedCountries) ? visitedCountries : [])
+          .map((code) => this.normalizeCountryCode(code))
+          .filter(Boolean);
+      },
+      syncCountriesFromProp(visitedCountries) {
+        const next = new Set(this.countryCodesFromProp(visitedCountries));
+        const current = Array.from(this.selectedCountries).map((code) => this.normalizeCountryCode(code));
+        const unchanged = next.size === current.length && current.every((code) => next.has(code));
+        if (unchanged) {
+          this.applyAllMapColors();
+          return;
+        }
+        this.syncingFromProp = true;
+        this.selectedCountries = next;
+        this.$nextTick(() => {
+          this.applyAllMapColors();
+          this.syncingFromProp = false;
         });
       },
       toggleCountry(countryId) {
-        if (this.selectedCountries.has(countryId)) {
-            this.selectedCountries.delete(countryId);
-        } else {
-            this.selectedCountries.add(countryId);
+        const code = this.normalizeCountryCode(countryId);
+        if (!code) {
+          return;
         }
-        this.updateMapColors(countryId);
+        if (this.selectedCountries.has(code)) {
+            this.selectedCountries.delete(code);
+        } else {
+            this.selectedCountries.add(code);
+        }
+        this.updateMapColors(code);
 
-        // Emit the updated list of selected countries
-        this.$emit('selected-countries-changed', Array.from(this.selectedCountries));
+        if (!this.syncingFromProp) {
+          this.$emit('selected-countries-changed', Array.from(this.selectedCountries));
+        }
       },
       isVisitedCountry(code) {
-        return this.selectedCountries.has(code)
-          || (Array.isArray(this.visitedCountries) && this.visitedCountries.includes(code));
+        const normalized = this.normalizeCountryCode(code);
+        return this.selectedCountries.has(normalized)
+          || (Array.isArray(this.visitedCountries) && this.visitedCountries.some((item) => this.normalizeCountryCode(item) === normalized));
       },
       isHoverableCountry(code) {
         return this.type === 'form' || this.isVisitedCountry(code);
@@ -6940,33 +6974,18 @@ export default {
         return this.hoveredCountry && this.hoveredCountry.code === code;
       },
       pathForCode(code) {
-        return document.getElementById(String(code).toUpperCase());
-      },
-      restorePathOrder(path) {
-        if (!path || !path._origNextSibling) {
-          return;
+        const svg = this.$refs.mapSvg;
+        if (!svg) {
+          return null;
         }
-        const parent = path.parentNode;
-        if (parent && path._origNextSibling.parentNode === parent) {
-          parent.insertBefore(path, path._origNextSibling);
-        }
-        path._origNextSibling = null;
-      },
-      bringPathToFront(path) {
-        if (!path || !path.parentNode) {
-          return;
-        }
-        path._origNextSibling = path.nextSibling;
-        path.parentNode.appendChild(path);
+        return svg.querySelector('#' + String(code).toUpperCase());
       },
       highlightPath(path) {
         if (this.hoveredPath && this.hoveredPath !== path) {
           this.hoveredPath.classList.remove('is-hovered');
-          this.restorePathOrder(this.hoveredPath);
         }
         this.hoveredPath = path || null;
         if (this.hoveredPath) {
-          this.bringPathToFront(this.hoveredPath);
           this.hoveredPath.classList.add('is-hovered');
         }
       },
@@ -7166,12 +7185,22 @@ export default {
           this.hideCountryTip();
         }
       },
+      applyAllMapColors() {
+        const svg = this.$refs.mapSvg;
+        if (!svg) {
+          return;
+        }
+        svg.querySelectorAll('path[id]').forEach((path) => {
+          const code = this.normalizeCountryCode(path.id);
+          path.classList.toggle('is-visited', this.selectedCountries.has(code));
+        });
+      },
       updateMapColors(countryId) {
-        const path = document.getElementById(countryId.toUpperCase());
+        const path = this.pathForCode(countryId);
         if (path) {
             path.style.fill = '';
             path.style.stroke = '';
-            path.classList.toggle('is-visited', this.selectedCountries.has(countryId));
+            path.classList.toggle('is-visited', this.selectedCountries.has(this.normalizeCountryCode(countryId)));
         }
       }
 	},
@@ -7292,7 +7321,7 @@ export default {
     .visited-countries-float #list {
         max-width: none;
         max-height: 260px;
-        flex: none;
+        flex: 1 1 auto;
         min-height: 0;
         padding: 4px 6px 8px;
     }
@@ -7324,6 +7353,7 @@ export default {
 		left: 10px;
 		z-index: 4;
 		width: min(230px, calc(100% - 56px));
+		max-height: calc(100% - 20px);
 		display: flex;
 		flex-direction: column;
 		background: rgba(255, 255, 255, 0.88);

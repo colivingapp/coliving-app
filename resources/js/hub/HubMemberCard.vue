@@ -61,19 +61,7 @@ import "/node_modules/flag-icons/css/flag-icons.min.css";
 
 import ProfilePic from '../components/ProfilePic.vue';
 import SocialFieldIcon from '../components/SocialFieldIcon.vue';
-
-const SOCIAL_NETWORKS = [
-  { name: 'twitter', label: 'Twitter' },
-  { name: 'facebook', label: 'Facebook' },
-  { name: 'instagram', label: 'Instagram' },
-  { name: 'youtube', label: 'YouTube' },
-  { name: 'tiktok', label: 'TikTok' },
-  { name: 'pinterest', label: 'Pinterest' },
-  { name: 'linkedin', label: 'LinkedIn' },
-  { name: 'github', label: 'GitHub' },
-  { name: 'substack', label: 'Substack' },
-  { name: 'medium', label: 'Medium' },
-];
+import { MATE_SOCIAL_NETWORKS, normalizeSocialUrl } from '../socialUrls.js';
 
 const LIFESTYLE = [
   { key: 'orgSpont', low: 'Organized', high: 'Spontaneous' },
@@ -101,20 +89,6 @@ function countryName(code) {
     return regionNames?.of(code.toUpperCase()) || code.toUpperCase();
   } catch (error) {
     return code.toUpperCase();
-  }
-}
-
-function safeExternalUrl(url) {
-  if (!url) return '';
-  let value = String(url).trim();
-  if (!value) return '';
-  if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
-    return parsed.href;
-  } catch (error) {
-    return '';
   }
 }
 
@@ -162,9 +136,9 @@ const visitedCountries = computed(() => {
 const visitedPreview = computed(() => visitedCountries.value.slice(0, 8));
 const visitedExtra = computed(() => Math.max(0, visitedCountries.value.length - visitedPreview.value.length));
 
-const socials = computed(() => SOCIAL_NETWORKS
+const socials = computed(() => MATE_SOCIAL_NETWORKS
   .map(network => {
-    const href = safeExternalUrl(props.mate[network.name]);
+    const href = normalizeSocialUrl(network.name, props.mate[network.name]);
     return href ? { ...network, href } : null;
   })
   .filter(Boolean));

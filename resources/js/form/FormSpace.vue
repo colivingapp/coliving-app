@@ -231,7 +231,7 @@
           </div>
             
           <div style="height:10px;"></div>
-          <MapSpacesSearchable :location="{ 'latitude': latitude, 'longitude': longitude }"   />
+          <MapSpacesSearchable :location="mapLocation" />
 
           <div style="height:20px;"></div>
           <label for="google_url">Google Maps URL (Optional)</label>
@@ -490,8 +490,8 @@ export default {
         quietLoud: { name: 'quietLoud', value: '5', labels: { left: 'Quiet', right: 'Loud' } },
         earlyNight: { name: 'earlyBirdNightOwl', value: '5', labels: { left: 'Early Bird', right: 'Night Owl' } },
         workFun: { name: 'workFun', value: '5', labels: { left: 'Work', right: 'Fun' } },
-        expTrad: { name: 'experimentalTraditional', value: '5', labels: { left: 'Experimental', right: 'Traditional' } },
-        multiLocal: { name: 'multiculturalLocal', value: '5', labels: { left: 'Multicultural', right: 'Local' } },
+        expTrad: { name: 'traditionalExperimental', value: '5', labels: { left: 'Traditional', right: 'Experimental' } },
+        multiLocal: { name: 'localMulticultural', value: '5', labels: { left: 'Local', right: 'Multicultural' } },
       },
       
       private: 0,
@@ -558,7 +558,13 @@ export default {
         out[slug] = meta.label;
       }
       return out;
-    }
+    },
+    mapLocation() {
+      return {
+        latitude: this.latitude,
+        longitude: this.longitude,
+      };
+    },
   },
 
   mounted() {
@@ -785,13 +791,16 @@ export default {
     },
     
     handleLocationUpdated(locationFormatted, country, country_code, city, coordinates) {
-      // console.log(locationFormatted, country, city, coordinates);
       this.address = locationFormatted;
       this.country = country;
       this.city = city;
       this.country_code = country_code;
-      this.latitude = coordinates.lat;
-      this.longitude = coordinates.lng;
+      const lat = Number(coordinates?.lat);
+      const lng = Number(coordinates?.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        this.latitude = lat;
+        this.longitude = lng;
+      }
     },
 
     onCategoryChange() {

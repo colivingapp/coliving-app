@@ -17,31 +17,57 @@ export default {
     return {
       map: null,
       marker: null,
-
-      longitude: '',
-      latitude: '',
-      searchQuery: '',
-
-      searchResults: null,
-      initial: true,
     };
   },
   mounted() {
-    console.log(this.location)
-    this.longitude = this.location.longitude;
-    this.latitude = this.location.latitude;
-
     this.initializeMap();
-    this.addMarkers();
+    this.$nextTick(() => {
+      this.invalidateMapSize();
+      this.syncMarker(this.location);
+    });
+    window.addEventListener('resize', this.invalidateMapSize);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.invalidateMapSize);
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+    this.marker = null;
   },
   methods: {
+    parseCoord(value) {
+      if (value === '' || value === null || value === undefined) {
+        return null;
+      }
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    },
+    coordsFrom(loc) {
+      if (!loc) {
+        return null;
+      }
+      const latitude = this.parseCoord(loc.latitude);
+      const longitude = this.parseCoord(loc.longitude);
+      if (latitude === null || longitude === null) {
+        return null;
+      }
+      if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+        return null;
+      }
+      return { latitude, longitude };
+    },
+    sameCoords(a, b) {
+      return !!(a && b && a.latitude === b.latitude && a.longitude === b.longitude);
+    },
     initializeMap() {
       this.map = L.map(this.$refs.map, {
         maxBounds: [[-63, -180], [90, 180]],
         maxBoundsViscosity: 1.0,
         minZoom: 2,
         worldCopyJump: false,
-      }).setView([0, 0], 2);
+        zoomControl: false,
+      }).setView([20, 0], 2);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
@@ -49,13 +75,15 @@ export default {
       }).addTo(this.map);
 
       L.control.zoom().addTo(this.map);
-      L.control.attribution().addTo(this.map);
-
       this.map.scrollWheelZoom.enable();
     },
-    
-    addMarkers() {
-      const markerIcon = L.icon({
+    invalidateMapSize() {
+      if (this.map) {
+        this.map.invalidateSize();
+      }
+    },
+    markerIcon() {
+      return L.icon({
         iconUrl: '/img/leaflet/marker-icon.png',
         iconRetinaUrl: '/img/leaflet/marker-icon-2x.png',
         shadowUrl: '/img/leaflet/marker-shadow.png',
@@ -65,30 +93,36 @@ export default {
         tooltipAnchor: [16, -28],
         shadowSize: [41, 41]
       });
-
-      this.marker = L.marker([this.latitude, this.longitude], { icon: markerIcon }).addTo(this.map);
-      
-      this.map.setView([this.latitude, this.longitude], 15);
     },
-    
-    clearMarkers() {
-      this.marker.removeFrom(this.map);
-    },
+    syncMarker(loc) {
+      if (!this.map) {
+        return;
+      }
 
+      const coords = this.coordsFrom(loc);
+      if (!coords) {
+        return;
+      }
+
+      if (this.marker) {
+        this.marker.setLatLng([coords.latitude, coords.longitude]);
+      } else {
+        this.marker = L.marker([coords.latitude, coords.longitude], { icon: this.markerIcon() }).addTo(this.map);
+      }
+
+      this.map.setView([coords.latitude, coords.longitude], 15);
+      this.invalidateMapSize();
+    },
     setAddress(address) {
-      console.log(address);
       this.$emit('addressUpdate', address);
     }
   },
-  
   watch: {
-    location(loc) {
-      this.longitude = loc.longitude;
-      this.latitude = loc.latitude;
-
-      this.clearMarkers();
-      // this.initializeMap();
-      this.addMarkers();
+    location(loc, prev) {
+      if (this.sameCoords(this.coordsFrom(loc), this.coordsFrom(prev))) {
+        return;
+      }
+      this.syncMarker(loc);
     },
   },
 };

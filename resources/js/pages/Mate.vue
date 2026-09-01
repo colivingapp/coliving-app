@@ -48,7 +48,6 @@
               </a>
             </div>
 
-            <p v-if="memberSinceYear" class="mp-since">On Coliving App since {{ memberSinceYear }}</p>
           </div>
         </aside>
 
@@ -241,19 +240,7 @@ import "/node_modules/flag-icons/css/flag-icons.min.css";
 import ProfilePic from '../components/ProfilePic.vue';
 import Icons from '../components/Icons.vue';
 import VisitedCountries from '../form/VisitedCountries.vue';
-
-const SOCIAL_NETWORKS = [
-  { name: 'twitter', label: 'Twitter' },
-  { name: 'facebook', label: 'Facebook' },
-  { name: 'instagram', label: 'Instagram' },
-  { name: 'youtube', label: 'YouTube' },
-  { name: 'tiktok', label: 'TikTok' },
-  { name: 'pinterest', label: 'Pinterest' },
-  { name: 'linkedin', label: 'LinkedIn' },
-  { name: 'github', label: 'GitHub' },
-  { name: 'substack', label: 'Substack' },
-  { name: 'medium', label: 'Medium' },
-];
+import { MATE_SOCIAL_NETWORKS, normalizeSocialUrl } from '../socialUrls.js';
 
 const lifestyleAxes = [
   { key: 'orgSpont', left: 'Organized', right: 'Spontaneous' },
@@ -346,9 +333,9 @@ const memberSinceYear = computed(() => {
 
 const socials = computed(() => {
   if (!mate.value) return [];
-  return SOCIAL_NETWORKS
+  return MATE_SOCIAL_NETWORKS
     .map(network => {
-      const href = safeExternalUrl(mate.value[network.name]);
+      const href = normalizeSocialUrl(network.name, mate.value[network.name]);
       return href ? { ...network, href } : null;
     })
     .filter(Boolean);
@@ -448,31 +435,6 @@ function formatDate(timestamp) {
     month: 'long',
     day: 'numeric',
   });
-}
-
-function safeExternalUrl(url) {
-  if (!url) {
-    return '';
-  }
-
-  let value = String(url).trim();
-  if (!value) {
-    return '';
-  }
-
-  if (!/^https?:\/\//i.test(value)) {
-    value = 'https://' + value;
-  }
-
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return '';
-    }
-    return parsed.href;
-  } catch (error) {
-    return '';
-  }
 }
 
 const fetchMate = async () => {
@@ -692,12 +654,6 @@ const submitRatingEdit = () => {
   width: 30px;
   height: 30px;
   display: inline-block;
-}
-
-.mp-since {
-  font-size: 11px;
-  color: #b6b6b6;
-  margin: 16px 0 0;
 }
 
 .mp-eyebrow {

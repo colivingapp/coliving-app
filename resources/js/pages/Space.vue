@@ -8,6 +8,7 @@ import { CATEGORY_META, SUBCATEGORY_META } from '../spaceTaxonomy.js';
 
 import ProfilePic from '../components/ProfilePic.vue';
 import Icons from '../components/Icons.vue';
+import { normalizeSocialUrl, safeExternalUrl } from '../socialUrls.js';
 
 const space = ref(null);
 const route = useRoute();
@@ -40,30 +41,8 @@ function formatTimestamp(timestamp) {
   });
 }
 
-// Helper function to ensure external URLs are absolute
 function formatExternalUrl(url) {
-  if (!url) {
-    return '';
-  }
-
-  let value = String(url).trim();
-  if (!value) {
-    return '';
-  }
-
-  if (!/^https?:\/\//i.test(value)) {
-    value = 'https://' + value;
-  }
-
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return '';
-    }
-    return parsed.href;
-  } catch (error) {
-    return '';
-  }
+  return safeExternalUrl(url);
 }
 
 let isLoaded = ref(false);
@@ -343,40 +322,40 @@ function getSubcategoryLabel(category, subcategory) {
         <h2>Social</h2>
 
         <span v-if="space.twitter != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.twitter)" target="_blank"><icons :iconName="'twitter'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('twitter', space.twitter)" target="_blank"><icons :iconName="'twitter'" /></a></div>
         </span>
         <span v-if="space.facebook != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.facebook)" target="_blank"><icons :iconName="'facebook'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('facebook', space.facebook)" target="_blank"><icons :iconName="'facebook'" /></a></div>
         </span>
         <span v-if="space.instagram != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.instagram)" target="_blank"><icons :iconName="'instagram'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('instagram', space.instagram)" target="_blank"><icons :iconName="'instagram'" /></a></div>
         </span>
         <span v-if="space.pinterest != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.pinterest)" target="_blank"><icons :iconName="'pinterest'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('pinterest', space.pinterest)" target="_blank"><icons :iconName="'pinterest'" /></a></div>
         </span>
         <span v-if="space.telegram != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.telegram)" target="_blank"><icons :iconName="'telegram'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('telegram', space.telegram)" target="_blank"><icons :iconName="'telegram'" /></a></div>
         </span>
         <span v-if="space.github != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.github)" target="_blank"><icons :iconName="'github'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('github', space.github)" target="_blank"><icons :iconName="'github'" /></a></div>
         </span>
         <span v-if="space.youtube != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.youtube)" target="_blank"><icons :iconName="'youtube'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('youtube', space.youtube)" target="_blank"><icons :iconName="'youtube'" /></a></div>
         </span>
         <span v-if="space.tiktok != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.tiktok)" target="_blank"><icons :iconName="'tiktok'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('tiktok', space.tiktok)" target="_blank"><icons :iconName="'tiktok'" /></a></div>
         </span>
         <span v-if="space.linkedin != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.linkedin)" target="_blank"><icons :iconName="'linkedin'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('linkedin', space.linkedin)" target="_blank"><icons :iconName="'linkedin'" /></a></div>
         </span>
         <span v-if="space.linktree != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.linktree)" target="_blank"><icons :iconName="'linktree'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('linktree', space.linktree)" target="_blank"><icons :iconName="'linktree'" /></a></div>
         </span>
         <span v-if="space.substack != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.substack)" target="_blank"><icons :iconName="'substack'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('substack', space.substack)" target="_blank"><icons :iconName="'substack'" /></a></div>
         </span>
         <span v-if="space.medium != ''">
-          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="formatExternalUrl(space.medium)" target="_blank"><icons :iconName="'medium'" /></a></div>
+          <div style="display:inline-block;width:30px;margin-right:10px;" class="buttons-hover"><a :href="normalizeSocialUrl('medium', space.medium)" target="_blank"><icons :iconName="'medium'" /></a></div>
         </span>
       </span>
 

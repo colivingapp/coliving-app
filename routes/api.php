@@ -27,6 +27,7 @@ use App\Services\EmailService;
 use App\Services\ImageStorage;
 use App\Services\SpacePhotoSync;
 use App\Services\MateService;
+use App\Services\SocialUrlNormalizer;
 use App\Services\SpaceClaimAuthorization;
 
 use App\Http\Controllers\SpaceController;
@@ -208,18 +209,19 @@ Route::post('/space', function (Request $request) {
 
     $space->amenities = (string)$request->input('amenities');    
 
-    $space->twitter =(string)$request->input('twitter');
-    $space->facebook = (string)$request->input('facebook');
-    $space->instagram = (string)$request->input('instagram');
-    $space->youtube = (string)$request->input('youtube');
-    $space->tiktok  = (string)$request->input('tiktok');
-    $space->pinterest = (string)$request->input('pinterest');
-    $space->linkedin  = (string)$request->input('linkedin');
-    $space->linktree  = (string)$request->input('linktree');
-    $space->telegram  = (string)$request->input('telegram');
-    $space->github  = (string)$request->input('github');
-    $space->substack  = (string)$request->input('substack');
-    $space->medium  = (string)$request->input('medium');
+    $spaceSocials = SocialUrlNormalizer::fromRequest($request, SocialUrlNormalizer::SPACE_FIELDS);
+    $space->twitter = $spaceSocials['twitter'];
+    $space->facebook = $spaceSocials['facebook'];
+    $space->instagram = $spaceSocials['instagram'];
+    $space->youtube = $spaceSocials['youtube'];
+    $space->tiktok = $spaceSocials['tiktok'];
+    $space->pinterest = $spaceSocials['pinterest'];
+    $space->linkedin = $spaceSocials['linkedin'];
+    $space->linktree = $spaceSocials['linktree'];
+    $space->telegram = $spaceSocials['telegram'];
+    $space->github = $spaceSocials['github'];
+    $space->substack = $spaceSocials['substack'];
+    $space->medium = $spaceSocials['medium'];
 
     $space->booking_com  = (string)$request->input('booking_com');
     $space->coliving_com  = (string)$request->input('coliving_com');
@@ -946,17 +948,6 @@ Route::post('/mate', function (Request $request) {
         'expTrad' => (string)$request->expTrad,
         'multiLocal' => (string)$request->multiLocal,
 
-        'twitter' => ChatAuthorization::safeHttpUrl($request->twitter),
-        'facebook' => ChatAuthorization::safeHttpUrl($request->facebook),
-        'instagram' => ChatAuthorization::safeHttpUrl($request->instagram),
-        'youtube' => ChatAuthorization::safeHttpUrl($request->youtube),
-        'tiktok'  => ChatAuthorization::safeHttpUrl($request->tiktok),
-        'pinterest' => ChatAuthorization::safeHttpUrl($request->pinterest),
-        'linkedin' => ChatAuthorization::safeHttpUrl($request->linkedin),
-        'github' => ChatAuthorization::safeHttpUrl($request->github),
-        'substack' => ChatAuthorization::safeHttpUrl($request->substack),
-        'medium' => ChatAuthorization::safeHttpUrl($request->medium),
-
         'location_country' => (string)$request->location_country,
 
         'private' => $request->private,
@@ -964,6 +955,7 @@ Route::post('/mate', function (Request $request) {
         'hobbies_interests' => (string)$request->hobbies_interests,
         'visited_countries' => $request->visitedCountries, 
     ];
+    $mateData = array_merge($mateData, SocialUrlNormalizer::fromRequest($request, SocialUrlNormalizer::MATE_FIELDS));
 
     // Check if the request has a 'photo' file
     if ($request->hasFile('photo')) {
