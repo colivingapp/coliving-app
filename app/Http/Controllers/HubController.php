@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\HubEvent;
 use App\Models\HubMessage;
+use App\Models\HubPoll;
+use App\Models\HubPollOption;
+use App\Models\HubPollVote;
 use App\Models\HubPost;
 use App\Models\HubThread;
 use App\Models\Log;
@@ -177,6 +180,10 @@ class HubController extends Controller
     private function decorateThreads($threads, Request $request, Space $space)
     {
         $threadIds = $threads->pluck('id');
+        $pollThreadIds = HubPoll::whereIn('hub_thread_id', $threadIds)
+            ->pluck('hub_thread_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
         $postCounts = HubPost::whereIn('hub_thread_id', $threadIds)
             ->select('hub_thread_id', DB::raw('count(*) as posts_count'))
             ->groupBy('hub_thread_id')
@@ -188,12 +195,13 @@ class HubController extends Controller
             ->unique('hub_thread_id')
             ->keyBy('hub_thread_id');
 
-        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $request, $space) {
+        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $request, $space, $pollThreadIds) {
             $thread->posts_count = (int) ($postCounts[$thread->id] ?? 0);
             $thread->replies_count = max(0, $thread->posts_count - 1);
             $thread->latest_post = $latestPosts[$thread->id] ?? null;
             $thread->is_mine = (int) $thread->author_user_id === (int) $request->user()->id;
             $thread->can_delete = $this->canDeleteThread($request, $space, $thread);
+            $thread->has_poll = in_array((int) $thread->id, $pollThreadIds, true);
             return $thread;
         });
     }
@@ -267,25 +275,57 @@ class HubController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:160',
             'content' => 'required|string|max:5000',
+            'poll' => 'nullable|array',
+            'poll.question' => 'nullable|string|max:200',
+            'poll.allow_multiple' => 'nullable|boolean',
+            'poll.options' => 'nullable|array|max:6',
+            'poll.options.*' => 'nullable|string|max:80',
         ]);
+
+        $pollData = $this->pollDataFromRequest($data['poll'] ?? null);
+        if ($pollData === false) {
+            return response()->json(['message' => 'Add a poll question and at least 2 options.'], 422);
+        }
 
         $author = $this->authorFor($request);
-        $thread = HubThread::create([
-            'space_uid' => $space->uid,
-            'author_user_id' => $author['author_user_id'],
-            'title' => trim($data['title']),
-            'type' => 'discussion',
-            'is_sticky' => false,
-            'last_post_at' => now(),
-        ]);
+        $thread = DB::transaction(function () use ($space, $data, $author, $pollData) {
+            $thread = HubThread::create([
+                'space_uid' => $space->uid,
+                'author_user_id' => $author['author_user_id'],
+                'title' => trim($data['title']),
+                'type' => 'discussion',
+                'is_sticky' => false,
+                'last_post_at' => now(),
+            ]);
 
-        HubPost::create([
-            'hub_thread_id' => $thread->id,
-            'space_uid' => $space->uid,
-            'author_user_id' => $author['author_user_id'],
-            'author_uid' => $author['author_uid'],
-            'content' => trim($data['content']),
-        ]);
+            HubPost::create([
+                'hub_thread_id' => $thread->id,
+                'space_uid' => $space->uid,
+                'author_user_id' => $author['author_user_id'],
+                'author_uid' => $author['author_uid'],
+                'content' => trim($data['content']),
+            ]);
+
+            if ($pollData) {
+                $poll = HubPoll::create([
+                    'hub_thread_id' => $thread->id,
+                    'space_uid' => $space->uid,
+                    'author_user_id' => $author['author_user_id'],
+                    'question' => $pollData['question'],
+                    'allow_multiple' => $pollData['allow_multiple'],
+                ]);
+
+                foreach ($pollData['options'] as $index => $label) {
+                    HubPollOption::create([
+                        'hub_poll_id' => $poll->id,
+                        'label' => $label,
+                        'position' => $index,
+                    ]);
+                }
+            }
+
+            return $thread;
+        });
 
         return response()->json(['thread' => $thread], 201);
     }
@@ -300,6 +340,9 @@ class HubController extends Controller
         $posts = HubPost::where('hub_thread_id', $thread->id)
             ->orderBy('created_at')
             ->get();
+        $poll = HubPoll::where('hub_thread_id', $thread->id)
+            ->with('options.votes')
+            ->first();
 
         $thread->is_mine = (int) $thread->author_user_id === (int) $request->user()->id;
         $thread->can_delete = $this->canDeleteThread($request, $space, $thread);
@@ -307,6 +350,7 @@ class HubController extends Controller
         return response()->json([
             'thread' => $thread,
             'posts' => $posts,
+            'poll' => $poll ? $this->serializePoll($poll, $request) : null,
         ]);
     }
 
@@ -490,6 +534,94 @@ class HubController extends Controller
             'location' => $event->location,
             'created_at' => $event->created_at,
             'is_mine' => (int) $event->author_user_id === (int) $request->user()->id,
+        ];
+    }
+
+    private function pollDataFromRequest(?array $pollInput): array|false|null
+    {
+        if ($pollInput === null) {
+            return null;
+        }
+
+        $question = trim((string) ($pollInput['question'] ?? ''));
+        $options = array_values(array_filter(array_map(
+            fn ($label) => trim((string) $label),
+            $pollInput['options'] ?? []
+        )));
+
+        if ($question === '' && count($options) === 0) {
+            return null;
+        }
+
+        if ($question === '' || count($options) < 2) {
+            return false;
+        }
+
+        return [
+            'question' => $question,
+            'options' => $options,
+            'allow_multiple' => (bool) ($pollInput['allow_multiple'] ?? false),
+        ];
+    }
+
+    public function votePoll(Request $request, string $uid, HubThread $thread, HubPoll $poll, HubPollOption $option)
+    {
+        $space = $this->accessibleSpace($request, $uid);
+        if (
+            !$space
+            || $thread->space_uid !== $space->uid
+            || $poll->space_uid !== $space->uid
+            || (int) $poll->hub_thread_id !== (int) $thread->id
+            || (int) $option->hub_poll_id !== (int) $poll->id
+        ) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $userId = (int) $request->user()->id;
+        $existingForOption = HubPollVote::where('hub_poll_option_id', $option->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existingForOption) {
+            $existingForOption->delete();
+        } else {
+            if (!$poll->allow_multiple) {
+                HubPollVote::where('hub_poll_id', $poll->id)->where('user_id', $userId)->delete();
+            }
+
+            HubPollVote::create([
+                'hub_poll_id' => $poll->id,
+                'hub_poll_option_id' => $option->id,
+                'user_id' => $userId,
+            ]);
+        }
+
+        $poll->load('options.votes');
+
+        return response()->json(['poll' => $this->serializePoll($poll, $request)]);
+    }
+
+    private function serializePoll(HubPoll $poll, Request $request): array
+    {
+        $userId = (int) $request->user()->id;
+
+        $options = $poll->options->map(function (HubPollOption $option) use ($userId) {
+            $votes = $option->votes;
+
+            return [
+                'id' => $option->id,
+                'label' => $option->label,
+                'votes_count' => $votes->count(),
+                'is_selected' => $votes->contains(fn ($vote) => (int) $vote->user_id === $userId),
+            ];
+        });
+
+        return [
+            'id' => $poll->id,
+            'question' => $poll->question,
+            'allow_multiple' => (bool) $poll->allow_multiple,
+            'options' => $options,
+            'total_votes' => $options->sum('votes_count'),
         ];
     }
 }

@@ -27,6 +27,7 @@ const stats = ref({ current_members: 0, left_members: 0, deleted_members: 0, pas
 const mates = ref([]);
 const threads = ref([]);
 const selectedThread = ref(null);
+const selectedPoll = ref(null);
 const posts = ref([]);
 const events = ref([]);
 const joinRequests = ref([]);
@@ -37,7 +38,7 @@ const membersSort = ref('active');
 const membersPage = ref(1);
 const requestsFilter = ref('pending');
 const showNewThread = ref(false);
-const newThread = ref({ title: '', content: '' });
+const newThread = ref(blankThreadForm());
 const newReply = ref('');
 const spaceInfoDraft = ref('');
 const spaceInfoEditor = ref(null);
@@ -140,6 +141,26 @@ const postsWithAuthors = computed(() => posts.value.map(post => {
     authorTo: mateProfileTo(author),
   };
 }));
+const leadingPollOptionId = computed(() => {
+  if (!selectedPoll.value?.total_votes) return null;
+  const sorted = [...selectedPoll.value.options].sort((a, b) => b.votes_count - a.votes_count);
+  if (!sorted.length || sorted[0].votes_count === 0) return null;
+  if (sorted.length > 1 && sorted[1].votes_count === sorted[0].votes_count) return null;
+  return sorted[0].id;
+});
+
+function blankThreadForm() {
+  return {
+    title: '',
+    content: '',
+    poll: {
+      enabled: false,
+      question: '',
+      options: ['', ''],
+      allow_multiple: false,
+    },
+  };
+}
 
 function resizeSpaceInfoEditor() {
   const editor = spaceInfoEditor.value;
@@ -155,10 +176,13 @@ function spaceInfoTopicTo() {
   return `/space/${uid.value}/hub`;
 }
 
+function isFirstPost(post) {
+  return postsWithAuthors.value[0]?.id === post.id;
+}
+
 function isEmptySpaceInfoFirstPost(post) {
   if (selectedThread.value?.type !== 'space_info') return false;
-  const first = postsWithAuthors.value[0];
-  if (!first || first.id !== post.id) return false;
+  if (!isFirstPost(post)) return false;
   return !String(post.content || '').trim();
 }
 
@@ -208,6 +232,27 @@ function setMembersFilter(filter) {
 function setMembersSort(sort) {
   membersSort.value = sort;
   membersPage.value = 1;
+}
+
+function toggleNewThreadPoll() {
+  newThread.value.poll.enabled = !newThread.value.poll.enabled;
+  if (!newThread.value.poll.enabled) {
+    newThread.value.poll = blankThreadForm().poll;
+  } else if (!newThread.value.poll.question.trim()) {
+    newThread.value.poll.question = newThread.value.title;
+  }
+}
+
+function addPollOption() {
+  if (newThread.value.poll.options.length < 6) {
+    newThread.value.poll.options.push('');
+  }
+}
+
+function removePollOption(index) {
+  if (newThread.value.poll.options.length > 2) {
+    newThread.value.poll.options.splice(index, 1);
+  }
 }
 
 function goToMembersPage(page) {
@@ -274,6 +319,7 @@ async function fetchThreads() {
 async function fetchThread(threadId) {
   if (!threadId) {
     selectedThread.value = null;
+    selectedPoll.value = null;
     posts.value = [];
     return;
   }
@@ -282,10 +328,12 @@ async function fetchThread(threadId) {
   try {
     const response = await axios.get(`/api/space/${uid.value}/hub/topics/${threadId}`);
     selectedThread.value = response.data.thread;
+    selectedPoll.value = response.data.poll || null;
     posts.value = response.data.posts || [];
   } catch (error) {
     console.error(error);
     selectedThread.value = null;
+    selectedPoll.value = null;
     posts.value = [];
   } finally {
     isLoadingThread.value = false;
@@ -301,8 +349,21 @@ async function createThread() {
   actionLoading.value = true;
   actionError.value = '';
   try {
-    const response = await axios.post(`/api/space/${uid.value}/hub/topics`, newThread.value);
-    newThread.value = { title: '', content: '' };
+    const payload = {
+      title: newThread.value.title,
+      content: newThread.value.content,
+    };
+
+    if (newThread.value.poll.enabled) {
+      payload.poll = {
+        question: newThread.value.poll.question,
+        options: newThread.value.poll.options,
+        allow_multiple: newThread.value.poll.allow_multiple,
+      };
+    }
+
+    const response = await axios.post(`/api/space/${uid.value}/hub/topics`, payload);
+    newThread.value = blankThreadForm();
     showNewThread.value = false;
     await fetchThreads();
     router.push(`/space/${uid.value}/hub/topics/${response.data.thread.id}`);
@@ -323,6 +384,7 @@ async function deleteThread() {
   try {
     await axios.delete(`/api/space/${uid.value}/hub/topics/${selectedThread.value.id}`);
     selectedThread.value = null;
+    selectedPoll.value = null;
     posts.value = [];
     await fetchThreads();
     router.push(`/space/${uid.value}/hub`);
@@ -347,6 +409,30 @@ async function createReply() {
   } catch (error) {
     console.error(error);
     actionError.value = 'Could not post the reply.';
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+function pollPercent(option) {
+  if (!selectedPoll.value?.total_votes) return 0;
+  return Math.round((option.votes_count / selectedPoll.value.total_votes) * 100);
+}
+
+async function votePoll(option) {
+  if (actionLoading.value || !selectedThread.value || !selectedPoll.value) return;
+
+  actionLoading.value = true;
+  actionError.value = '';
+  try {
+    const response = await axios.post(
+      `/api/space/${uid.value}/hub/topics/${selectedThread.value.id}/polls/${selectedPoll.value.id}/options/${option.id}/vote`
+    );
+    selectedPoll.value = response.data.poll;
+    await fetchThreads();
+  } catch (error) {
+    console.error(error);
+    actionError.value = error.response?.data?.message || 'Could not record your vote.';
   } finally {
     actionLoading.value = false;
   }
@@ -682,7 +768,42 @@ onMounted(loadHub);
                       Add Space Info in
                       <router-link :to="hubLink('settings')">Settings</router-link>.
                     </i>
-                    <i v-else>No information available yet.</i>
+                    <i v-else-if="!(isFirstPost(post) && selectedPoll)">No information available yet.</i>
+                  </div>
+
+                  <div v-if="isFirstPost(post) && selectedPoll" class="hub-post-poll">
+                    <div class="hub-poll-head">
+                      <div class="hub-poll-question">{{ selectedPoll.question }}</div>
+                      <span class="hub-poll-meta">{{ selectedPoll.allow_multiple ? 'Multiple choice' : 'Single choice' }}</span>
+                    </div>
+
+                    <div class="hub-poll-options">
+                      <button
+                        v-for="option in selectedPoll.options"
+                        :key="option.id"
+                        type="button"
+                        class="hub-poll-option"
+                        :class="{ selected: option.is_selected, leading: option.id === leadingPollOptionId }"
+                        :disabled="actionLoading"
+                        @click="votePoll(option)"
+                      >
+                        <span class="hub-poll-bar" :style="{ width: pollPercent(option) + '%' }"></span>
+                        <span
+                          class="hub-poll-indicator"
+                          :class="[selectedPoll.allow_multiple ? 'is-checkbox' : 'is-radio', { checked: option.is_selected }]"
+                          aria-hidden="true"
+                        >
+                          <span v-if="option.is_selected">&#10003;</span>
+                        </span>
+                        <span class="hub-poll-option-label">{{ option.label }}</span>
+                        <span class="hub-poll-option-count">{{ option.votes_count }}</span>
+                        <span class="hub-poll-percent">{{ pollPercent(option) }}%</span>
+                      </button>
+                    </div>
+
+                    <div class="hub-poll-total">
+                      {{ selectedPoll.total_votes }} {{ selectedPoll.total_votes === 1 ? 'vote' : 'votes' }}
+                    </div>
                   </div>
                 </article>
               </div>
@@ -714,6 +835,54 @@ onMounted(loadHub);
                 <input id="thread-title" v-model="newThread.title" type="text" class="input" placeholder="Topic title">
                 <label for="thread-content">First post</label>
                 <textarea id="thread-content" v-model="newThread.content" class="textarea" placeholder="Start the discussion..." style="min-height:140px;"></textarea>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-quiet hub-add-poll-btn"
+                  @click="toggleNewThreadPoll"
+                >{{ newThread.poll.enabled ? 'Remove poll' : '+ Add poll' }}</button>
+
+                <div v-if="newThread.poll.enabled" class="hub-topic-poll-editor">
+                  <label for="thread-poll-question">Poll question</label>
+                  <input
+                    id="thread-poll-question"
+                    v-model="newThread.poll.question"
+                    type="text"
+                    class="input"
+                    placeholder="What should we decide?"
+                    maxlength="200"
+                  >
+
+                  <label>Options</label>
+                  <div class="hub-topic-poll-options">
+                    <div v-for="(option, index) in newThread.poll.options" :key="index" class="hub-topic-poll-option-row">
+                      <input
+                        v-model="newThread.poll.options[index]"
+                        type="text"
+                        class="input"
+                        :placeholder="`Option ${index + 1}`"
+                        maxlength="80"
+                      >
+                      <button
+                        v-if="newThread.poll.options.length > 2"
+                        type="button"
+                        class="hub-topic-poll-remove"
+                        aria-label="Remove option"
+                        @click="removePollOption(index)"
+                      >&times;</button>
+                    </div>
+                  </div>
+                  <button
+                    v-if="newThread.poll.options.length < 6"
+                    type="button"
+                    class="btn btn-sm btn-quiet hub-topic-poll-add"
+                    @click="addPollOption"
+                  >+ Add option</button>
+
+                  <label class="hub-topic-poll-toggle">
+                    <input v-model="newThread.poll.allow_multiple" type="checkbox">
+                    Allow choosing multiple options
+                  </label>
+                </div>
                 <div class="hub-form-actions">
                   <span v-if="actionError" class="hub-error">{{ actionError }}</span>
                   <button type="button" class="btn btn-md btn-join" :disabled="actionLoading" @click="createThread">{{ actionLoading ? 'Creating...' : 'Create topic' }}</button>
@@ -737,6 +906,7 @@ onMounted(loadHub);
                         </svg>
                       </span>
                       {{ thread.title }}
+                      <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
                     </div>
                     <div class="hub-topic-meta">Last activity {{ formatDate(thread.last_post_at || thread.updated_at) }}</div>
                   </div>
@@ -752,7 +922,10 @@ onMounted(loadHub);
                   class="hub-topic-row"
                 >
                   <div class="hub-topic-main">
-                    <div class="hub-topic-title">{{ thread.title }}</div>
+                    <div class="hub-topic-title">
+                      {{ thread.title }}
+                      <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
+                    </div>
                     <div class="hub-topic-meta">Last activity {{ formatDate(thread.last_post_at || thread.updated_at) }}</div>
                   </div>
                   <div class="hub-topic-count">
@@ -1076,6 +1249,10 @@ onMounted(loadHub);
   justify-content: flex-start;
 }
 
+.hub-form-card .hub-form-actions {
+  margin-top: 4px;
+}
+
 .hub-row-actions {
   justify-content: flex-end;
 }
@@ -1168,7 +1345,7 @@ onMounted(loadHub);
 
 .hub-new-topic {
   display: block;
-  margin: 0 0 24px;
+  margin: 0 0 32px;
 }
 
 .hub-main,
@@ -1263,6 +1440,19 @@ onMounted(loadHub);
   height: 14px;
 }
 
+.hub-topic-poll-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+  background: #f3f8ff;
+  border: 1px solid #d7ebff;
+  color: #0a6dad;
+}
+
 .hub-topic-count {
   text-align: right;
   color: rgb(110, 110, 110);
@@ -1277,6 +1467,155 @@ onMounted(loadHub);
 
 .hub-post {
   padding: 16px;
+}
+
+.hub-post-poll {
+  max-width: 380px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.hub-poll-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hub-poll-question {
+  margin: 0;
+  padding-top: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.hub-poll-meta {
+  flex: 0 0 auto;
+  color: #888;
+  font-size: 11px;
+}
+
+.hub-poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hub-poll-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid #e8e8e8;
+  border-radius: 7px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.hub-poll-option:hover:not(:disabled) {
+  border-color: #cfe9ff;
+}
+
+.hub-poll-option.selected {
+  border-color: #00abff;
+}
+
+.hub-poll-option:disabled {
+  cursor: default;
+}
+
+.hub-poll-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(0, 171, 255, .12);
+  pointer-events: none;
+}
+
+.hub-poll-option.selected .hub-poll-bar,
+.hub-poll-option.leading .hub-poll-bar {
+  background: rgba(0, 171, 255, .18);
+}
+
+.hub-poll-indicator,
+.hub-poll-option-label,
+.hub-poll-option-count,
+.hub-poll-percent {
+  position: relative;
+  z-index: 1;
+}
+
+.hub-poll-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #c8c8c8;
+  background: #fff;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hub-poll-indicator.is-radio {
+  border-radius: 50%;
+}
+
+.hub-poll-indicator.is-checkbox {
+  border-radius: 3px;
+}
+
+.hub-poll-indicator.checked {
+  border-color: #00abff;
+  background: #00abff;
+}
+
+.hub-poll-option-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  overflow-wrap: anywhere;
+}
+
+.hub-poll-option-count,
+.hub-poll-percent {
+  flex: 0 0 auto;
+  color: #777;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-poll-percent {
+  min-width: 2.4em;
+  text-align: right;
+  font-weight: 700;
+}
+
+.hub-poll-option.selected .hub-poll-percent {
+  color: #0094dc;
+}
+
+.hub-poll-total {
+  margin-top: 7px;
+  color: #888;
+  font-size: 12px;
 }
 
 .hub-post-meta {
@@ -1351,6 +1690,72 @@ a.hub-post-author-identity:hover span {
 .hub-settings-block .textarea,
 .hub-reply-box .textarea {
   width: 100%;
+}
+
+.hub-add-poll-btn {
+  margin: 6px 0 14px;
+}
+
+.hub-topic-poll-editor {
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #d7ebff;
+  border-radius: 12px;
+  background: #f7fafd;
+}
+
+.hub-topic-poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hub-topic-poll-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-topic-poll-option-row .input {
+  flex: 1;
+}
+
+.hub-topic-poll-remove {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hub-topic-poll-remove:hover {
+  border-color: #ff9d9d;
+  color: #d0342c;
+}
+
+.hub-topic-poll-add {
+  margin-bottom: 12px;
+}
+
+.hub-topic-poll-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0 !important;
+  font-weight: 400 !important;
+}
+
+.hub-topic-poll-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #00abff;
 }
 
 .hub-settings-block h3,
@@ -1795,6 +2200,10 @@ a.hub-post-author-identity:hover span {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+
+  .hub-post-poll {
+    max-width: 100%;
   }
 
   .hub-form-actions {

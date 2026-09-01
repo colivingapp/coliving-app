@@ -1377,6 +1377,7 @@ Route::post('/space/{uid}/hub/leave-admin', [HubController::class, 'leaveAdmin']
 Route::get('/space/{uid}/hub/events', [HubController::class, 'events'])->middleware('auth:sanctum');
 Route::post('/space/{uid}/hub/events', [HubController::class, 'createEvent'])->middleware(['auth:sanctum', 'verified']);
 Route::delete('/space/{uid}/hub/events/{event}', [HubController::class, 'destroyEvent'])->middleware(['auth:sanctum', 'verified']);
+Route::post('/space/{uid}/hub/topics/{thread}/polls/{poll}/options/{option}/vote', [HubController::class, 'votePoll'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
 
 Route::get('/my-bookmarks', function() {

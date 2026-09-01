@@ -29,4 +29,9 @@ class HubThread extends Model
     {
         return $this->hasMany(HubPost::class);
     }
+
+    public function poll()
+    {
+        return $this->hasOne(HubPoll::class);
+    }
 }
