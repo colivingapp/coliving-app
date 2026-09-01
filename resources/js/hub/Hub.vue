@@ -214,6 +214,20 @@ function formatDate(value) {
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
+function topicActivityLabel(thread) {
+  if (thread.type === 'space_info') {
+    return `Updated ${formatDate(thread.space_info_updated_at || thread.updated_at || thread.last_post_at)}`;
+  }
+  return `Last activity ${formatDate(thread.last_post_at || thread.updated_at)}`;
+}
+
+function postDateLabel(post) {
+  if (selectedThread.value?.type === 'space_info' && isFirstPost(post)) {
+    return `Updated ${formatDate(post.updated_at || post.created_at)}`;
+  }
+  return formatDate(post.created_at);
+}
+
 function memberTime(value) {
   if (!value) return 0;
   const time = new Date(value).getTime();
@@ -760,7 +774,7 @@ onMounted(loadHub);
                         <span>{{ post.authorName }}</span>
                       </component>
                     </div>
-                    <span>{{ formatDate(post.created_at) }}</span>
+                    <span>{{ postDateLabel(post) }}</span>
                   </div>
                   <div class="hub-post-content">
                     <span v-if="String(post.content || '').trim()" style="white-space: pre-wrap;">{{ post.content }}</span>
@@ -908,7 +922,7 @@ onMounted(loadHub);
                       {{ thread.title }}
                       <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
                     </div>
-                    <div class="hub-topic-meta">Last activity {{ formatDate(thread.last_post_at || thread.updated_at) }}</div>
+                    <div class="hub-topic-meta">{{ topicActivityLabel(thread) }}</div>
                   </div>
                   <div class="hub-topic-count">
                     <b>{{ thread.replies_count }}</b>
@@ -926,7 +940,7 @@ onMounted(loadHub);
                       {{ thread.title }}
                       <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
                     </div>
-                    <div class="hub-topic-meta">Last activity {{ formatDate(thread.last_post_at || thread.updated_at) }}</div>
+                    <div class="hub-topic-meta">{{ topicActivityLabel(thread) }}</div>
                   </div>
                   <div class="hub-topic-count">
                     <b>{{ thread.replies_count }}</b>

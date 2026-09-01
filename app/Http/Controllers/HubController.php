@@ -194,11 +194,22 @@ class HubController extends Controller
             ->get()
             ->unique('hub_thread_id')
             ->keyBy('hub_thread_id');
+        $firstPosts = HubPost::whereIn('hub_thread_id', $threadIds)
+            ->orderBy('created_at')
+            ->get()
+            ->unique('hub_thread_id')
+            ->keyBy('hub_thread_id');
 
-        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $request, $space, $pollThreadIds) {
+        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $firstPosts, $request, $space, $pollThreadIds) {
             $thread->posts_count = (int) ($postCounts[$thread->id] ?? 0);
             $thread->replies_count = max(0, $thread->posts_count - 1);
             $thread->latest_post = $latestPosts[$thread->id] ?? null;
+            if ($thread->type === 'space_info') {
+                $firstPost = $firstPosts[$thread->id] ?? null;
+                $thread->space_info_updated_at = $firstPost?->updated_at
+                    ?? $firstPost?->created_at
+                    ?? $thread->updated_at;
+            }
             $thread->is_mine = (int) $thread->author_user_id === (int) $request->user()->id;
             $thread->can_delete = $this->canDeleteThread($request, $space, $thread);
             $thread->has_poll = in_array((int) $thread->id, $pollThreadIds, true);
