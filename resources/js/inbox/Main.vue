@@ -8,7 +8,10 @@
       </router-link>
       <div class="convo-page-title">
         <h1>Conversation</h1>
-        <span v-if="$route.params.uid != mate.uid">With {{ conversationType }}: <router-link :to="conversationWithUrl">{{ conversationWithName }}</router-link></span>
+        <span v-if="$route.params.uid != mate.uid" class="convo-with-line">
+          <span class="convo-with-label">With {{ conversationType }}:</span>
+          <router-link :to="conversationWithUrl" class="convo-with-name">{{ conversationWithName }}</router-link>
+        </span>
       </div>
     </div>
     <div style="height:40px;"></div>
@@ -355,6 +358,32 @@ function joinRequestDecline(id) {
   margin-bottom: 10px;
 }
 
+.convo-page-title {
+  min-width: 0;
+}
+
+.convo-with-line {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.convo-with-label {
+  flex-shrink: 0;
+}
+
+.convo-with-name {
+  display: inline-block;
+  max-width: min(42ch, 100%);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .info-bubble {
   background-color: #f1f1f1;
   color: #333;
@@ -528,6 +557,10 @@ function joinRequestDecline(id) {
 @media screen and (max-width:640px) {
   .convo-grid {
     display:grid;grid-template-rows:calc(100vh - 340px) 20px 30px;
+  }
+
+  .convo-with-name {
+    max-width: min(18ch, 100%);
   }
 }
 </style>

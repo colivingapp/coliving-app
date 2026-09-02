@@ -72,9 +72,11 @@
                                         <span v-else-if="conv.participants.receiver.username">{{ conv.participants.receiver.username }}</span>
                                         <span v-else>{{ conv.type == 'space_mate' ? conv.user2 : conv.participants.receiver.uid }}</span>
                                     </div>
+                                </div>
+                                <div class="convo-bottom">
+                                    <div class="convo-sub">{{ conv.type == 'space_mate' ? 'Space' : 'Mate' }}</div>
                                     <span class="convo-time">{{ formatDate(conv.updated_at) }}</span>
                                 </div>
-                                <div class="convo-sub">{{ conv.type == 'space_mate' ? 'Space' : 'Mate' }}</div>
                             </div>
                             <span v-if="conv.new" class="convo-dot"></span>
                         </div>
@@ -112,11 +114,13 @@
                                         <span v-else-if="conv.participants.creator.username">{{ conv.participants.creator.username }}</span>
                                         <span v-else>{{ conv.participants.creator.uid }}</span>
                                     </div>
-                                    <span class="convo-time">{{ formatDate(conv.updated_at) }}</span>
                                 </div>
-                                <div class="convo-sub">
-                                    <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
-                                    <span v-else>{{ conv.user2 }}</span>
+                                <div class="convo-bottom">
+                                    <div class="convo-sub">
+                                        <span v-if="conv.participants.receiver.name">{{ conv.participants.receiver.name }}</span>
+                                        <span v-else>{{ conv.user2 }}</span>
+                                    </div>
+                                    <span class="convo-time">{{ formatDate(conv.updated_at) }}</span>
                                 </div>
                             </div>
                             <span v-if="conv.new" class="convo-dot"></span>
@@ -420,6 +424,8 @@ if (userLoggedIn.value) {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
 }
 
@@ -439,6 +445,10 @@ if (userLoggedIn.value) {
 
 .convo-link {
     display: block;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
     color: inherit;
     text-decoration: none;
 }
@@ -449,9 +459,15 @@ if (userLoggedIn.value) {
 }
 
 .convo-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
     padding: 11px 14px;
     border-radius: 14px;
     border: 1px solid #e8ebf0;
@@ -470,6 +486,10 @@ if (userLoggedIn.value) {
 .convo-card.convo-new {
     border-left: 3px solid var(--sky);
     background: #f8fbff;
+}
+
+.convo-card.convo-new .convo-row {
+    padding-right: 16px;
 }
 
 /* AVATARS — small (you) on the left, big (them) on the right */
@@ -530,8 +550,11 @@ if (userLoggedIn.value) {
 
 /* TEXT */
 .convo-main {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    width: 0;
+    max-width: 100%;
+    overflow: hidden;
     text-align: left;
 }
 
@@ -539,6 +562,9 @@ if (userLoggedIn.value) {
     display: flex;
     align-items: baseline;
     gap: 10px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .convo-name {
@@ -553,12 +579,23 @@ if (userLoggedIn.value) {
 }
 
 .convo-sub {
+    flex: 1;
+    min-width: 0;
     font-size: 12.5px;
     color: #8f8f8f;
-    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.convo-bottom {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    margin-top: 2px;
 }
 
 .convo-time {
@@ -569,7 +606,9 @@ if (userLoggedIn.value) {
 }
 
 .convo-dot {
-    flex-shrink: 0;
+    position: absolute;
+    top: 13px;
+    right: 14px;
     width: 8px;
     height: 8px;
     border-radius: 50%;

@@ -37,56 +37,58 @@
         </div>
       </div>
 
-      <div style="height:30px;"></div>
-      
-      <div v-if="hubType == 'coliving'">
-        <div v-if="isLoading">Loading...</div>
-        <div v-else-if="myColivingSpaces.length > 0" class="space-grid">
-          <SpaceCard
-            v-for="space in myColivingSpaces"
-            :key="space.uid || space.space_uid"
-            :space="space"
-            :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
-          />
-        </div>
-        <div v-else>
-          <div style="height:10px;"></div>
-          You are not currently coliving. When you join or administer a coliving space, your space hub will be available here.
-          <div style="height:10px;"></div>
-        </div>
-      </div>
+      <div v-if="!isLoading">
+        <div style="height:30px;"></div>
 
-      <div v-else-if="hubType == 'vacant'">
-        <div v-if="isLoading">Loading...</div>
-        <div v-else-if="vacantColivingSpaces.length > 0" class="space-grid">
-          <SpaceCard
-            v-for="space in vacantColivingSpaces"
-            :key="space.uid || space.space_uid"
-            :space="space"
-            :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
-          />
+        <div v-if="hubType == 'coliving'">
+          <div v-if="myColivingSpaces.length > 0" class="space-grid">
+            <SpaceCard
+              v-for="space in myColivingSpaces"
+              :key="space.uid || space.space_uid"
+              :space="space"
+              :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
+            />
+          </div>
+          <div v-else>
+            <div style="height:10px;"></div>
+            You are not currently coliving. When you join or administer a coliving space, your space hub will be available here.
+            <div style="height:10px;"></div>
+          </div>
         </div>
+
+        <div v-else-if="hubType == 'vacant'">
+          <div v-if="vacantColivingSpaces.length > 0" class="space-grid">
+            <SpaceCard
+              v-for="space in vacantColivingSpaces"
+              :key="space.uid || space.space_uid"
+              :space="space"
+              :to="'/space/' + (space.uid || space.space_uid) + '/hub'"
+            />
+          </div>
+          <div v-else>
+            <div style="height:10px;"></div>
+            You have no vacant spaces.
+            <div style="height:10px;"></div>
+          </div>
+        </div>
+
         <div v-else>
-          <div style="height:10px;"></div>
-          You have no vacant spaces.
-          <div style="height:10px;"></div>
+          <div v-if="pastColivingSpaces.length > 0" class="space-grid">
+            <SpaceCard
+              v-for="space in pastColivingSpaces"
+              :key="space.uid || space.space_uid"
+              :space="space"
+            />
+          </div>
+          <div v-else>
+            <div style="height:10px;"></div>
+            You have no past coliving experiences yet.
+            <div style="height:10px;"></div>
+          </div>
         </div>
       </div>
-      
-      <div v-else>
-        <div v-if="isLoading">Loading...</div>
-        <div v-else-if="pastColivingSpaces.length > 0" class="space-grid">
-          <SpaceCard
-            v-for="space in pastColivingSpaces"
-            :key="space.uid || space.space_uid"
-            :space="space"
-          />
-        </div>
-        <div v-else>
-          <div style="height:10px;"></div>
-          You have no past coliving experiences yet.
-          <div style="height:10px;"></div>
-        </div>
+      <div v-else class="spinner-container">
+        <div class="spinner" style="margin-top:50px;"></div>
       </div>
 
     </div>
@@ -158,9 +160,14 @@
 
   if (userLoggedIn.value) {
     const fetchMySpaces = async () => {
-      const response = await fetch('/api/hub-all');
-      const data = await response.json();
-      applyHubData(data);
+      try {
+        const response = await fetch('/api/hub-all');
+        const data = await response.json();
+        applyHubData(data);
+      } catch (error) {
+        console.error(error);
+        isLoading.value = false;
+      }
     };
     fetchMySpaces();
   }
