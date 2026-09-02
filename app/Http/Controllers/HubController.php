@@ -14,8 +14,10 @@ use App\Models\Mate;
 use App\Models\Space;
 use App\Models\SpaceMate;
 use App\Services\ChatAuthorization;
+use App\Services\MateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class HubController extends Controller
 {
@@ -75,6 +77,47 @@ class HubController extends Controller
         ]);
 
         return response()->json(['ok' => true, 'user_id' => $targetUserId]);
+    }
+
+    public function markSeen(Request $request, string $uid, MateService $mateService)
+    {
+        $space = $this->accessibleSpace($request, $uid);
+        if (!$space) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $section = $request->input('section', 'topics');
+        if (!in_array($section, ['topics', 'members', 'requests', 'calendar'], true)) {
+            return response()->json(['message' => 'Unknown Hub section.'], 422);
+        }
+
+        $this->markSpaceSectionSeen((int) $request->user()->id, $space->uid, $section);
+        $unseenSummary = $mateService->hubUnseenSummaryForCurrentUser($space->uid);
+
+        return response()->json([
+            'hasUnseenHub' => $unseenSummary['hasUnseenHub'],
+            'unseenSections' => $unseenSummary['unseenSections'],
+        ]);
+    }
+
+    private function markSpaceSectionSeen(int $userId, string $spaceUid, string $section): void
+    {
+        if (!Schema::hasTable('hub_space_views')) {
+            return;
+        }
+
+        $column = $section.'_seen_at';
+
+        DB::table('hub_space_views')->updateOrInsert(
+            [
+                'user_id' => $userId,
+                'space_uid' => $spaceUid,
+            ],
+            [
+                $column => now(),
+                'updated_at' => now(),
+            ]
+        );
     }
 
     public function leaveAdmin(Request $request, string $uid)
@@ -190,22 +233,26 @@ class HubController extends Controller
             ->pluck('posts_count', 'hub_thread_id');
 
         $latestPosts = HubPost::whereIn('hub_thread_id', $threadIds)
+            ->select('id', 'hub_thread_id', 'created_at', 'updated_at')
             ->orderByDesc('created_at')
             ->get()
             ->unique('hub_thread_id')
             ->keyBy('hub_thread_id');
         $firstPosts = HubPost::whereIn('hub_thread_id', $threadIds)
+            ->select('id', 'hub_thread_id', 'created_at', 'updated_at')
             ->orderBy('created_at')
             ->get()
             ->unique('hub_thread_id')
             ->keyBy('hub_thread_id');
+        $membershipBaseline = $this->hubMembershipBaseline($request, $space);
+        $newCountsByThread = $this->newPostCountsByThread($threadIds, $request, $membershipBaseline);
 
-        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $firstPosts, $request, $space, $pollThreadIds) {
+        return $threads->map(function ($thread) use ($postCounts, $latestPosts, $firstPosts, $newCountsByThread, $request, $space, $pollThreadIds) {
             $thread->posts_count = (int) ($postCounts[$thread->id] ?? 0);
             $thread->replies_count = max(0, $thread->posts_count - 1);
             $thread->latest_post = $latestPosts[$thread->id] ?? null;
+            $firstPost = $firstPosts[$thread->id] ?? null;
             if ($thread->type === 'space_info') {
-                $firstPost = $firstPosts[$thread->id] ?? null;
                 $thread->space_info_updated_at = $firstPost?->updated_at
                     ?? $firstPost?->created_at
                     ?? $thread->updated_at;
@@ -213,8 +260,78 @@ class HubController extends Controller
             $thread->is_mine = (int) $thread->author_user_id === (int) $request->user()->id;
             $thread->can_delete = $this->canDeleteThread($request, $space, $thread);
             $thread->has_poll = in_array((int) $thread->id, $pollThreadIds, true);
+            $newCounts = $newCountsByThread[$thread->id] ?? null;
+            $thread->has_unseen = (int) ($newCounts->new_posts_count ?? 0) > 0;
+            $thread->new_replies_count = (int) ($newCounts->new_replies_count ?? 0);
             return $thread;
         });
+    }
+
+    private function newPostCountsByThread($threadIds, Request $request, $membershipBaseline)
+    {
+        if ($threadIds->isEmpty()) {
+            return collect();
+        }
+
+        $firstPostIds = DB::table('hub_posts')
+            ->select('hub_thread_id', DB::raw('MIN(id) as first_post_id'))
+            ->whereIn('hub_thread_id', $threadIds)
+            ->groupBy('hub_thread_id');
+
+        $query = DB::table('hub_posts')
+            ->leftJoinSub($firstPostIds, 'first_posts', function ($join) {
+                $join->on('hub_posts.hub_thread_id', '=', 'first_posts.hub_thread_id');
+            })
+            ->whereIn('hub_posts.hub_thread_id', $threadIds)
+            ->where('hub_posts.author_user_id', '!=', $request->user()->id)
+            ->select(
+                'hub_posts.hub_thread_id',
+                DB::raw('COUNT(*) as new_posts_count'),
+                DB::raw('SUM(CASE WHEN hub_posts.id <> first_posts.first_post_id THEN 1 ELSE 0 END) as new_replies_count')
+            )
+            ->groupBy('hub_posts.hub_thread_id');
+
+        if (Schema::hasTable('hub_thread_views')) {
+            $query->leftJoin('hub_thread_views', function ($join) use ($request) {
+                $join->on('hub_posts.hub_thread_id', '=', 'hub_thread_views.hub_thread_id')
+                    ->where('hub_thread_views.user_id', '=', $request->user()->id);
+            })->whereRaw('hub_posts.created_at > COALESCE(hub_thread_views.last_seen_at, ?)', [
+                $membershipBaseline,
+            ]);
+        } else {
+            $query->where('hub_posts.created_at', '>', $membershipBaseline);
+        }
+
+        return $query->get()->keyBy('hub_thread_id');
+    }
+
+    private function hubMembershipBaseline(Request $request, Space $space)
+    {
+        $membership = SpaceMate::where('space_uid', $space->uid)
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'active')
+            ->orderByDesc('id')
+            ->first();
+
+        return $membership?->joined_at ?? $space->created_at;
+    }
+
+    private function markThreadSeen(Request $request, HubThread $thread): void
+    {
+        if (!Schema::hasTable('hub_thread_views')) {
+            return;
+        }
+
+        DB::table('hub_thread_views')->updateOrInsert(
+            [
+                'user_id' => $request->user()->id,
+                'hub_thread_id' => $thread->id,
+            ],
+            [
+                'last_seen_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
     }
 
     private function ensureGeneralThreadFromChat(Space $space): void
@@ -357,6 +474,8 @@ class HubController extends Controller
 
         $thread->is_mine = (int) $thread->author_user_id === (int) $request->user()->id;
         $thread->can_delete = $this->canDeleteThread($request, $space, $thread);
+        $this->markThreadSeen($request, $thread);
+        $this->markSpaceSectionSeen((int) $request->user()->id, $space->uid, 'topics');
 
         return response()->json([
             'thread' => $thread,

@@ -13,6 +13,7 @@
           <div class="page-menu-button" @click="hubType = 'coliving'">
             <span class="inbox-type-link" :class="{active : hubType == 'coliving'}">
               Coliving ({{ myColivingSpaces.length }})
+              <span v-if="hasUnseenColiving" style="color:red;">●</span>
             </span>
           </div>
           <div class="page-menu-underline" v-if="hubType == 'coliving'"></div>
@@ -21,6 +22,7 @@
           <div class="page-menu-button" @click="hubType = 'vacant'">
             <span class="inbox-type-link" :class="{active : hubType == 'vacant'}">
               Vacant ({{ vacantColivingSpaces.length }})
+              <span v-if="hasUnseenVacant" style="color:red;">●</span>
             </span>
           </div>
           <div class="page-menu-underline" v-if="hubType == 'vacant'"></div>
@@ -105,9 +107,10 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue';
+  import { computed, inject, ref, watch } from 'vue';
   import SpaceCard from '../components/SpaceCard.vue';
 
+  const hubStatus = inject('hubStatus');
   let userLoggedIn = ref(window.userLoggedIn);
   let myColivingSpaces = ref([]);
   let vacantColivingSpaces = ref([]);
@@ -127,6 +130,23 @@
     return [...(spaces || [])].sort((a, b) => activityTime(b) - activityTime(a));
   };
 
+  const hasUnseenColiving = computed(() => myColivingSpaces.value.some(space => space.hub_unseen));
+  const hasUnseenVacant = computed(() => vacantColivingSpaces.value.some(space => space.hub_unseen));
+
+  function syncHubStatus() {
+    if (hubStatus) {
+      hubStatus.hasUnseenHub = hasUnseenColiving.value || hasUnseenVacant.value;
+    }
+  }
+
+  function applyHubData(data) {
+    myColivingSpaces.value = sortByRecentActivity(data.myColivingSpaces);
+    vacantColivingSpaces.value = sortByRecentActivity(data.vacantColivingSpaces || []);
+    pastColivingSpaces.value = sortByRecentActivity(data.pastColivingSpaces);
+    isLoading.value = false;
+    syncHubStatus();
+  }
+
   watch([vacantColivingSpaces, pastColivingSpaces], () => {
     if (hubType.value === 'vacant' && vacantColivingSpaces.value.length === 0) {
       hubType.value = 'coliving';
@@ -137,22 +157,12 @@
   });
 
   if (userLoggedIn.value) {
-    if (window.myColivingSpaces) {
-      myColivingSpaces.value = sortByRecentActivity(window.myColivingSpaces);
-      vacantColivingSpaces.value = sortByRecentActivity(window.vacantColivingSpaces || []);
-      pastColivingSpaces.value = sortByRecentActivity(window.pastColivingSpaces || []);
-      isLoading.value = false;
-    } else {
-      const fetchMySpaces = async () => {
-        const response = await fetch('/api/hub-all');
-        const data = await response.json();
-        myColivingSpaces.value = sortByRecentActivity(data.myColivingSpaces);
-        vacantColivingSpaces.value = sortByRecentActivity(data.vacantColivingSpaces || []);
-        pastColivingSpaces.value = sortByRecentActivity(data.pastColivingSpaces);
-        isLoading.value = false;
-      };
-      fetchMySpaces();
-    }
+    const fetchMySpaces = async () => {
+      const response = await fetch('/api/hub-all');
+      const data = await response.json();
+      applyHubData(data);
+    };
+    fetchMySpaces();
   }
 </script>
 

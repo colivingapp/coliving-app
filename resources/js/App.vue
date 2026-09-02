@@ -28,6 +28,11 @@
     })
     provide('inboxStatus', inboxStatus)
 
+    const hubStatus = reactive({
+        hasUnseenHub: window.mate?.hasUnseenHub ?? false,
+    })
+    provide('hubStatus', hubStatus)
+
     import { useRoute, useRouter } from 'vue-router';
     
     const router = useRouter();

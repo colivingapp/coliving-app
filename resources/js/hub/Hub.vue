@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import ProfilePic from '../components/ProfilePic.vue';
@@ -9,6 +9,7 @@ import { spacePhotoUrl } from '../mediaUrls.js';
 
 const route = useRoute();
 const router = useRouter();
+const hubStatus = inject('hubStatus');
 const uid = computed(() => route.params.uid);
 
 const userLoggedIn = ref(window.userLoggedIn);
@@ -31,6 +32,7 @@ const selectedPoll = ref(null);
 const posts = ref([]);
 const events = ref([]);
 const joinRequests = ref([]);
+const unseenSections = ref([]);
 
 const MEMBERS_PER_PAGE = 40;
 const membersFilter = ref('current');
@@ -199,6 +201,10 @@ function hubLink(section) {
   return `${base}/${section}`;
 }
 
+function isSectionUnseen(section) {
+  return unseenSections.value.includes(section);
+}
+
 function mateDisplayName(mate) {
   if (!mate) return 'Member';
   if (mate.account_deleted) return 'Deleted account';
@@ -293,6 +299,7 @@ async function fetchHub() {
     isAdmin.value = !!response.data.is_admin;
     currentUserId.value = response.data.current_user_id ?? null;
     stats.value = response.data.stats || stats.value;
+    unseenSections.value = response.data.unseen_sections || [];
     spaceInfoDraft.value = response.data.space?.info || '';
     isMember.value = true;
   } catch (error) {
@@ -336,6 +343,19 @@ async function fetchThreads() {
   }
 }
 
+function markThreadReadInList(threadId) {
+  const id = Number(threadId);
+  threads.value = threads.value.map(thread => {
+    if (Number(thread.id) !== id) return thread;
+
+    return {
+      ...thread,
+      has_unseen: false,
+      new_replies_count: 0,
+    };
+  });
+}
+
 async function fetchThread(threadId) {
   if (!threadId) {
     selectedThread.value = null;
@@ -350,6 +370,7 @@ async function fetchThread(threadId) {
     selectedThread.value = response.data.thread;
     selectedPoll.value = response.data.poll || null;
     posts.value = response.data.posts || [];
+    markThreadReadInList(threadId);
   } catch (error) {
     console.error(error);
     selectedThread.value = null;
@@ -539,6 +560,20 @@ async function fetchEvents() {
   }
 }
 
+async function markHubSeen(section = activeSection.value) {
+  if (!['topics', 'members', 'requests', 'calendar'].includes(section)) return;
+
+  try {
+    const response = await axios.post(`/api/space/${uid.value}/hub/seen`, { section });
+    unseenSections.value = response.data.unseenSections || [];
+    if (hubStatus) {
+      hubStatus.hasUnseenHub = !!response.data.hasUnseenHub;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function saveSpaceInfo() {
   actionLoading.value = true;
   actionError.value = '';
@@ -645,6 +680,7 @@ async function loadHub() {
   await Promise.all([fetchMembers(), fetchThreads(), fetchEvents()]);
   await fetchJoinRequests();
   await fetchThread(route.params.threadId);
+  await markHubSeen();
 }
 
 watch(() => route.params.threadId, threadId => {
@@ -653,9 +689,11 @@ watch(() => route.params.threadId, threadId => {
 
 watch(activeSection, section => {
   if (section !== 'topics') showNewThread.value = false;
+  if (section === 'topics') fetchThreads();
   if (section === 'requests') fetchJoinRequests();
   if (section === 'calendar') fetchEvents();
   if (section === 'settings') nextTick(resizeSpaceInfoEditor);
+  markHubSeen(section);
 });
 
 watch(spaceInfoDraft, () => nextTick(resizeSpaceInfoEditor));
@@ -689,7 +727,10 @@ onMounted(loadHub);
         <div class="page-menu-button-outer">
           <router-link :to="hubLink('topics')">
             <div class="page-menu-button">
-              <span class="inbox-type-link" :class="{ active: activeSection === 'topics' }">Topics</span>
+              <span class="inbox-type-link" :class="{ active: activeSection === 'topics' }">
+                Topics
+                <span v-if="isSectionUnseen('topics')" style="color:red;">●</span>
+              </span>
             </div>
           </router-link>
           <div class="page-menu-underline" :class="{ active: activeSection === 'topics' }"></div>
@@ -698,7 +739,10 @@ onMounted(loadHub);
         <div class="page-menu-button-outer">
           <router-link :to="hubLink('members')">
             <div class="page-menu-button">
-              <span class="inbox-type-link" :class="{ active: activeSection === 'members' }">Members</span>
+              <span class="inbox-type-link" :class="{ active: activeSection === 'members' }">
+                Members
+                <span v-if="isSectionUnseen('members')" style="color:red;">●</span>
+              </span>
             </div>
           </router-link>
           <div class="page-menu-underline" :class="{ active: activeSection === 'members' }"></div>
@@ -711,6 +755,7 @@ onMounted(loadHub);
                 <span class="hub-tab-full">Join Requests</span>
                 <span class="hub-tab-short">Requests</span>
                 <span v-if="stats.pending_join_requests > 0" class="hub-badge">{{ stats.pending_join_requests }}</span>
+                <span v-if="isSectionUnseen('requests')" style="color:red;">●</span>
               </span>
             </div>
           </router-link>
@@ -720,7 +765,10 @@ onMounted(loadHub);
         <div class="page-menu-button-outer">
           <router-link :to="hubLink('calendar')">
             <div class="page-menu-button">
-              <span class="inbox-type-link" :class="{ active: activeSection === 'calendar' }">Calendar</span>
+              <span class="inbox-type-link" :class="{ active: activeSection === 'calendar' }">
+                Calendar
+                <span v-if="isSectionUnseen('calendar')" style="color:red;">●</span>
+              </span>
             </div>
           </router-link>
           <div class="page-menu-underline" :class="{ active: activeSection === 'calendar' }"></div>
@@ -919,6 +967,7 @@ onMounted(loadHub);
                 >
                   <div class="hub-topic-main">
                     <div class="hub-topic-title">
+                      <span v-if="thread.has_unseen" style="color:red;">●</span>
                       <span class="hub-sticky-mark" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M12 17v5"/>
@@ -927,6 +976,7 @@ onMounted(loadHub);
                       </span>
                       {{ thread.title }}
                       <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
+                      <span v-if="thread.new_replies_count > 0" class="hub-topic-new-replies">{{ thread.new_replies_count }} new {{ thread.new_replies_count === 1 ? 'reply' : 'replies' }}</span>
                     </div>
                     <div class="hub-topic-meta">{{ topicActivityLabel(thread) }}</div>
                   </div>
@@ -943,8 +993,10 @@ onMounted(loadHub);
                 >
                   <div class="hub-topic-main">
                     <div class="hub-topic-title">
+                      <span v-if="thread.has_unseen" style="color:red;">●</span>
                       {{ thread.title }}
                       <span v-if="thread.has_poll" class="hub-topic-poll-badge">Poll</span>
+                      <span v-if="thread.new_replies_count > 0" class="hub-topic-new-replies">{{ thread.new_replies_count }} new {{ thread.new_replies_count === 1 ? 'reply' : 'replies' }}</span>
                     </div>
                     <div class="hub-topic-meta">{{ topicActivityLabel(thread) }}</div>
                   </div>
@@ -1480,6 +1532,19 @@ onMounted(loadHub);
   background: #f3f8ff;
   border: 1px solid #d7ebff;
   color: #0a6dad;
+}
+
+.hub-topic-new-replies {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+  background: #fff2f2;
+  border: 1px solid #ffd3d3;
+  color: #d0342c;
 }
 
 .hub-topic-count {

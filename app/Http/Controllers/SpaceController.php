@@ -123,11 +123,11 @@ class SpaceController extends Controller
         // current & past memberships
         $colivingSpaces = SpaceMate::where('status', 'active')
             ->where('user_id', $userId)
-            ->get(['space_uid', 'left_at', 'joined_at']);
+            ->get(['space_uid', 'left_at', 'joined_at', 'role']);
 
         $pastColivingSpaces = SpaceMate::where('status', 'left')
             ->where('user_id', $userId)
-            ->get(['space_uid', 'left_at', 'joined_at']);
+            ->get(['space_uid', 'left_at', 'joined_at', 'role']);
 
         // all space UIDs we’ll need
         $allUids = $colivingSpaces->pluck('space_uid')

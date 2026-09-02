@@ -98,7 +98,9 @@
                       &nbsp;
                       <!-- <router-link to="/mates">Mates</router-link>
                       &nbsp; -->
-                      <router-link to="/hub">Hub</router-link>
+                      <router-link to="/hub">
+                        <span v-if="hubStatus && hubStatus.hasUnseenHub" style="color:red;">●</span> Hub
+                      </router-link>
                       &nbsp;
                       <!-- <router-link to="/inbox">Inbox</router-link> -->
                       <router-link to="/inbox">
@@ -148,7 +150,7 @@
 
                         <router-link to="/spaces" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Spaces</router-link>
                         <!-- <router-link to="/mates" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Mates</router-link> -->
-                        <router-link to="/hub" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Hub</router-link>
+                        <router-link to="/hub" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Hub <span v-if="hubStatus && hubStatus.hasUnseenHub" style="color:red;">●</span></router-link>
                         <router-link to="/inbox" class="block w-full px-4 py-2 text-sm leading-5 text-gray-700 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">Inbox <span v-if="inboxStatus && (inboxStatus.hasUnreadPersonal || inboxStatus.hasUnreadSpaces)" style="color:red;">●</span>
                         </router-link>
       
@@ -173,6 +175,7 @@ import JetDropdown from './Dropdown.vue'
 import { ref, computed, watch, inject, onMounted, onUnmounted } from 'vue';
 
 const inboxStatus = inject('inboxStatus')
+const hubStatus = inject('hubStatus')
 
 import { useRouter } from 'vue-router';
 const router = useRouter();

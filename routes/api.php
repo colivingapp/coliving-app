@@ -446,6 +446,7 @@ Route::get('/space/{uid}/hub', function(SpaceController $spaceController, $uid) 
     }
 
     $data[0] = $spaceMates;
+    $data['unseen_sections'] = app(MateService::class)->hubUnseenSectionsForCurrentUserSpace($uid);
 
     return ($data); 
 })->middleware(['auth:sanctum', 'verified']);
@@ -904,7 +905,11 @@ Route::get('/my-spaces', function(SpaceController $spaceController) {
 
 
 Route::get('/hub-all', function(SpaceController $spaceController) {
-    $coliving_spaces = $spaceController->myColivingSpaces();
+    $mateService = app(MateService::class);
+    $coliving_spaces = $mateService->decorateHubSpacesWithUnseen(
+        $spaceController->myColivingSpaces(),
+        (int) auth()->id()
+    );
     $mate = Mate::where('user_id', auth()->user()->id)->get();
     return ([
         'myColivingSpaces' => $coliving_spaces[0],
@@ -1281,6 +1286,7 @@ Route::get('/conversation/hub/{uid}', [InboxHubController::class, 'showConversat
 
 Route::post('/conversation/hub/{uid}', [InboxHubController::class, 'store'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 
+Route::post('/space/{uid}/hub/seen', [HubController::class, 'markSeen'])->middleware('auth:sanctum');
 Route::get('/space/{uid}/hub/topics', [HubController::class, 'threads'])->middleware('auth:sanctum');
 Route::post('/space/{uid}/hub/topics', [HubController::class, 'createThread'])->middleware(['auth:sanctum', 'throttle:chat-message']);
 Route::get('/space/{uid}/hub/topics/{thread}', [HubController::class, 'showThread'])->middleware('auth:sanctum');

@@ -18,7 +18,7 @@
         </span>
       </div>
       <div class="space-card-body" :class="{ 'space-card-body-actions': manageable }">
-        <p class="space-card-title">{{ space.name }}</p>
+        <p class="space-card-title"><span v-if="space.hub_unseen" style="color:red;">●</span>{{ space.hub_unseen ? ' ' : '' }}{{ space.name }}</p>
         <p v-if="space.address" class="space-card-address">{{ space.address }}</p>
         <p v-else-if="space.country" class="space-card-address">{{ space.country }}</p>
       </div>
