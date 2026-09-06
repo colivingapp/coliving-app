@@ -1,44 +1,83 @@
 <template>
   <div class="lmc" :class="canCompare ? 'is-member' : 'is-guest'">
     <div class="lmc-stack">
-      <div class="lmc-radar-bg" :class="{ 'is-faded': !canCompare }" aria-hidden="true">
-        <svg class="lmc-radar-svg" viewBox="0 0 280 280" role="img" aria-label="Lifestyle match radar chart">
-          <polygon
-            v-for="(ring, index) in rings"
-            :key="'ring-' + index"
-            :points="ring"
-            class="lmc-ring"
-            :class="{ 'is-mid': index === 2 }"
-          />
-          <line
-            v-for="(spoke, index) in spokes"
-            :key="'spoke-' + index"
-            :x1="spoke.x1" :y1="spoke.y1" :x2="spoke.x2" :y2="spoke.y2"
-            class="lmc-spoke"
-          />
-          <polygon :points="spaceShape.points" class="lmc-fill is-space" />
-          <polygon
-            v-if="canCompare"
-            :points="youShape.points"
-            class="lmc-fill is-you"
-          />
-          <polygon
-            v-else
-            :points="demoYouShape.points"
-            class="lmc-fill is-you is-demo"
-          />
-          <circle
-            v-for="(dot, index) in spaceShape.dots"
-            :key="'s-' + index"
-            :cx="dot.x" :cy="dot.y" r="4.5" class="lmc-dot is-space"
-          />
-          <circle
-            v-if="canCompare"
-            v-for="(dot, index) in youShape.dots"
-            :key="'y-' + index"
-            :cx="dot.x" :cy="dot.y" r="4.5" class="lmc-dot is-you"
-          />
-        </svg>
+      <div class="lmc-radar-bg">
+        <div class="lmc-radar-wrap">
+          <svg class="lmc-radar-svg" :class="{ 'is-faded': !canCompare }" viewBox="0 0 280 280" role="img" aria-label="Lifestyle match radar chart">
+            <polygon
+              v-for="(ring, index) in rings"
+              :key="'ring-' + index"
+              :points="ring"
+              class="lmc-ring"
+              :class="{ 'is-mid': index === 2 }"
+            />
+            <line
+              v-for="(spoke, index) in spokes"
+              :key="'spoke-' + index"
+              :x1="spoke.x1" :y1="spoke.y1" :x2="spoke.x2" :y2="spoke.y2"
+              class="lmc-spoke"
+            />
+            <line
+              v-for="(spoke, index) in spokeHits"
+              :key="'spoke-hit-' + index"
+              :x1="spoke.x1" :y1="spoke.y1" :x2="spoke.x2" :y2="spoke.y2"
+              class="lmc-hit-spoke"
+              @mouseenter="showRadarTip(index)"
+              @mouseleave="hideRadarTip"
+            />
+            <polygon :points="spaceShape.points" class="lmc-fill is-space" />
+            <polygon
+              v-if="canCompare"
+              :points="youShape.points"
+              class="lmc-fill is-you"
+            />
+            <polygon
+              v-else
+              :points="demoYouShape.points"
+              class="lmc-fill is-you is-demo"
+            />
+            <g
+              v-for="(node, index) in axisNodes"
+              :key="'axis-' + index"
+              class="lmc-node"
+              @mouseenter="showRadarTip(index)"
+              @mouseleave="hideRadarTip"
+            >
+              <circle :cx="node.x" :cy="node.y" r="14" class="lmc-hit" />
+            </g>
+            <g
+              v-for="(dot, index) in spaceShape.dots"
+              :key="'s-' + index"
+              class="lmc-node"
+              @mouseenter="showRadarTip(index, 'space')"
+              @mouseleave="hideRadarTip"
+            >
+              <circle :cx="dot.x" :cy="dot.y" r="14" class="lmc-hit" />
+              <circle :cx="dot.x" :cy="dot.y" r="4.5" class="lmc-dot is-space" />
+            </g>
+            <template v-if="canCompare">
+              <g
+                v-for="(dot, index) in youShape.dots"
+                :key="'y-' + index"
+                class="lmc-node"
+                @mouseenter="showRadarTip(index, 'you')"
+                @mouseleave="hideRadarTip"
+              >
+                <circle :cx="dot.x" :cy="dot.y" r="14" class="lmc-hit" />
+                <circle :cx="dot.x" :cy="dot.y" r="4.5" class="lmc-dot is-you" />
+              </g>
+            </template>
+          </svg>
+          <div
+            v-if="radarTip"
+            class="lmc-radar-tip"
+            :class="{ 'is-below': radarTip.flip }"
+            :style="{ left: radarTip.x + '%', top: radarTip.y + '%' }"
+          >
+            <i v-if="radarTip.tone" class="lmc-radar-tip-dot" :class="'is-' + radarTip.tone"></i>
+            <span>{{ radarTip.left }} {{ radarTip.leftPct }}% - {{ radarTip.right }} {{ radarTip.rightPct }}%</span>
+          </div>
+        </div>
       </div>
 
       <div class="lmc-stack-front">
@@ -147,8 +186,46 @@ const spokes = axes.map((_, index) => {
   return { x1: RADAR.cx, y1: RADAR.cy, x2: end.x, y2: end.y };
 });
 
+const spokeHits = axes.map((_, index) => {
+  const start = polar(index, 0.28);
+  const end = polar(index, 1);
+  return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+});
+
 const spaceShape = computed(() => shape(props.space));
 const youShape = computed(() => shape(myFits));
+const axisNodes = axes.map((_, index) => polar(index, 1));
+const radarTip = ref(null);
+
+function axisPercents(source, key) {
+  const rightPct = Math.round((clampFit(source?.[key]) / 10) * 100);
+  return { leftPct: 100 - rightPct, rightPct };
+}
+
+function showRadarTip(index, tone = '') {
+  const axis = axes[index];
+  const spaceDot = spaceShape.value.dots[index];
+  const youDot = youShape.value.dots[index];
+  const source = tone === 'you' ? myFits : props.space;
+  const pos = (tone === 'you' && youDot)
+    ? youDot
+    : (tone === 'space' && spaceDot)
+      ? spaceDot
+      : axisNodes[index];
+  radarTip.value = {
+    tone,
+    left: axis.left,
+    right: axis.right,
+    ...axisPercents(source, axis.key),
+    x: (pos.x / 280) * 100,
+    y: (pos.y / 280) * 100,
+    flip: pos.y < 48,
+  };
+}
+
+function hideRadarTip() {
+  radarTip.value = null;
+}
 
 const demoYouShape = computed(() => shape({
   orgSpont: clampFit(props.space?.orgSpont) + 2,
@@ -204,13 +281,22 @@ const score = computed(() => {
   justify-content: center;
   pointer-events: none;
   transform: translateY(-15px);
+  overflow: visible;
+}
+
+.lmc-radar-wrap {
+  position: relative;
+  width: 240px;
+  max-width: 100%;
+  overflow: visible;
+  z-index: 2;
 }
 
 .lmc.is-member .lmc-radar-bg {
   transform: translateY(-5px);
 }
 
-.lmc-radar-bg.is-faded {
+.lmc-radar-svg.is-faded {
   opacity: 0.42;
 }
 
@@ -232,6 +318,7 @@ const score = computed(() => {
   flex-direction: column;
   justify-content: space-between;
   min-height: 268px;
+  pointer-events: none;
 }
 
 .lmc-stack-foot {
@@ -306,6 +393,7 @@ const score = computed(() => {
   fill: none;
   stroke: #e6eef4;
   stroke-width: 1;
+  pointer-events: none;
 }
 
 .lmc-ring.is-mid {
@@ -316,12 +404,14 @@ const score = computed(() => {
 .lmc-spoke {
   stroke: #d7e4ee;
   stroke-width: 1;
+  pointer-events: none;
 }
 
 .lmc-fill {
   fill-opacity: 0.22;
   stroke-width: 2;
   stroke-linejoin: round;
+  pointer-events: none;
 }
 
 .lmc-fill.is-space {
@@ -342,6 +432,60 @@ const score = computed(() => {
 .lmc-dot {
   stroke: #fff;
   stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.lmc-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.lmc-hit-spoke {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  pointer-events: stroke;
+}
+
+.lmc-node:hover .lmc-dot {
+  r: 6.5;
+}
+
+.lmc-radar-tip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-50%, calc(-100% - 10px));
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+  color: #333;
+}
+
+.lmc-radar-tip.is-below {
+  transform: translate(-50%, 12px);
+}
+
+.lmc-radar-tip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lmc-radar-tip-dot.is-space {
+  background: #0086da;
+}
+
+.lmc-radar-tip-dot.is-you {
+  background: #e8833a;
 }
 
 .lmc-dot.is-space,
@@ -400,6 +544,7 @@ const score = computed(() => {
   color: #555;
   cursor: pointer;
   line-height: 1.2;
+  pointer-events: auto;
 }
 
 .lmc-toggle-arrow {
@@ -413,6 +558,7 @@ const score = computed(() => {
 
 .lmc-guest-text {
   margin-top: 23px;
+  pointer-events: auto;
 }
 
 .lmc-axes {

@@ -107,8 +107,8 @@
           </div>
 
           <div class="mp-lifestyle-body">
-            <div class="mp-radar" aria-hidden="true">
-              <svg class="mp-radar-svg" viewBox="0 0 280 280" role="img">
+            <div class="mp-radar">
+              <svg class="mp-radar-svg" viewBox="0 0 280 280" role="img" aria-label="Lifestyle match radar chart">
                 <polygon
                   v-for="(ring, index) in radarRings"
                   :key="'ring-'+index"
@@ -125,25 +125,58 @@
                   :y2="spoke.y2"
                   class="mp-radar-spoke"
                 />
+                <line
+                  v-for="(spoke, index) in radarSpokeHits"
+                  :key="'spoke-hit-'+index"
+                  :x1="spoke.x1"
+                  :y1="spoke.y1"
+                  :x2="spoke.x2"
+                  :y2="spoke.y2"
+                  class="mp-radar-hit-spoke"
+                  @mouseenter="showRadarTip(index)"
+                  @mouseleave="hideRadarTip"
+                />
                 <polygon v-if="themRadar.points" :points="themRadar.points" class="mp-radar-fill is-them" />
                 <polygon v-if="youRadar.points" :points="youRadar.points" class="mp-radar-fill is-you" />
-                <circle
+                <g
+                  v-for="(node, index) in radarAxisNodes"
+                  :key="'axis-'+index"
+                  class="mp-radar-node"
+                  @mouseenter="showRadarTip(index)"
+                  @mouseleave="hideRadarTip"
+                >
+                  <circle :cx="node.x" :cy="node.y" r="14" class="mp-radar-hit" />
+                </g>
+                <g
                   v-for="(dot, index) in themRadar.dots"
                   :key="'them-'+index"
-                  :cx="dot.x"
-                  :cy="dot.y"
-                  r="4.5"
-                  class="mp-radar-dot is-them"
-                />
-                <circle
+                  class="mp-radar-node"
+                  @mouseenter="showRadarTip(index, 'them')"
+                  @mouseleave="hideRadarTip"
+                >
+                  <circle :cx="dot.x" :cy="dot.y" r="14" class="mp-radar-hit" />
+                  <circle :cx="dot.x" :cy="dot.y" r="4.5" class="mp-radar-dot is-them" />
+                </g>
+                <g
                   v-for="(dot, index) in youRadar.dots"
                   :key="'you-'+index"
-                  :cx="dot.x"
-                  :cy="dot.y"
-                  r="4.5"
-                  class="mp-radar-dot is-you"
-                />
+                  class="mp-radar-node"
+                  @mouseenter="showRadarTip(index, 'you')"
+                  @mouseleave="hideRadarTip"
+                >
+                  <circle :cx="dot.x" :cy="dot.y" r="14" class="mp-radar-hit" />
+                  <circle :cx="dot.x" :cy="dot.y" r="4.5" class="mp-radar-dot is-you" />
+                </g>
               </svg>
+              <div
+                v-if="radarTip"
+                class="mp-radar-tip"
+                :class="{ 'is-below': radarTip.flip }"
+                :style="{ left: radarTip.x + '%', top: radarTip.y + '%' }"
+              >
+                <i v-if="radarTip.tone" class="mp-radar-tip-dot" :class="'is-' + radarTip.tone"></i>
+                <span>{{ radarTip.left }} {{ radarTip.leftPct }}% - {{ radarTip.right }} {{ radarTip.rightPct }}%</span>
+              </div>
             </div>
 
             <div class="mp-lifestyle-axes">
@@ -373,6 +406,39 @@ function radarShape(source) {
   };
 }
 
+const radarAxisNodes = lifestyleAxes.map((_, index) => radarPolar(index, 1));
+const radarTip = ref(null);
+
+function axisPercents(source, key) {
+  const rightPct = Math.round((clampFit(source?.[key]) / 10) * 100);
+  return { leftPct: 100 - rightPct, rightPct };
+}
+
+function showRadarTip(index, tone = '') {
+  const axis = lifestyleAxes[index];
+  const themDot = themRadar.value.dots[index];
+  const youDot = youRadar.value.dots[index];
+  const source = tone === 'you' ? myFits.value : mate.value;
+  const pos = (tone === 'you' && youDot)
+    ? youDot
+    : (tone === 'them' && themDot)
+      ? themDot
+      : radarAxisNodes[index];
+  radarTip.value = {
+    tone,
+    left: axis.left,
+    right: axis.right,
+    ...axisPercents(source, axis.key),
+    x: (pos.x / 280) * 100,
+    y: (pos.y / 280) * 100,
+    flip: pos.y < 48,
+  };
+}
+
+function hideRadarTip() {
+  radarTip.value = null;
+}
+
 const radarRings = [0.2, 0.4, 0.6, 0.8, 1].map(ratio => (
   lifestyleAxes.map((_, index) => {
     const p = radarPolar(index, ratio);
@@ -383,6 +449,12 @@ const radarRings = [0.2, 0.4, 0.6, 0.8, 1].map(ratio => (
 const radarSpokes = lifestyleAxes.map((_, index) => {
   const end = radarPolar(index, 1);
   return { x1: RADAR.cx, y1: RADAR.cy, x2: end.x, y2: end.y };
+});
+
+const radarSpokeHits = lifestyleAxes.map((_, index) => {
+  const start = radarPolar(index, 0.28);
+  const end = radarPolar(index, 1);
+  return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
 });
 
 const themRadar = computed(() => radarShape(mate.value));
@@ -774,12 +846,14 @@ const submitRatingEdit = () => {
 .mp-axis-dot.is-them,
 .mp-radar-dot.is-them {
   background: #0086da;
+  fill: #0086da;
 }
 
 .mp-legend-item.is-you i,
 .mp-axis-dot.is-you,
 .mp-radar-dot.is-you {
   background: #e8833a;
+  fill: #e8833a;
 }
 
 .mp-radar {
@@ -787,6 +861,7 @@ const submitRatingEdit = () => {
   width: 100%;
   max-width: 280px;
   margin: 0;
+  overflow: visible;
 }
 
 .mp-radar-svg {
@@ -799,6 +874,7 @@ const submitRatingEdit = () => {
   fill: none;
   stroke: #e6eef4;
   stroke-width: 1;
+  pointer-events: none;
 }
 
 .mp-radar-ring.is-mid {
@@ -809,12 +885,14 @@ const submitRatingEdit = () => {
 .mp-radar-spoke {
   stroke: #d7e4ee;
   stroke-width: 1;
+  pointer-events: none;
 }
 
 .mp-radar-fill {
   fill-opacity: 0.22;
   stroke-width: 2;
   stroke-linejoin: round;
+  pointer-events: none;
 }
 
 .mp-radar-fill.is-them {
@@ -830,6 +908,60 @@ const submitRatingEdit = () => {
 .mp-radar-dot {
   stroke: #fff;
   stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.mp-radar-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.mp-radar-hit-spoke {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  pointer-events: stroke;
+}
+
+.mp-radar-node:hover .mp-radar-dot {
+  r: 6.5;
+}
+
+.mp-radar-tip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-50%, calc(-100% - 10px));
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+  color: #333;
+}
+
+.mp-radar-tip.is-below {
+  transform: translate(-50%, 12px);
+}
+
+.mp-radar-tip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mp-radar-tip-dot.is-them {
+  background: #0086da;
+}
+
+.mp-radar-tip-dot.is-you {
+  background: #e8833a;
 }
 
 .mp-lifestyle-insight {
