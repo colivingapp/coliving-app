@@ -1,6 +1,6 @@
 <template>
-    <div v-if="profile_pic == 'photo'" style="border-radius:50%;overflow:hidden;">
-      <img :src="photoSrc" class="img-fit-cover" @error="onPhotoError"/>
+    <div v-if="profile_pic == 'photo'" class="profile-photo">
+      <img :src="photoSrc" class="profile-photo-img" alt="" @error="onPhotoError"/>
     </div>
     <div v-else><multiavatar :avatar="avatar" /></div>
 </template>
@@ -45,3 +45,18 @@ export default {
     },
 }
 </script>
+
+<style>
+.profile-photo {
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.profile-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+</style>
