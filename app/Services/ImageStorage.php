@@ -173,7 +173,7 @@ class ImageStorage
 
     private function ensureDirectory(string $kind, bool $thumbs): void
     {
-        $path = 'public/' . $kind . ($thumbs ? '/thumbs' : '');
-        Storage::makeDirectory($path);
+        $path = $kind . ($thumbs ? '/thumbs' : '');
+        Storage::disk('public')->makeDirectory($path);
     }
 }
