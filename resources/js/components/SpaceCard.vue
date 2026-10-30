@@ -96,14 +96,16 @@ const linkTo = computed(() => props.to || '/space/' + spaceUid.value);
   color: inherit;
 }
 
-.space-card-link {
+.space-card-link,
+.space-card-link:visited {
   display: block;
-  color: inherit;
+  color: rgb(0, 134, 218);
   text-decoration: none;
 }
 
-.space-card-link:hover {
-  color: inherit;
+.space-card-link:hover,
+.space-card-link:active {
+  color: rgb(43, 174, 255);
   text-decoration: none;
 }
 
